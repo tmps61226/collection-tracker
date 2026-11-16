@@ -436,37 +436,79 @@ async function testKey(){
     setMsg(r.ok?'金鑰可以用 ✓（這個測試不會用掉每日額度）':'金鑰有問題：'+nice(new Error(j.error&&j.error.message||r.status)));
   }catch(e){setMsg('失敗：'+nice(e))}
 }
+const SHOT_SCHEMA=()=>({type:'OBJECT',properties:{
+  sourceType:{type:'STRING',enum:SRC},seller:{type:'STRING'},link:{type:'STRING'},buyDate:{type:'STRING'},recvDate:{type:'STRING'},
+  status:{type:'STRING',enum:['wish','pre','have','']},currency:{type:'STRING',enum:['TWD','JPY','CNY','KRW','USD']},ship:{type:'NUMBER'},
+  pay:{type:'STRING',enum:['unpaid','deposit','paid','cod']},deposit:{type:'NUMBER'},twTotal:{type:'NUMBER'},eta:{type:'STRING'},category:{type:'STRING'},orig:{type:'STRING'},
+  items:{type:'ARRAY',items:{type:'OBJECT',properties:{name:{type:'STRING'},qty:{type:'NUMBER'},price:{type:'NUMBER'},img:{type:'INTEGER'},box:{type:'ARRAY',items:{type:'NUMBER'}}},required:['name','qty','price']}}
+},required:['items']});
+function shotPrompt(n){return `你是繁體中文訂單辨識器。以下 ${n} 張圖片屬於同一筆預購或訂單，請整合成一筆，依指定格式回傳 JSON。
+圖片可能是：蝦皮／賣貨便訂單、LINE 社群喊單（貼文加留言）、日韓商品頁截圖、代購或使用者自己整理的「清單／明細表」。
+
+【品項（最重要）】
+1. 若其中有一張是清單或明細表（有品項、數量、外幣金額、台幣金額、合計），品項、數量、金額一律以它為準；商品頁截圖拿來取得商品照片與完整品名。
+2. items 每個品項一筆，絕對不要漏掉。name 整理成台灣常用的完整繁體中文（角色、系列、款式、商品類型都要寫），看不清楚不要亂猜；qty 是數量；price 是「單價」。
+3. 外幣訂單：currency 填外幣（JPY／KRW／CNY／USD），price 填外幣單價；若圖上有使用者已換算好的台幣總額，填在 twTotal。台幣訂單 currency 填 TWD。
+4. 不要把商品頁上的原價、劃線價、廣告價當成單價，除非那就是實際購買價。同一筆訂單有多個品項就列多筆。看不出來的欄位用空字串或 0。
+
+【商品照片】
+box 是該品項商品照片在那張圖裡的位置 [ymin,xmin,ymax,xmax]，0～1000 的相對座標（左上角為原點），img 是它出現在第幾張圖（從 0 開始）。商品頁截圖上最大的商品主圖就是該品項的照片，請依品名或款式把每一頁對應到正確的品項。只框商品照片本身，不要框店家頭像、Logo、按鈕或文字；清單表格或沒有商品照片的圖，不要給 box。
+
+【日期】
+只讀圖上真的出現的日期，年份用西元四位數 YYYY-MM-DD；手機最上面的狀態列時間（例如 02:22）不是日期，要忽略；不要編造、不要用今天的日期。「訂單成立／下單／付款」的日期填 buyDate；「買家取件成功／已送達／訂單已完成／已收貨」的日期填 recvDate，並且 status 填 have。只看得到取件日期時，buyDate 也填同一天。預計到貨日填 eta。
+
+【喊單模式】
+若圖片是 LINE 社群／LINE VOOM 的團購貼文加留言串：貼文有商品照片、系列名稱、價格（例如「指定款150$」）、貼文時間與開單者（seller 填開單者名稱）。留言串裡每個人用「款式名+數量」喊單（如「漢頓 +1」「花小兔 +2」）。請只找暱稱為「${S.nick||'瓜呱'}」的留言，這些才是我的訂單：每則留言一個品項，name 寫成「系列名 款式名 商品類型」，qty 取自「+數字」（沒寫就是 1），price 取自貼文價格，buyDate 用我留言的時間，貼文若寫「預購」status 填 pre。別人的留言一律忽略。找不到我的留言時 items 留空並在 orig 說明原因。
+
+其他欄位：sourceType 從 ${SRC.join('、')} 挑一個；seller 填賣家或代購名稱；category 從 ${S.cats.join('、')} 挑一個，沒有就空字串；pay 是付款狀態；orig 填圖上的原文品名。`}
+function parseShot(j){
+  let t=(j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts||[]).map(p=>p.text||'').join('').replace(/```json|```/g,'').trim();
+  if(!t)throw new Error('Gemini 沒有回傳內容'+(j.promptFeedback&&j.promptFeedback.blockReason?'（被擋：'+j.promptFeedback.blockReason+'）':''));
+  let d;try{d=JSON.parse(t)}catch(e){const m=t.match(/[\[{][\s\S]*[\]}]/);if(!m)throw new Error('Gemini 回傳的格式讀不懂');d=JSON.parse(m[0])}
+  if(Array.isArray(d))d={items:d};
+  if(!Array.isArray(d.items)){const alt=d.products||d.item||d['品項']||d['商品'];if(Array.isArray(alt))d.items=alt;else{const sub=Object.values(d).find(v=>v&&typeof v==='object'&&!Array.isArray(v)&&Array.isArray(v.items));if(sub)d=Object.assign({},d,sub);else d.items=[]}}
+  d._raw=t;return d;
+}
+async function callShot(k,parts,schema,on){
+  const body={contents:[{parts}],generationConfig:{responseMimeType:'application/json'}};
+  if(schema)body.generationConfig.responseSchema=SHOT_SCHEMA();
+  return parseShot(await gem(k,body,on,40000));
+}
 async function doShot(files){
   const k=(localStorage.getItem('gk')||'').replace(/[^\x21-\x7e]/g,'');if(!k){setMsg('請先貼上 Gemini API Key');return}
   setMsg('辨識中，請稍等…');
   try{
-    const prompt=`你是繁體中文訂單辨識器。以下 ${files.length} 張圖片屬於同一筆預購或訂單（可能是LINE社群喊單截圖、商品型錄、蝦皮、賣貨便、日拍等）。請整合成一筆訂單，只回傳 JSON：
-{"sourceType":"${SRC.join('|')} 其中之一","seller":"賣家或代購名稱","link":"","buyDate":"訂單成立／下單日期 YYYY-MM-DD或空字串","recvDate":"取件成功／送達／已完成的日期 YYYY-MM-DD或空字串","status":"wish|pre|have 其一或空字串","currency":"TWD|JPY|CNY|KRW|USD","ship":運費數字,"pay":"unpaid|deposit|paid|cod","deposit":已付訂金數字,"eta":"預計到貨日YYYY-MM-DD或空字串","category":"從這些分類挑一個：${S.cats.join('、')}，沒有就空字串","items":[{"name":"品名","qty":數量,"price":單價數字,"img":該商品照片出現在第幾張圖（從0開始）,"box":[ymin,xmin,ymax,xmax]}],"orig":"圖上的原文品名"}
-box 是該品項「商品縮圖／商品照片」在那張截圖裡的位置，座標為 0～1000 的相對值（左上角為原點），只框商品照片本身，不要框店家頭像、Logo、按鈕或文字；每個品項各自框自己的照片；看不到商品照片就不要給 box。
-日期規則：只讀圖上真的出現的日期，年份要是西元四位數；手機最上面的狀態列時間（例如 02:22）不是日期，要忽略；不要編造、不要用今天的日期。「訂單成立／下單／付款」的日期填 buyDate；「買家取件成功／已送達／訂單已完成／已收貨」的日期填 recvDate，並且 status 填 have。如果只看得到取件日期而沒有下單日期，buyDate 也填同一天。
-規則：品名請整理成台灣常用的完整繁體中文，例如「哥吉拉×三麗鷗 漢頓 填充玩偶吊飾」，角色、款式、商品類型都要寫出，看不清楚的不要亂猜。price 只填實際購買的單價，不要填日幣定價、原價或廣告價格。同一筆訂單有多個品項就列多筆。看不出來的欄位用空字串或0。
-【喊單模式】若圖片是LINE社群／LINE VOOM的團購貼文加留言串：貼文通常有商品照片、系列名稱、價格（例如「指定款150$」）、貼文時間與開單者（seller 填開單者名稱）。留言串裡每個人用「款式名+數量」喊單（如「漢頓 +1」「花小兔 +2」）。請只找暱稱為「${S.nick||'瓜呱'}」的留言（含頭像相同、同名的多則留言），這些才是我的訂單：每則留言就是一個品項，name 寫成「系列名 款式名 商品類型」（款式名取自留言，系列與商品類型取自貼文照片與文字），qty 取自「+數字」（沒寫就是1），price 取自貼文價格（指定款價格適用於所選款式，不要填別人的）。buyDate 用我留言的時間。別人的留言一律忽略。若貼文寫「預購」，status 填 "pre"。若沒有找到我的留言，items 留空並在 orig 說明原因。
-在 JSON 裡多加一個欄位 "status":"pre|wish|have 或空字串"。`;
-    const parts=[{text:prompt}];
-    const small=[];
-    for(const f of files){const u=await shrink(f,1400);if(u){small.push(u);parts.push({inline_data:{mime_type:'image/webp',data:u.split(',')[1]}})}}
-    const j=await gem(k,{contents:[{parts}],generationConfig:{responseMimeType:'application/json'}},m=>setMsg('辨識中（'+m+'），最久約 15～30 秒…'),30000);
-    const d=JSON.parse(j.candidates[0].content.parts[0].text.replace(/```json|```/g,''));
+    const small=[],imgParts=[];
+    for(const f of files){const u=await shrink(f,1400);if(u){small.push(u);imgParts.push({inline_data:{mime_type:'image/webp',data:u.split(',')[1]}})}}
+    const on=m=>setMsg('辨識中（'+m+'），最久約 15～40 秒…');
+    const parts=[{text:shotPrompt(files.length)},...imgParts];
+    let d;
+    try{d=await callShot(k,parts,true,on)}
+    catch(e){if(/schema|INVALID_ARGUMENT|Invalid JSON payload|response_schema/i.test(e.message)&&!isQuota(e.message))d=await callShot(k,parts,false,on);else throw e}
+    if(!d.items.some(i=>i&&i.name)){
+      setMsg('第一次沒抓到品項，再試一次…');
+      const p2=[{text:'請只做一件事：把這些圖片中這筆訂單的所有品項列出來（品名用繁體中文、數量、單價）。若有清單或明細表，以它為準，一個品項都不要漏。'+shotPrompt(files.length)},...imgParts];
+      try{const d2=await callShot(k,p2,true,on);if(d2.items.some(i=>i&&i.name))d=Object.assign({},d,{items:d2.items,currency:d.currency||d2.currency,twTotal:d.twTotal||d2.twTotal})}catch(e2){if(isQuota(e2.message))throw e2}
+    }
     if(d.sourceType&&SRC.includes(d.sourceType))cur.src=d.sourceType;
     if(d.seller)cur.seller=d.seller;if(d.link)cur.link=d.link;if(/^\d{4}-\d{2}-\d{2}$/.test(d.buyDate||''))cur.buyDate=d.buyDate;
     if(CUR[d.currency])cur.cur=d.currency;if(+d.ship)cur.ship=+d.ship;
     if(PAY[d.pay]){cur.pay=d.pay;if(d.pay==='deposit'&&+d.deposit)cur.deposit=+d.deposit}
     if(d.category&&S.cats.includes(d.category))cur.cat=d.category;
-    if(Array.isArray(d.items)&&d.items.length)cur.items=d.items.map(i=>({name:i.name||'',qty:+i.qty||1,price:+i.price||''}));
+    const good=d.items.filter(i=>i&&(i.name||+i.price));
+    if(good.length)cur.items=good.map(i=>({name:String(i.name||''),qty:+i.qty||1,price:+i.price||''}));
+    if(cur.cur!=='TWD'&&+d.twTotal>0&&good.length)cur.twPaid=+d.twTotal;
     if(d.eta){cur.eta=d.eta;cur.status='pre'}else if(['pre','wish','have'].includes(d.status))cur.status=d.status;
     if(/^\d{4}-\d{2}-\d{2}$/.test(d.recvDate||'')){cur.recvDate=d.recvDate;if(!d.eta)cur.status='have'}
     if(/^\d{4}-\d{2}-\d{2}$/.test(d.recvDate||'')&&!/^\d{4}-\d{2}-\d{2}$/.test(d.buyDate||''))cur.buyDate=d.recvDate;
     if(cur.status==='have'&&!cur.recvDate)cur.recvDate=today();
     if(d.orig&&!(cur.items[0]&&cur.items[0].name===d.orig))cur.note=(cur.note?cur.note+'\n':'')+'原文品名：'+d.orig;
     let nc=0;
-    if(Array.isArray(d.items))for(let k=0;k<d.items.length&&k<cur.items.length;k++){const it=d.items[k];let bx=it.box;if(bx&&!Array.isArray(bx)&&typeof bx==='object')bx=[bx.ymin,bx.xmin,bx.ymax,bx.xmax];if(typeof bx==='string')bx=bx.match(/-?\d+(?:\.\d+)?/g);if(Array.isArray(bx)&&bx.length===4){bx=bx.map(Number);let u=await cropImg(files[+it.img||0]||files[0],bx);if(u)u=await trimImg(u);if(u){cur.items[k].img={s:u};nc++;if(!cur.imgs.length)cur.imgs.push({s:u})}}}
+    if(good.length)for(let q=0;q<good.length&&q<cur.items.length;q++){const it=good[q];let bx=it.box;if(bx&&!Array.isArray(bx)&&typeof bx==='object')bx=[bx.ymin,bx.xmin,bx.ymax,bx.xmax];if(typeof bx==='string')bx=bx.match(/-?\d+(?:\.\d+)?/g);if(Array.isArray(bx)&&bx.length===4){bx=bx.map(Number);let u=await cropImg(files[+it.img||0]||files[0],bx);if(u)u=await trimImg(u);if(u){cur.items[q].img={s:u};if(!nc){cur.imgs.unshift({s:u});cur.cover=0}nc++}}}
     for(const u of small){if(cur.imgs.length<10)cur.imgs.push({s:u})}
-    drawEd();setMsg(nc?'已填入，自動截取 '+nc+' 張商品圖，並保留原訂單截圖，請檢查一下再儲存':'已填入，請檢查一下內容再儲存（'+(d.items&&d.items.some(i=>i.box)?'商品圖位置不合理，無法裁切':'沒偵測到商品圖')+'，已保留原截圖，可點縮圖手動加圖）');
+    drawEd();
+    if(!good.length)setMsg('沒辨識出品項（Gemini 回傳：'+d._raw.slice(0,90).replace(/\s+/g,' ')+'…）。請手動填，或換更清楚的截圖再試。');
+    else setMsg('已填入 '+good.length+' 個品項'+(nc?'，自動截取 '+nc+' 張商品圖':'，沒偵測到商品圖，可點縮圖手動加圖')+'；原截圖已保留，請檢查一下再儲存');
   }catch(e){setMsg('辨識失敗：'+nice(e))}
 }
 async function doBg(m){
