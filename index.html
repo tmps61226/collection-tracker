@@ -287,7 +287,9 @@ async function doShot(files){
   try{
     const prompt=`你是繁體中文訂單辨識器。以下 ${files.length} 張圖片屬於同一筆預購或訂單（可能是LINE社群喊單截圖、商品型錄、蝦皮、賣貨便、日拍等）。請整合成一筆訂單，只回傳 JSON：
 {"sourceType":"${SRC.join('|')} 其中之一","seller":"賣家或代購名稱","link":"","buyDate":"YYYY-MM-DD或空字串","currency":"TWD|JPY|CNY|KRW|USD","ship":運費數字,"pay":"unpaid|deposit|paid|cod","deposit":已付訂金數字,"eta":"預計到貨日YYYY-MM-DD或空字串","category":"從這些分類挑一個：${S.cats.join('、')}，沒有就空字串","items":[{"name":"品名","qty":數量,"price":單價數字}],"orig":"圖上的原文品名"}
-規則：品名請整理成台灣常用的完整繁體中文，例如「哥吉拉×三麗鷗 漢頓 填充玩偶吊飾」，角色、款式、商品類型都要寫出，看不清楚的不要亂猜。price 只填實際購買的單價，不要填日幣定價、原價或廣告價格。同一筆訂單有多個品項就列多筆。看不出來的欄位用空字串或0。`;
+規則：品名請整理成台灣常用的完整繁體中文，例如「哥吉拉×三麗鷗 漢頓 填充玩偶吊飾」，角色、款式、商品類型都要寫出，看不清楚的不要亂猜。price 只填實際購買的單價，不要填日幣定價、原價或廣告價格。同一筆訂單有多個品項就列多筆。看不出來的欄位用空字串或0。
+【喊單模式】若圖片是LINE社群／LINE VOOM的團購貼文加留言串：貼文通常有商品照片、系列名稱、價格（例如「指定款150$」）、貼文時間與開單者（seller 填開單者名稱）。留言串裡每個人用「款式名+數量」喊單（如「漢頓 +1」「花小兔 +2」）。請只找暱稱為「${S.nick||'瓜呱'}」的留言（含頭像相同、同名的多則留言），這些才是我的訂單：每則留言就是一個品項，name 寫成「系列名 款式名 商品類型」（款式名取自留言，系列與商品類型取自貼文照片與文字），qty 取自「+數字」（沒寫就是1），price 取自貼文價格（指定款價格適用於所選款式，不要填別人的）。buyDate 用我留言的時間。別人的留言一律忽略。若貼文寫「預購」，status 填 "pre"。若沒有找到我的留言，items 留空並在 orig 說明原因。
+在 JSON 裡多加一個欄位 "status":"pre|wish|have 或空字串"。`;
     const parts=[{text:prompt}];
     const small=[];
     for(const f of files){const u=await shrink(f,1400);if(u){small.push(u);parts.push({inline_data:{mime_type:'image/webp',data:u.split(',')[1]}})}}
@@ -300,7 +302,7 @@ async function doShot(files){
     if(PAY[d.pay]){cur.pay=d.pay;if(d.pay==='deposit'&&+d.deposit)cur.deposit=+d.deposit}
     if(d.category&&S.cats.includes(d.category))cur.cat=d.category;
     if(Array.isArray(d.items)&&d.items.length)cur.items=d.items.map(i=>({name:i.name||'',qty:+i.qty||1,price:+i.price||''}));
-    if(d.eta){cur.eta=d.eta;cur.status='pre'}
+    if(d.eta){cur.eta=d.eta;cur.status='pre'}else if(['pre','wish','have'].includes(d.status))cur.status=d.status;
     if(d.orig&&!(cur.items[0]&&cur.items[0].name===d.orig))cur.note=(cur.note?cur.note+'\n':'')+'原文品名：'+d.orig;
     for(const u of small){if(cur.imgs.length<10)cur.imgs.push({s:u})}
     drawEd();setMsg('已填入，請檢查一下內容再儲存');
@@ -323,6 +325,7 @@ function drawSet(){
   SO.innerHTML=`<div class="mh"><button id="sx">完成</button><span></span></div>
   <div class="cd"><h3>自訂分類</h3>${S.cats.map((c,i)=>`<div class="cr"><input data-ci="${i}" value="${esc(c)}"><button data-cd="${i}">刪除</button></div>`).join('')}
     <div class="cr"><input id="newcat" placeholder="新增分類名稱"><button id="addcat" style="color:var(--ac)">新增</button></div></div>
+  <div class="cd"><h3>我的暱稱（喊單截圖用來找我的留言）</h3><div class="fr"><span>暱稱</span><input id="nick" value="${esc(S.nick||'瓜呱')}" placeholder="例如：瓜呱"></div></div>
   <div class="cd"><h3>匯率（換算成台幣，用於統計）</h3>${['JPY','CNY','KRW','USD'].map(c=>`<div class="fr"><span>1 ${CURN[c]} =</span><input data-rate="${c}" type="number" inputmode="decimal" step="any" value="${S.rates[c]}"></div>`).join('')}</div>
   <div class="cd"><h3>備份</h3><button class="btn" id="ex">匯出備份</button><button class="btn" id="im">匯入備份</button><input type="file" id="imf" accept=".json" hidden>
     <div class="msg">資料只存在這個瀏覽器，建議定期匯出備份。</div></div>`;
@@ -331,6 +334,7 @@ $('gear').onclick=()=>{drawSet();SO.classList.add('show')};
 SO.addEventListener('change',e=>{
   const t=e.target;
   if(t.dataset.ci!==undefined){const i=+t.dataset.ci,old=S.cats[i],v=t.value.trim();if(v&&v!==old){S.cats[i]=v;items.forEach(o=>{if(o.cat===old)o.cat=v});save();renderCats();render()}else t.value=old}
+  if(t.id==='nick'){S.nick=t.value.trim()||'瓜呱';save()}
   if(t.dataset.rate){S.rates[t.dataset.rate]=+t.value||S.rates[t.dataset.rate];save();render()}
   if(t.id==='imf'&&t.files[0]){const r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result),its=Array.isArray(d)?d:d.items;if(!Array.isArray(its))throw 0;if(confirm('匯入 '+its.length+' 筆資料，會取代目前的資料，確定嗎？')){items=its.map(mig);if(d.settings&&d.settings.cats)S=Object.assign(S,d.settings);save();renderCats();render();drawSet()}}catch(x){alert('檔案格式不正確')}};r.readAsText(t.files[0])}
 });
