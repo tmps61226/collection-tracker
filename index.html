@@ -12,7 +12,7 @@ body{margin:0;background-color:var(--bg);background-image:url("data:image/svg+xm
 .top{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;margin:6px 0 16px}
 .circ{width:44px;height:44px;border-radius:50%;border:1px solid var(--ln);background:var(--card);display:flex;align-items:center;justify-content:center;font:600 17px var(--num);color:var(--tx);cursor:pointer;padding:0}
 .circ svg{width:20px;height:20px}
-.ttl{text-align:center;font:700 26px var(--mono);letter-spacing:.5px}
+.ttl{text-align:center;font:700 26px -apple-system,"PingFang TC","Noto Sans TC",sans-serif;letter-spacing:3px}
 .dt{text-align:center;font:15px var(--num);color:var(--mu);margin-top:2px}
 .sum{background:var(--card);border-radius:24px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 2px 14px #3a2e1a12;margin-bottom:10px;overflow:hidden}
 .sum small{display:block;font:15px var(--num);color:var(--mu)}
@@ -97,7 +97,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .cr button{border:0;background:transparent;color:var(--rd);cursor:pointer}
 </style></head><body>
 <div class="w">
-  <div class="top"><button class="circ" id="gear" aria-label="設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg></button><div><div class="ttl">Collection</div><div class="dt" id="dt"></div></div><button class="circ" id="eye" aria-label="隱藏金額"></button></div>
+  <div class="top"><button class="circ" id="gear" aria-label="設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg></button><div><div class="ttl">收藏櫃</div><div class="dt" id="dt"></div></div><button class="circ" id="eye" aria-label="隱藏金額"></button></div>
   <div id="stats"></div>
   <input class="sr" id="q" placeholder="搜尋品名、賣家、備註">
   <div class="chips" id="chips"></div>
@@ -191,10 +191,10 @@ function render(){
   const m=n=>'NT$'+Math.round(n).toLocaleString();
   const ym=today().slice(0,7),mi=items.filter(o=>(o.buyDate||'').startsWith(ym)&&o.status!=='wish');
   const rec5=[];[...items].sort((a,b)=>(b.buyDate||'').localeCompare(a.buyDate||'')).forEach(o=>{o.items.forEach(it=>{if(it.img&&rec5.length<5)rec5.push(it.img.s)});if(o.imgs&&o.imgs[o.cover]&&rec5.length<5&&!o.items.some(i=>i.img))rec5.push(o.imgs[o.cover].s)});
-  $('stats').innerHTML=`<div class="sum"><div><small>This Month</small><b>${mi.length}<i>筆訂單</i></b><small>${m(mi.reduce((a,o)=>a+tw(o,total(o)),0))}</small></div><div class="stkrow">${rec5.map(x=>`<img src="${x}" alt="">`).join('')}</div></div>
+  $('stats').innerHTML=`<div class="sum"><div><small>本月</small><b>${mi.length}<i>筆訂單</i></b><small>${m(mi.reduce((a,o)=>a+tw(o,total(o)),0))}</small></div><div class="stkrow">${rec5.map(x=>`<img src="${x}" alt="">`).join('')}</div></div>
   <div class="mini">${[['總投入',S.hide?HID:m(inv)],['待付尾款',m(pend)],['預購中',items.filter(o=>o.status==='pre').length+' 件'],['售出回血',m(rec)]].map(x=>`<div><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}</div>`;
   $('eye').innerHTML=EYE[S.hide?1:0];
-  $('dt').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+  $('dt').textContent=new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
   $('chips').innerHTML=[['all','全部'],['pre','預購中'],['have','已到貨'],['wish','想買'],['sold','已售出']].map(c=>`<button class="chip ${$('fs').value===c[0]?'on':''}" data-s="${c[0]}">${c[1]}</button>`).join('');
   const q=$('q').value.trim().toLowerCase(),fs=$('fs').value,fc=$('fc').value,so=$('so').value;
   let l=items.filter(o=>{
@@ -204,7 +204,7 @@ function render(){
     return [o.items.map(i=>i.name).join(' '),o.seller,o.src,o.cat,o.note].join(' ').toLowerCase().includes(q)});
   l.sort((a,b)=>so==='price'?tw(b,total(b))-tw(a,total(a)):so==='eta'?((a.eta||'9999')<(b.eta||'9999')?-1:1):(b.buyDate||'').localeCompare(a.buyDate||''));
   
-  if(!l.length){$('main').innerHTML='<div class="empty">'+(items.length?'找不到符合的訂單':'Nothing here yet<br>按下方 ＋ 新增第一件')+'</div>';return}
+  if(!l.length){$('main').innerHTML='<div class="empty">'+(items.length?'找不到符合的訂單':'還沒有任何收藏<br>按下方 ＋ 新增第一件')+'</div>';return}
   const due=o=>o.status==='pre'&&o.eta&&o.eta<today();
   const cb=c=>c.tag?`<span class="bd sold">${c.tag}</span>`:bd(c.o);
   const bd=o=>(o.status==='have'?'':`<span class="bd ${o.status}">${ST[o.status]}</span>`)+(due(o)?'<span class="bd due">逾期</span>':'');
@@ -218,8 +218,8 @@ function render(){
     });
     else cells.push({o,name:title(o),img:(o.items.length===1&&o.items[0].img)?o.items[0].img.s:cover(o),price:total(o)});
   });
-  $('dt').textContent+=' · '+cells.length+' items';
-  const im=c=>c.img?`<img src="${c.img}" alt="">`:'<span style="font:12px var(--mono);color:var(--mu)">no img</span>';
+  $('dt').textContent+=' · 共 '+cells.length+' 件';
+  const im=c=>c.img?`<img src="${c.img}" alt="">`:'<span style="font:12px var(--mono);color:var(--mu)">無圖片</span>';
   $('main').innerHTML=view==='grid'
    ?`<div class="grid">${cells.map(c=>`<div class="cell" data-id="${c.o.id}"><div class="bds">${cb(c)}</div><div class="im">${im(c)}</div><div class="nm">${esc(c.name)}</div><div class="pr">${money(c.o,c.price)}</div></div>`).join('')}</div>`
    :`<div class="list">${cells.map(c=>{const o=c.o;return `<div class="row" data-id="${o.id}"><div class="im">${im(c)}</div><div class="mt"><div class="nm">${esc(c.name)}${cb(c)}</div><small>${esc(o.src)} ${esc(o.seller)} · ${fmt(o.buyDate)}</small><small>${o.cat?esc(o.cat)+' · ':''}${PAY[o.pay]}${o.status==='pre'&&o.eta?' · 預計 '+fmt(o.eta):''}</small></div><div class="pr">${money(o,c.price)}</div></div>`}).join('')}</div>`;
@@ -250,7 +250,7 @@ function drawEd(){
   <div class="cd"><h3>商品圖片（點一下設為封面）</h3>
     <div class="thumbs">${cur.imgs.map((m,i)=>`<div class="th ${i===cur.cover?'cv':''}" data-c="${i}"><img src="${m.s}">${i===cur.cover?'<b>封面</b>':''}<i data-rm="${i}">×</i></div>`).join('')}</div>
     <button class="btn" id="addimg">＋ 新增圖片</button><input type="file" id="imgf" accept="image/*" multiple hidden>
-    ${cover(cur)?(cur.imgs[cur.cover]&&cur.imgs[cur.cover].o?'<button class="btn" id="undo">還原封面原圖</button>':'<button class="btn" id="bg">✂️ 封面去背</button>'):''}
+    ${cover(cur)?(cur.imgs[cur.cover]&&cur.imgs[cur.cover].o?'<button class="btn" id="undo">還原封面原圖</button>':'<button class="btn" id="bg">✂️ 封面去背</button>')+'<button class="btn" id="zm">🔍 封面放大主體</button>':''}
     <div class="msg" id="msg2"></div></div>
   <div class="cd">${seg('status',[['wish','想買'],['pre','預購中'],['have','已到貨'],['sold','已售出']])}
     ${sel('分類','cat',[['','未分類'],...cats.map(c=>[c,c])])}
@@ -261,7 +261,7 @@ function drawEd(){
       <div class="ir"><div class="ith" data-ip="${i}">${it.img?`<img src="${it.img.s}">`:'📷'}</div><input data-i="${i}" data-k="name" placeholder="品名" value="${esc(it.name)}"></div>
       <div class="two"><input data-i="${i}" data-k="qty" type="number" inputmode="numeric" placeholder="數量" value="${esc(it.qty)}"><input data-i="${i}" data-k="price" type="number" inputmode="decimal" placeholder="單價" value="${esc(it.price)}"></div>
       ${cur.status==='have'||cur.status==='sold'?`<div class="sell"><span>已售出</span><button data-sq="${i}" data-d="-1">−</button><b>${sq(it)} / ${+it.qty||1}</b><button data-sq="${i}" data-d="1">＋</button>${sq(it)?`<input data-i="${i}" data-k="sp" type="number" inputmode="decimal" placeholder="賣了多少（台幣總額）" value="${esc(it.sp||'')}">`:''}</div>`:''}
-      ${it.img?`<div style="margin-top:6px">${it.img.o?`<button class="btn" data-iun="${i}">還原原圖</button>`:`<button class="btn" data-ibg="${i}">✂️ 去背</button>`}<button class="btn" data-irm="${i}">移除圖片</button></div>`:''}</div>`).join('')}
+      ${it.img?`<div style="margin-top:6px">${it.img.o?`<button class="btn" data-iun="${i}">還原原圖</button>`:`<button class="btn" data-ibg="${i}">✂️ 去背</button>`}<button class="btn" data-izm="${i}">🔍 放大主體</button><button class="btn" data-irm="${i}">移除圖片</button></div>`:''}</div>`).join('')}
     <input type="file" id="itf" accept="image/*" hidden>
     <div class="msg">到貨後，每個品項會在收藏櫃各自顯示。點左邊的縮圖，可以替這個品項單獨加照片、去背。</div>
     <button class="btn" id="addit">＋ 新增品項</button></div>
@@ -321,6 +321,7 @@ MO.addEventListener('click',ev=>{
     if(b.dataset.k==='unit'){const x=calcEta(cur.start,cur.dur,cur.unit);if(x)cur.eta=x}
     drawEd();return}
   if(b.dataset.ibg!==undefined){doBg(cur.items[+b.dataset.ibg].img);return}
+  if(b.dataset.izm!==undefined){const m=cur.items[+b.dataset.izm].img;trimImg(m.s).then(t=>{m.s=t;drawEd()});return}
   if(b.dataset.iun!==undefined){const m=cur.items[+b.dataset.iun].img;m.s=m.o;delete m.o;drawEd();return}
   if(b.dataset.irm!==undefined){delete cur.items[+b.dataset.irm].img;drawEd();return}
   if(b.dataset.del!==undefined){cur.items.splice(+b.dataset.del,1);if(!cur.items.length)cur.items.push({name:'',qty:1,price:''});drawEd();return}
@@ -329,6 +330,7 @@ MO.addEventListener('click',ev=>{
   if(id==='tk'){testKey();return}
   if(id==='shot'){const k=($('gk').value||'').trim();if(!k){setMsg('請先貼上 Gemini API Key');return}localStorage.setItem('gk',k);$('shotf').click()}
   if(id==='addimg')$('imgf').click();
+  if(id==='zm'){const m=cur.imgs[cur.cover];trimImg(m.s).then(t=>{m.s=t;drawEd()});return}
   if(id==='bg')doBg(cur.imgs[cur.cover]);
   if(id==='undo'){const m=cur.imgs[cur.cover];m.s=m.o;delete m.o;drawEd()}
   if(id==='sv'){delete cur._new;derive(cur);cur.items=cur.items.filter((i,n)=>i.name||+i.price||n===0);const i=items.findIndex(x=>x.id===cur.id);i<0?items.unshift(cur):items[i]=cur;save();render();MO.classList.remove('show')}
@@ -337,6 +339,22 @@ MO.addEventListener('click',ev=>{
 const setMsg=t=>{const m=$('msg');if(m)m.textContent=t};
 const setMsg2=t=>{const m=$('msg2');if(m)m.textContent=t};
 function shrink(file,max=900){return new Promise(res=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/webp',.85))};im.onerror=()=>res(null);im.src=r.result};r.readAsDataURL(file)})}
+function trimImg(u){return new Promise(res=>{const im=new Image();im.onerror=()=>res(u);im.onload=()=>{try{
+  const k=Math.min(1,900/Math.max(im.width,im.height)),w=Math.max(1,Math.round(im.width*k)),h=Math.max(1,Math.round(im.height*k)),c=document.createElement('canvas');c.width=w;c.height=h;
+  const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(im,0,0,w,h);const d=x.getImageData(0,0,w,h).data;
+  const px=(i,j)=>{const o=(j*w+i)*4;return [d[o],d[o+1],d[o+2],d[o+3]]};
+  const cs=[px(0,0),px(w-1,0),px(0,h-1),px(w-1,h-1)],hasA=cs.every(p=>p[3]<30);
+  const bg=[0,1,2].map(n=>cs.reduce((a,p)=>a+p[n],0)/4),light=!hasA&&bg.every(v=>v>225);
+  const isBg=o=>d[o+3]<30||(!hasA&&(Math.abs(d[o]-bg[0])+Math.abs(d[o+1]-bg[1])+Math.abs(d[o+2]-bg[2])<60||(light&&d[o]>215&&d[o+1]>215&&d[o+2]>215)));
+  const rows=new Array(h).fill(0),cols=new Array(w).fill(0);
+  for(let j=0;j<h;j++)for(let i=0;i<w;i++)if(!isBg((j*w+i)*4)){rows[j]++;cols[i]++}
+  const tr=Math.max(2,w*.01),tc=Math.max(2,h*.01);
+  let y1=rows.findIndex(v=>v>=tr),y2=h-1-[...rows].reverse().findIndex(v=>v>=tr),x1=cols.findIndex(v=>v>=tc),x2=w-1-[...cols].reverse().findIndex(v=>v>=tc);
+  if(y1<0||x1<0||y2<=y1||x2<=x1)return res(u);
+  const pad=Math.round(.06*Math.max(x2-x1,y2-y1));y1=Math.max(0,y1-pad);x1=Math.max(0,x1-pad);y2=Math.min(h-1,y2+pad);x2=Math.min(w-1,x2+pad);
+  const bw=x2-x1+1,bh=y2-y1+1;if(bw*bh>.9*w*h)return res(u);
+  const o=document.createElement('canvas');o.width=bw;o.height=bh;o.getContext('2d').drawImage(c,x1,y1,bw,bh,0,0,bw,bh);res(o.toDataURL('image/webp',.92))
+  }catch(e){res(u)}};im.src=u})}
 function cropImg(file,box){return new Promise(res=>{try{const r=new FileReader();r.onerror=()=>res(null);r.onload=()=>{const im=new Image();im.onerror=()=>res(null);im.onload=()=>{
   const W=im.naturalWidth,H=im.naturalHeight;
   let [y1,x1,y2,x2]=box;if([y1,x1,y2,x2].some(v=>!isFinite(v)))return res(null);
@@ -437,7 +455,7 @@ box 是該品項「商品縮圖／商品照片」在那張截圖裡的位置，�
     if(cur.status==='have'&&!cur.recvDate)cur.recvDate=today();
     if(d.orig&&!(cur.items[0]&&cur.items[0].name===d.orig))cur.note=(cur.note?cur.note+'\n':'')+'原文品名：'+d.orig;
     let nc=0;
-    if(Array.isArray(d.items))for(let k=0;k<d.items.length&&k<cur.items.length;k++){const it=d.items[k];let bx=it.box;if(bx&&!Array.isArray(bx)&&typeof bx==='object')bx=[bx.ymin,bx.xmin,bx.ymax,bx.xmax];if(typeof bx==='string')bx=bx.match(/-?\d+(?:\.\d+)?/g);if(Array.isArray(bx)&&bx.length===4){bx=bx.map(Number);const u=await cropImg(files[+it.img||0]||files[0],bx);if(u){cur.items[k].img={s:u};nc++;if(!cur.imgs.length)cur.imgs.push({s:u})}}}
+    if(Array.isArray(d.items))for(let k=0;k<d.items.length&&k<cur.items.length;k++){const it=d.items[k];let bx=it.box;if(bx&&!Array.isArray(bx)&&typeof bx==='object')bx=[bx.ymin,bx.xmin,bx.ymax,bx.xmax];if(typeof bx==='string')bx=bx.match(/-?\d+(?:\.\d+)?/g);if(Array.isArray(bx)&&bx.length===4){bx=bx.map(Number);let u=await cropImg(files[+it.img||0]||files[0],bx);if(u)u=await trimImg(u);if(u){cur.items[k].img={s:u};nc++;if(!cur.imgs.length)cur.imgs.push({s:u})}}}
     for(const u of small){if(cur.imgs.length<10)cur.imgs.push({s:u})}
     drawEd();setMsg(nc?'已填入，自動截取 '+nc+' 張商品圖，並保留原訂單截圖，請檢查一下再儲存':'已填入，請檢查一下內容再儲存（'+(d.items&&d.items.some(i=>i.box)?'商品圖位置不合理，無法裁切':'沒偵測到商品圖')+'，已保留原截圖，可點縮圖手動加圖）');
   }catch(e){setMsg('辨識失敗：'+nice(e))}
@@ -448,7 +466,7 @@ async function doBg(m){
     const {removeBackground}=await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm');
     const blob=await (await fetch(m.s)).blob();const out=await removeBackground(blob);
     const u=URL.createObjectURL(out),im=new Image();
-    im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);m.o=m.s;m.s=c.toDataURL('image/webp',.9);drawEd()};
+    im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);m.o=m.s;trimImg(c.toDataURL('image/webp',.9)).then(t=>{m.s=t;drawEd()})};
     im.src=u;
   }catch(e){setMsg2('去背失敗：'+e.message)}
 }
