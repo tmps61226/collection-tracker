@@ -367,12 +367,21 @@ async function models(k){
   GMC=[...new Set([...GM0,...l])].slice(0,8);
   return GMC;
 }
+const isQuota=m=>/quota|RESOURCE_EXHAUSTED|rate.?limit/i.test(m||'');
+function nice(e){
+  const m=(e&&e.message)||String(e);
+  if(isQuota(m)){const t=m.match(/retry in (?:(\d+)h)?(?:(\d+)m)?/i);const h=t&&(t[1]||t[2])?(t[1]?t[1]+' 小時':'')+(t[2]?' '+t[2]+' 分鐘':''):'';return '今天的免費額度用完了（Google 每天每個模型有次數上限）'+(h?'，約 '+h+' 後重置':'，隔天會重置')+'。這段時間可以先手動填寫訂單。'}
+  if(/demand|overload|unavailable/i.test(m))return 'Google 目前很忙，過幾分鐘再試';
+  if(/Load failed|Failed to fetch/.test(m))return '連不上 Gemini（網路中斷或金鑰有誤）';
+  return m;
+}
 async function gem(k,body,on,ms){
   ms=ms||15000;
-  const GM=await models(k);
+  const GM=await models(k),dead=new Set();
   let last;
   for(let r=0;r<2;r++){
     for(const m of GM){
+      if(dead.has(m))continue;
       if(on)on(m);
       let x,j;const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),ms);
       try{
@@ -380,9 +389,12 @@ async function gem(k,body,on,ms){
         j=await x.json();
       }catch(e){last=e.name==='AbortError'?new Error('等太久沒回應（'+m+'）'):e;continue}finally{clearTimeout(tm)}
       if(x.ok)return j;
-      last=new Error(j.error&&j.error.message||x.status);
-      if(/api key|permission|billing|quota exceeded for/i.test(last.message)&&x.status!==404)throw last;
+      const msg=j.error&&j.error.message||String(x.status);
+      if(isQuota(msg)||x.status===404||/no longer available/i.test(msg))dead.add(m);
+      if(!(isQuota(msg)&&last&&!isQuota(last.message)))last=new Error(msg);
+      if(/api key not valid|permission denied|billing/i.test(msg)&&!isQuota(msg))throw last;
     }
+    if(dead.size>=GM.length)break;
     await new Promise(r=>setTimeout(r,1500));
   }
   throw last;
@@ -390,8 +402,12 @@ async function gem(k,body,on,ms){
 async function testKey(){
   const k=($('gk').value||localStorage.getItem('gk')||'').replace(/[^\x21-\x7e]/g,'');if(!k){setMsg('請先貼上 Gemini API Key');return}
   localStorage.setItem('gk',k);setMsg('測試中…');
-  try{await gem(k,{contents:[{parts:[{text:'回覆 OK'}]}]},m=>setMsg('測試中…（'+m+'）'));setMsg('金鑰可以用 ✓（長度 '+k.length+'）')}
-  catch(e){setMsg('失敗：'+e.message+(/demand|overload/i.test(e.message)?'。Google 目前很忙，過幾分鐘再試':''))}
+  try{
+    const ac=new AbortController(),t=setTimeout(()=>ac.abort(),12000);
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=5',{signal:ac.signal,headers:{'x-goog-api-key':k}});clearTimeout(t);
+    const j=await r.json();
+    setMsg(r.ok?'金鑰可以用 ✓（這個測試不會用掉每日額度）':'金鑰有問題：'+nice(new Error(j.error&&j.error.message||r.status)));
+  }catch(e){setMsg('失敗：'+nice(e))}
 }
 async function doShot(files){
   const k=(localStorage.getItem('gk')||'').replace(/[^\x21-\x7e]/g,'');if(!k){setMsg('請先貼上 Gemini API Key');return}
@@ -424,7 +440,7 @@ box 是該品項「商品縮圖／商品照片」在那張截圖裡的位置，�
     if(Array.isArray(d.items))for(let k=0;k<d.items.length&&k<cur.items.length;k++){const it=d.items[k];let bx=it.box;if(bx&&!Array.isArray(bx)&&typeof bx==='object')bx=[bx.ymin,bx.xmin,bx.ymax,bx.xmax];if(typeof bx==='string')bx=bx.match(/-?\d+(?:\.\d+)?/g);if(Array.isArray(bx)&&bx.length===4){bx=bx.map(Number);const u=await cropImg(files[+it.img||0]||files[0],bx);if(u){cur.items[k].img={s:u};nc++;if(!cur.imgs.length)cur.imgs.push({s:u})}}}
     if(!nc)for(const u of small){if(cur.imgs.length<10)cur.imgs.push({s:u})}
     drawEd();setMsg(nc?'已填入，並自動截取 '+nc+' 張商品圖，請檢查一下再儲存':'已填入，請檢查一下內容再儲存（'+(d.items&&d.items.some(i=>i.box)?'商品圖位置不合理，無法裁切':'沒偵測到商品圖')+'，已放入原截圖，可點縮圖手動加圖）');
-  }catch(e){setMsg('辨識失敗：'+(/Load failed|Failed to fetch/.test(e.message)?'連不上 Gemini（網路中斷、金鑰貼錯，或金鑰有多餘的字）。請按「測試金鑰」確認':e.message))}
+  }catch(e){setMsg('辨識失敗：'+nice(e))}
 }
 async function doBg(m){
   setMsg2('去背中…第一次要下載模型，請稍等');
