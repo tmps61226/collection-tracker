@@ -168,8 +168,8 @@ const paidAmt=o=>o.pay==='paid'?total(o):o.pay==='deposit'?Math.min(+o.deposit||
 const bal=o=>total(o)-paidAmt(o);
 const feeOf=o=>(o.fee===''||o.fee==null)?(+S.cardFee||0):(+o.fee||0);
 function effRate(o){
-  if(o.cur==='TWD')return 1;
   const t=total(o);if(+o.twPaid>0&&t>0)return o.twPaid/t;
+  if(o.cur==='TWD')return 1+(o.pm==='card'?feeOf(o)/100:0);
   const r=+o.rate>0?+o.rate:(+S.rates[o.cur]||1);
   return r*(1+(o.pm==='card'?feeOf(o)/100:0));
 }
@@ -177,7 +177,7 @@ const tw=(o,n)=>n*effRate(o);
 const EYE=['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.6 5.7A10 10 0 0112 5.5c6.4 0 10 6.5 10 6.5a17 17 0 01-3.2 4M6.5 7.2C3.7 9 2 12 2 12s3.6 6.5 10 6.5c1.6 0 3-.4 4.3-1M9.9 9.9a3 3 0 004.2 4.2"/></svg>'];
 const HID='＊＊＊';
 const ic=(o,it)=>(it&&it.cat)||o.cat||'';
-const pp=(o,n)=>money(o,n)+(o.cur!=='TWD'?`<span class="tw">≈ NT$${Math.round(tw(o,n)).toLocaleString()}</span>`:'');
+const pp=(o,n)=>money(o,n)+(o.cur!=='TWD'||effRate(o)!==1?`<span class="tw">≈ NT$${Math.round(tw(o,n)).toLocaleString()}</span>`:'');
 const money=(o,n)=>(CUR[o.cur]||'')+Math.round(n).toLocaleString();
 const sq=i=>Math.max(0,Math.min(+i.sq||0,+i.qty||1));
 const units=o=>o.items.reduce((a,i)=>a+(+i.qty||1),0);
@@ -286,7 +286,7 @@ function drawEd(){
     <button class="btn" id="addit">＋ 新增品項</button></div>
   <div class="cd">${sel('幣別','cur',Object.keys(CUR).map(c=>[c,CURN[c]+' '+CUR[c]]))}${fr('運費','ship','number','0')}
     <div class="fr"><span>總金額</span><b id="tot"></b></div></div>
-  ${cur.cur!=='TWD'?`<div class="cd"><h3>換匯／刷卡（算成台幣用）</h3>${seg('pm',[['cash','現金換匯'],['card','刷卡'],['other','其他']])}${fr('實際匯率（1 '+CURN[cur.cur]+' = 台幣）','rate','number',String(S.rates[cur.cur]||''))}${cur.pm==='card'?fr('國外手續費 %','fee','number','預設 '+(+S.cardFee||0)+'（可改）'):''}${fr('實際扣款（台幣，選填）','twPaid','number','刷卡帳單的金額')}<div class="hint" id="fxh"></div></div>`:''}
+  ${true?`<div class="cd"><h3>${cur.cur==='TWD'?'付款方式／刷卡手續費':'換匯／刷卡（算成台幣用）'}</h3>${seg('pm',cur.cur==='TWD'?[['cash','現金／一般'],['card','刷卡（國外手續費）']]:[['cash','現金換匯'],['card','刷卡'],['other','其他']])}${cur.cur==='TWD'?'':fr('實際匯率（1 '+CURN[cur.cur]+' = 台幣）','rate','number',String(S.rates[cur.cur]||''))}${cur.pm==='card'?fr('國外手續費 %','fee','number','預設 '+(+S.cardFee||0)+'（可改）'):''}${fr('實際扣款（台幣，選填）','twPaid','number','刷卡帳單的金額')}<div class="hint" id="fxh"></div></div>`:''}
   <div class="cd"><h3>付款狀態</h3>${seg('pay',Object.keys(PAY).map(p=>[p,PAY[p]]))}
     ${cur.pay==='deposit'?fr('已付訂金','deposit','number','0'):''}
     <div class="fr"><span>待付金額</span><b id="bal"></b></div></div>
@@ -298,7 +298,7 @@ function drawEd(){
 }
 function upd(){
   const t=$('tot');if(!t)return;
-  t.textContent=money(cur,total(cur))+(cur.cur!=='TWD'?`（約 NT$${Math.round(tw(cur,total(cur))).toLocaleString()}）`:'');
+  t.textContent=money(cur,total(cur))+(cur.cur!=='TWD'||effRate(cur)!==1?`（約 NT$${Math.round(tw(cur,total(cur))).toLocaleString()}）`:'');
   $('bal').textContent=money(cur,bal(cur));
   const h=$('hint');if(h){if(cur.eta){const r=Math.round((new Date(cur.eta+'T00:00')-new Date(today()+'T00:00'))/864e5),w=cur.start?Math.max(0,Math.round((new Date(today()+'T00:00')-new Date(cur.start+'T00:00'))/864e5)):0;h.textContent=`已等待 ${w} 天，${r>=0?'剩餘 '+r+' 天':'已逾期 '+(-r)+' 天'}`}else h.textContent=''}
   const fh=$('fxh');if(fh){const r=effRate(cur);fh.textContent='目前算法：1 '+CURN[cur.cur]+' ≈ NT$'+(Math.round(r*10000)/10000)+(+cur.twPaid>0?'（依實際扣款）':cur.pm==='card'&&!(+cur.rate>0)?'（預設匯率＋手續費 '+feeOf(cur)+'%）':+cur.rate>0?'（你填的匯率'+(cur.pm==='card'&&feeOf(cur)?'＋手續費 '+feeOf(cur)+'%':'')+'）':'（設定裡的預設匯率）')}
