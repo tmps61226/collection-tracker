@@ -86,6 +86,10 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .it .x{position:absolute;top:6px;right:8px;border:0;background:transparent;color:var(--rd);cursor:pointer;font-size:13px}
 .ir{display:flex;gap:8px;align-items:center;padding-right:34px;margin-bottom:6px}.ir input{margin:0}
 .ith{flex:none;width:56px;height:56px;border-radius:14px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--mu);cursor:pointer}.ith img{width:100%;height:100%;object-fit:contain;border-radius:12px}
+.sell{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap;font-size:13px;color:var(--mu)}
+.sell button{width:32px;height:32px;border-radius:50%;border:0;background:var(--card);font-size:18px;cursor:pointer;color:var(--tx)}
+.sell b{font:600 14px var(--mono);color:var(--tx);min-width:44px;text-align:center}
+.sell input{flex:1;min-width:140px;border:0;background:var(--card);border-radius:12px;padding:8px 12px}
 .love [data-h]{font-size:22px;cursor:pointer;color:var(--heart)}
 .empty{text-align:center;color:var(--mu);padding:50px 10px;font:13px/1.8 var(--mono)}
 .msg{font-size:12px;color:var(--mu);padding:2px 0 8px}
@@ -110,7 +114,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 <div class="mo" id="mo"></div><div class="mo" id="so2"></div>
 
 <script>
-const SRC=['LINE社群','蝦皮','露天拍賣','FB','團購','噗浪','書店','電商','賣貨便','日本代購','門市／實體店','日本現場','其他'];
+const SRC=['LINE社群','蝦皮','露天拍賣','FB','團購','噗浪','書店','電商','賣貨便','日本代購','門市／實體店','日本現場','朋友幫買','其他'];
 const CUR={TWD:'NT$',JPY:'¥',CNY:'CN¥',KRW:'₩',USD:'US$'},CURN={TWD:'台幣',JPY:'日幣',CNY:'人民幣',KRW:'韓圜',USD:'美金'};
 const PAY={unpaid:'未付款',deposit:'已付訂金',paid:'已付款',cod:'貨到付款'},ST={wish:'想買',pre:'預購中',have:'已到貨',sold:'已出手'};
 let itT=0,items=[],S={cats:['漢頓','玩具','衣服','隱形眼鏡','化妝品'],rates:{TWD:1,JPY:.21,CNY:4.5,KRW:.023,USD:31}},view='grid',cur=null;
@@ -125,14 +129,22 @@ let dbp;const db=()=>dbp||(dbp=new Promise((res,rej)=>{try{const r=indexedDB.ope
 const kvGet=async k=>{try{const d=await db();return await new Promise(r=>{const q=d.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r(undefined)})}catch(e){return undefined}};
 async function save(){try{const d=await db(),t=d.transaction('kv','readwrite'),s=t.objectStore('kv');s.put(items,'items');s.put(S,'settings')}catch(e){console.error(e)}}
 
+/* partial sales: items carry sq (units sold) and sp (TWD revenue) */
+function migSold(o){
+  if(o.status==='sold'&&!o.items.some(i=>i.sq!==undefined)){
+    const cost=o.items.reduce((a,i)=>a+(+i.qty||1)*(+i.price||0),0),rev=+o.soldPrice||0;
+    o.items.forEach(i=>{const q=+i.qty||1;i.sq=q;i.sp=rev?Math.round(rev*(cost?q*(+i.price||0)/cost:1/o.items.length)):''});
+  }
+  return o;
+}
 /* migrate v1 records */
 function mig(o){
-  if(Array.isArray(o.items))return o;
+  if(Array.isArray(o.items))return migSold(o);
   const n={id:o.id,status:o.status||'have',src:o.platform||'其他',seller:o.seller||'',link:'',cat:o.cat||'',items:[{name:o.name||'',qty:1,price:+o.price||0}],cur:'TWD',ship:+o.ship||0,
     pay:o.mode==='dep'?(o.balPaid?'paid':'deposit'):'paid',deposit:+o.deposit||0,buyDate:o.buyDate||'',start:o.start||'',dur:o.dur||'',unit:o.unit||'month',eta:'',recvDate:o.recvDate||'',love:o.love||3,note:o.note||'',
     imgs:o.img?[{s:o.img,o:o.imgOrig}]:[],cover:0,soldPrice:o.soldPrice||'',soldDate:o.soldDate||''};
   if(o.preorder&&o.start&&o.dur){const e=calcEta(o.start,o.dur,o.unit);if(e)n.eta=e}
-  return n;
+  return migSold(n);
 }
 function newOrder(){return {id:'o'+Date.now(),status:'pre',src:'LINE社群',seller:'',link:'',cat:S.cats[0]||'',items:[{name:'',qty:1,price:''}],cur:'TWD',ship:0,pay:'paid',deposit:0,buyDate:today(),start:today(),dur:'',unit:'month',eta:'',recvDate:'',love:3,note:'',imgs:[],cover:0,soldPrice:'',soldDate:''}}
 
@@ -149,7 +161,14 @@ const paidAmt=o=>o.pay==='paid'?total(o):o.pay==='deposit'?Math.min(+o.deposit||
 const bal=o=>total(o)-paidAmt(o);
 const tw=(o,n)=>n*(+S.rates[o.cur]||1);
 const money=(o,n)=>(CUR[o.cur]||'')+Math.round(n).toLocaleString();
-const profitTW=o=>tw(o,0)+(+o.soldPrice||0)-tw(o,total(o));
+const sq=i=>Math.max(0,Math.min(+i.sq||0,+i.qty||1));
+const units=o=>o.items.reduce((a,i)=>a+(+i.qty||1),0);
+const soldUnits=o=>o.items.reduce((a,i)=>a+sq(i),0);
+const soldRev=o=>o.items.reduce((a,i)=>a+(sq(i)?(+i.sp||0):0),0);
+const unitCost=(o,i)=>tw(o,+i.price||0)+tw(o,+o.ship||0)/(units(o)||1);
+const soldCost=o=>o.items.reduce((a,i)=>a+sq(i)*unitCost(o,i),0);
+const profitTW=o=>soldRev(o)-soldCost(o);
+function derive(o){if(o.status!=='have'&&o.status!=='sold')return;o.status=soldUnits(o)>=units(o)?'sold':'have';if(soldUnits(o)>0&&!o.soldDate)o.soldDate=today()}
 const title=o=>{const f=o.items.find(i=>i.name)||o.items[0]||{};return (f.name||'未命名')+(o.items.length>1?` 等${o.items.length}項`:'')};
 const cover=o=>o.imgs&&o.imgs[o.cover]?o.imgs[o.cover].s:(o.imgs&&o.imgs[0]?o.imgs[0].s:'');
 
@@ -159,7 +178,7 @@ function render(){
   const act=items.filter(o=>o.status!=='wish');
   const inv=act.reduce((a,o)=>a+tw(o,paidAmt(o)),0);
   const pend=items.filter(o=>o.status==='pre'||o.status==='have').reduce((a,o)=>a+tw(o,bal(o)),0);
-  const rec=items.filter(o=>o.status==='sold').reduce((a,o)=>a+(+o.soldPrice||0),0);
+  const rec=items.reduce((a,o)=>a+soldRev(o),0);
   const m=n=>'NT$'+Math.round(n).toLocaleString();
   const ym=today().slice(0,7),mi=items.filter(o=>(o.buyDate||'').startsWith(ym)&&o.status!=='wish');
   const rec5=[];[...items].sort((a,b)=>(b.buyDate||'').localeCompare(a.buyDate||'')).forEach(o=>{o.items.forEach(it=>{if(it.img&&rec5.length<5)rec5.push(it.img.s)});if(o.imgs&&o.imgs[o.cover]&&rec5.length<5&&!o.items.some(i=>i.img))rec5.push(o.imgs[o.cover].s)});
@@ -169,7 +188,7 @@ function render(){
   $('chips').innerHTML=[['all','全部'],['pre','預購中'],['have','已到貨'],['wish','想買'],['sold','已出手']].map(c=>`<button class="chip ${$('fs').value===c[0]?'on':''}" data-s="${c[0]}">${c[1]}</button>`).join('');
   const q=$('q').value.trim().toLowerCase(),fs=$('fs').value,fc=$('fc').value,so=$('so').value;
   let l=items.filter(o=>{
-    if(fs!=='all'&&o.status!==fs)return false;if(fc!=='all'&&o.cat!==fc)return false;
+    if(fs!=='all'&&!(fs==='sold'?(o.status==='sold'||soldUnits(o)>0):o.status===fs))return false;if(fc!=='all'&&o.cat!==fc)return false;
     if($('hs').checked&&o.status==='sold')return false;if($('hw').checked&&o.status==='wish')return false;
     if(!q)return true;
     return [o.items.map(i=>i.name).join(' '),o.seller,o.src,o.cat,o.note].join(' ').toLowerCase().includes(q)});
@@ -177,24 +196,30 @@ function render(){
   
   if(!l.length){$('main').innerHTML='<div class="empty">'+(items.length?'找不到符合的訂單':'Nothing here yet<br>按下方 ＋ 新增第一件')+'</div>';return}
   const due=o=>o.status==='pre'&&o.eta&&o.eta<today();
+  const cb=c=>c.tag?`<span class="bd sold">${c.tag}</span>`:bd(c.o);
   const bd=o=>(o.status==='have'?'':`<span class="bd ${o.status}">${ST[o.status]}</span>`)+(due(o)?'<span class="bd due">逾期</span>':'');
   const cells=[];
   l.forEach(o=>{
-    const split=(o.status==='have'||o.status==='sold')&&o.items.length>1;
-    if(split)o.items.forEach(it=>cells.push({o,name:it.name||'未命名',img:it.img?it.img.s:cover(o),price:(+it.price||0)*(+it.qty||1)}));
+    const split=(o.status==='have'||o.status==='sold')&&(o.items.length>1||soldUnits(o)>0);
+    if(split)o.items.forEach(it=>{
+      const q=+it.qty||1,n=sq(it),r=q-n;
+      if(fs==='have'&&r<=0)return;if(fs==='sold'&&n<=0)return;if($('hs').checked&&r<=0)return;
+      cells.push({o,name:(it.name||'未命名')+(n>0&&r>0?' ×'+r:q>1&&n===0?' ×'+q:''),img:it.img?it.img.s:cover(o),price:(+it.price||0)*q,tag:n>=q?'已出手':n>0?'已出 '+n+'/'+q:''});
+    });
     else cells.push({o,name:title(o),img:(o.items.length===1&&o.items[0].img)?o.items[0].img.s:cover(o),price:total(o)});
   });
   $('cnt').textContent=cells.length;
   const im=c=>c.img?`<img src="${c.img}" alt="">`:'<span style="font:12px var(--mono);color:var(--mu)">no img</span>';
   $('main').innerHTML=view==='grid'
-   ?`<div class="grid">${cells.map(c=>`<div class="cell" data-id="${c.o.id}"><div class="bds">${bd(c.o)}</div><div class="im">${im(c)}</div><div class="nm">${esc(c.name)}</div><div class="pr">${money(c.o,c.price)}</div></div>`).join('')}</div>`
-   :`<div class="list">${cells.map(c=>{const o=c.o;return `<div class="row" data-id="${o.id}"><div class="im">${im(c)}</div><div class="mt"><div class="nm">${esc(c.name)}${bd(o)}</div><small>${esc(o.src)} ${esc(o.seller)} · ${fmt(o.buyDate)}</small><small>${o.cat?esc(o.cat)+' · ':''}${PAY[o.pay]}${o.status==='pre'&&o.eta?' · 預計 '+fmt(o.eta):''}</small></div><div class="pr">${money(o,c.price)}</div></div>`}).join('')}</div>`;
+   ?`<div class="grid">${cells.map(c=>`<div class="cell" data-id="${c.o.id}"><div class="bds">${cb(c)}</div><div class="im">${im(c)}</div><div class="nm">${esc(c.name)}</div><div class="pr">${money(c.o,c.price)}</div></div>`).join('')}</div>`
+   :`<div class="list">${cells.map(c=>{const o=c.o;return `<div class="row" data-id="${o.id}"><div class="im">${im(c)}</div><div class="mt"><div class="nm">${esc(c.name)}${cb(c)}</div><small>${esc(o.src)} ${esc(o.seller)} · ${fmt(o.buyDate)}</small><small>${o.cat?esc(o.cat)+' · ':''}${PAY[o.pay]}${o.status==='pre'&&o.eta?' · 預計 '+fmt(o.eta):''}</small></div><div class="pr">${money(o,c.price)}</div></div>`}).join('')}</div>`;
 }
 
 /* editor */
 const seg=(key,opts)=>`<div class="seg">${opts.map(o=>`<button data-k="${key}" data-v="${o[0]}" class="${cur[key]===o[0]?'on':''}">${o[1]}</button>`).join('')}</div>`;
 const STORES=['三麗鷗門市','Sanrio Gift Gate','Sanrio Puroland','三麗鷗專賣店','寶可夢中心','迪士尼商店','Animate','Donki 唐吉訶德','扭蛋／轉蛋','Loft','Village Vanguard','機場免稅店'];
 function storeRow(){
+  if(cur.src==='朋友幫買')return fr('幫買的朋友','seller','text','朋友名字');
   if(cur.src!=='門市／實體店'&&cur.src!=='日本現場')return fr('賣家名稱','seller','text','');
   const used=[...new Set(items.filter(o=>o.src==='門市／實體店'||o.src==='日本現場').map(o=>o.seller).filter(Boolean))];
   const opts=[...new Set([...used,...STORES])];
@@ -225,6 +250,7 @@ function drawEd(){
     ${cur.items.map((it,i)=>`<div class="it"><button class="x" data-del="${i}">刪除</button>
       <div class="ir"><div class="ith" data-ip="${i}">${it.img?`<img src="${it.img.s}">`:'📷'}</div><input data-i="${i}" data-k="name" placeholder="品名" value="${esc(it.name)}"></div>
       <div class="two"><input data-i="${i}" data-k="qty" type="number" inputmode="numeric" placeholder="數量" value="${esc(it.qty)}"><input data-i="${i}" data-k="price" type="number" inputmode="decimal" placeholder="單價" value="${esc(it.price)}"></div>
+      ${cur.status==='have'||cur.status==='sold'?`<div class="sell"><span>已出手</span><button data-sq="${i}" data-d="-1">−</button><b>${sq(it)} / ${+it.qty||1}</b><button data-sq="${i}" data-d="1">＋</button>${sq(it)?`<input data-i="${i}" data-k="sp" type="number" inputmode="decimal" placeholder="賣了多少（台幣總額）" value="${esc(it.sp||'')}">`:''}</div>`:''}
       ${it.img?`<div style="margin-top:6px">${it.img.o?`<button class="btn" data-iun="${i}">還原原圖</button>`:`<button class="btn" data-ibg="${i}">✂️ 去背</button>`}<button class="btn" data-irm="${i}">移除圖片</button></div>`:''}</div>`).join('')}
     <input type="file" id="itf" accept="image/*" hidden>
     <div class="msg">到貨後，每個品項會在收藏櫃各自顯示。點左邊的縮圖，可以替這個品項單獨加照片、去背。</div>
@@ -236,7 +262,7 @@ function drawEd(){
     <div class="fr"><span>待付金額</span><b id="bal"></b></div></div>
   ${cur.status==='pre'?`<div class="cd"><h3>預計到貨</h3>${fr('工期開始','start','date')}${fr('工期長度','dur','number','')}${seg('unit',[['month','月'],['day','自然日'],['work','工作日']])}${fr('預計到貨日','eta','date')}<div class="hint" id="hint"></div></div>`:''}
   ${cur.status==='have'||cur.status==='sold'?`<div class="cd">${fr('收貨日期','recvDate','date')}</div>`:''}
-  ${cur.status==='sold'?`<div class="cd"><h3>出售</h3>${fr('售出價格（台幣）','soldPrice','number','0')}${fr('出售日期','soldDate','date')}<div class="fr"><span>淨賺／虧損</span><b id="pf"></b></div></div>`:''}
+  ${cur.status==='sold'||soldUnits(cur)>0?`<div class="cd"><h3>出售（已出 ${soldUnits(cur)} / ${units(cur)} 件）</h3>${fr('出售日期','soldDate','date')}<div class="fr"><span>已出手部分淨賺／虧損</span><b id="pf"></b></div></div>`:''}
   <div class="cd"><div class="fr"><textarea data-f="note" placeholder="備註（可選）">${esc(cur.note)}</textarea></div></div>`;
   upd();
 }
@@ -272,7 +298,13 @@ MO.addEventListener('click',ev=>{
   if(rm){cur.imgs.splice(+rm.dataset.rm,1);cur.cover=0;drawEd();return}
   if(th){cur.cover=+th.dataset.c;drawEd();return}
   if(!b)return;const id=b.id;
-  if(b.dataset.k){let v=b.dataset.v;cur[b.dataset.k]=v;
+  if(b.dataset.sq!==undefined){const it=cur.items[+b.dataset.sq],q=+it.qty||1;it.sq=Math.max(0,Math.min(q,sq(it)+(+b.dataset.d)));if(!it.sq)it.sp='';derive(cur);drawEd();return}
+  if(b.dataset.k){let v=b.dataset.v;const prev=cur[b.dataset.k];
+    if(b.dataset.k==='status'){
+      if(v==='have'&&soldUnits(cur)>0){if(!confirm('改回「已到貨」會清除出售紀錄，確定嗎？'))return;cur.items.forEach(it=>{it.sq=0;it.sp=''})}
+      if(v==='sold')cur.items.forEach(it=>{it.sq=+it.qty||1});
+    }
+    cur[b.dataset.k]=v;
     if(b.dataset.k==='status'){if(v==='have'&&!cur.recvDate)cur.recvDate=today();if(v==='sold'&&!cur.soldDate)cur.soldDate=today()}
     if(b.dataset.k==='unit'){const x=calcEta(cur.start,cur.dur,cur.unit);if(x)cur.eta=x}
     drawEd();return}
@@ -287,7 +319,7 @@ MO.addEventListener('click',ev=>{
   if(id==='addimg')$('imgf').click();
   if(id==='bg')doBg(cur.imgs[cur.cover]);
   if(id==='undo'){const m=cur.imgs[cur.cover];m.s=m.o;delete m.o;drawEd()}
-  if(id==='sv'){delete cur._new;cur.items=cur.items.filter((i,n)=>i.name||+i.price||n===0);const i=items.findIndex(x=>x.id===cur.id);i<0?items.unshift(cur):items[i]=cur;save();render();MO.classList.remove('show')}
+  if(id==='sv'){delete cur._new;derive(cur);cur.items=cur.items.filter((i,n)=>i.name||+i.price||n===0);const i=items.findIndex(x=>x.id===cur.id);i<0?items.unshift(cur):items[i]=cur;save();render();MO.classList.remove('show')}
   if(id==='dl'&&confirm('確定要刪除這筆訂單？')){items=items.filter(x=>x.id!==cur.id);save();render();MO.classList.remove('show')}
 });
 const setMsg=t=>{const m=$('msg');if(m)m.textContent=t};
