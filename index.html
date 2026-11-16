@@ -36,6 +36,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .cell img,.row img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 2px 3px #0003)}
 .nm{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pr{color:var(--mu);font:15px var(--num)}
+.pr .tw{display:block;font-size:14px;color:var(--tx);opacity:.7;margin-top:-1px}
 .bd{display:inline-block;font-size:11px;padding:1px 8px;border-radius:10px;background:var(--chip);color:var(--mu);margin-left:4px}
 .cell .bds{position:absolute;top:5px;left:5px;z-index:1;display:flex;flex-direction:column;align-items:flex-start;gap:3px}.cell .bd{margin:0}
 .bd.pre{background:#e6dff2;color:#7a62a8}.bd.wish{background:#f3edc2;color:#8a7a2a}.bd.sold{background:#e8e4dc;color:#8a8478}.bd.due{background:#f6d9d3;color:#b05545}
@@ -175,6 +176,7 @@ function effRate(o){
 const tw=(o,n)=>n*effRate(o);
 const EYE=['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.6 5.7A10 10 0 0112 5.5c6.4 0 10 6.5 10 6.5a17 17 0 01-3.2 4M6.5 7.2C3.7 9 2 12 2 12s3.6 6.5 10 6.5c1.6 0 3-.4 4.3-1M9.9 9.9a3 3 0 004.2 4.2"/></svg>'];
 const HID='＊＊＊';
+const pp=(o,n)=>money(o,n)+(o.cur!=='TWD'?`<span class="tw">≈ NT$${Math.round(tw(o,n)).toLocaleString()}</span>`:'');
 const money=(o,n)=>(CUR[o.cur]||'')+Math.round(n).toLocaleString();
 const sq=i=>Math.max(0,Math.min(+i.sq||0,+i.qty||1));
 const units=o=>o.items.reduce((a,i)=>a+(+i.qty||1),0);
@@ -227,8 +229,8 @@ function render(){
   $('dt').textContent+=' · 共 '+cells.length+' 件';
   const im=c=>c.img?`<img src="${c.img}" alt="">`:'<span style="font:12px var(--mono);color:var(--mu)">無圖片</span>';
   $('main').innerHTML=view==='grid'
-   ?`<div class="grid">${cells.map(c=>`<div class="cell" data-id="${c.o.id}"><div class="bds">${cb(c)}</div><div class="im">${im(c)}</div><div class="nm">${esc(c.name)}</div><div class="pr">${money(c.o,c.price)}</div></div>`).join('')}</div>`
-   :`<div class="list">${cells.map(c=>{const o=c.o;return `<div class="row" data-id="${o.id}"><div class="im">${im(c)}</div><div class="mt"><div class="nm">${esc(c.name)}${cb(c)}</div><small>${esc(o.src)} ${esc(o.seller)} · ${fmt(o.buyDate)}</small><small>${o.cat?esc(o.cat)+' · ':''}${PAY[o.pay]}${o.status==='pre'&&o.eta?' · 預計 '+fmt(o.eta):''}</small></div><div class="pr">${money(o,c.price)}</div></div>`}).join('')}</div>`;
+   ?`<div class="grid">${cells.map(c=>`<div class="cell" data-id="${c.o.id}"><div class="bds">${cb(c)}</div><div class="im">${im(c)}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price)}</div></div>`).join('')}</div>`
+   :`<div class="list">${cells.map(c=>{const o=c.o;return `<div class="row" data-id="${o.id}"><div class="im">${im(c)}</div><div class="mt"><div class="nm">${esc(c.name)}${cb(c)}</div><small>${esc(o.src)} ${esc(o.seller)} · ${fmt(o.buyDate)}</small><small>${o.cat?esc(o.cat)+' · ':''}${PAY[o.pay]}${o.status==='pre'&&o.eta?' · 預計 '+fmt(o.eta):''}</small></div><div class="pr">${pp(o,c.price)}</div></div>`}).join('')}</div>`;
 }
 
 /* editor */
