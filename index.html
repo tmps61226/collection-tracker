@@ -198,7 +198,7 @@ function drawEd(){
   <div class="mh"><button id="cx">取消</button><span>${cur._new?'':'<button class="dl" id="dl">刪除</button> '}<button class="sv" id="sv">儲存</button></span></div>
   <div class="cd"><h3>截圖自動填表（可一次選多張，視為同一筆訂單）</h3>
     <div class="fr"><span>Gemini Key</span><input id="gk" type="password" placeholder="貼上免費金鑰" value="${esc(k)}"></div>
-    <div><button class="btn pri" id="shot">上傳訂單截圖</button><input type="file" id="shotf" accept="image/*" multiple hidden><div class="msg" id="msg">辨識完成後請檢查內容，錯的可以直接改</div></div></div>
+    <div><button class="btn pri" id="shot">上傳訂單截圖</button><button class="btn" id="tk">測試金鑰</button><input type="file" id="shotf" accept="image/*" multiple hidden><div class="msg" id="msg">辨識完成後請檢查內容，錯的可以直接改</div></div></div>
   <div class="cd"><h3>商品圖片（點一下設為封面）</h3>
     <div class="thumbs">${cur.imgs.map((m,i)=>`<div class="th ${i===cur.cover?'cv':''}" data-c="${i}"><img src="${m.s}">${i===cur.cover?'<b>封面</b>':''}<i data-rm="${i}">×</i></div>`).join('')}</div>
     <button class="btn" id="addimg">＋ 新增圖片</button><input type="file" id="imgf" accept="image/*" multiple hidden>
@@ -268,6 +268,7 @@ MO.addEventListener('click',ev=>{
   if(b.dataset.del!==undefined){cur.items.splice(+b.dataset.del,1);if(!cur.items.length)cur.items.push({name:'',qty:1,price:''});drawEd();return}
   if(id==='addit'){cur.items.push({name:'',qty:1,price:''});drawEd();return}
   if(id==='cx')MO.classList.remove('show');
+  if(id==='tk'){testKey();return}
   if(id==='shot'){const k=($('gk').value||'').trim();if(!k){setMsg('請先貼上 Gemini API Key');return}localStorage.setItem('gk',k);$('shotf').click()}
   if(id==='addimg')$('imgf').click();
   if(id==='bg')doBg(cur.imgs[cur.cover]);
@@ -281,8 +282,15 @@ function shrink(file,max=900){return new Promise(res=>{const r=new FileReader();
 async function addImgs(files){for(const f of files){if(cur.imgs.length>=10)break;const s=await shrink(f);if(s)cur.imgs.push({s})}drawEd()}
 
 /* Gemini: screenshots -> one order */
+async function testKey(){
+  const k=($('gk').value||localStorage.getItem('gk')||'').replace(/[^\x21-\x7e]/g,'');if(!k){setMsg('請先貼上 Gemini API Key');return}
+  localStorage.setItem('gk',k);setMsg('測試中…');
+  try{const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':k},body:JSON.stringify({contents:[{parts:[{text:'回覆 OK'}]}]})});
+    const j=await r.json();setMsg(r.ok?'金鑰可以用 ✓（長度 '+k.length+'）':'金鑰有問題：'+(j.error&&j.error.message||r.status))}
+  catch(e){setMsg('連不上 Gemini：'+e.message+'（目前網路是否正常？金鑰長度 '+k.length+'）')}
+}
 async function doShot(files){
-  const k=(localStorage.getItem('gk')||'').trim();if(!k){setMsg('請先貼上 Gemini API Key');return}
+  const k=(localStorage.getItem('gk')||'').replace(/[^\x21-\x7e]/g,'');if(!k){setMsg('請先貼上 Gemini API Key');return}
   setMsg('辨識中，請稍等…');
   try{
     const prompt=`你是繁體中文訂單辨識器。以下 ${files.length} 張圖片屬於同一筆預購或訂單（可能是LINE社群喊單截圖、商品型錄、蝦皮、賣貨便、日拍等）。請整合成一筆訂單，只回傳 JSON：
@@ -293,7 +301,7 @@ async function doShot(files){
     const parts=[{text:prompt}];
     const small=[];
     for(const f of files){const u=await shrink(f,1400);if(u){small.push(u);parts.push({inline_data:{mime_type:'image/webp',data:u.split(',')[1]}})}}
-    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key='+encodeURIComponent(k),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts}],generationConfig:{responseMimeType:'application/json'}})});
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':k},body:JSON.stringify({contents:[{parts}],generationConfig:{responseMimeType:'application/json'}})});
     const j=await r.json();if(!r.ok)throw new Error(j.error&&j.error.message||r.status);
     const d=JSON.parse(j.candidates[0].content.parts[0].text.replace(/```json|```/g,''));
     if(d.sourceType&&SRC.includes(d.sourceType))cur.src=d.sourceType;
@@ -306,7 +314,7 @@ async function doShot(files){
     if(d.orig&&!(cur.items[0]&&cur.items[0].name===d.orig))cur.note=(cur.note?cur.note+'\n':'')+'原文品名：'+d.orig;
     for(const u of small){if(cur.imgs.length<10)cur.imgs.push({s:u})}
     drawEd();setMsg('已填入，請檢查一下內容再儲存');
-  }catch(e){setMsg('辨識失敗：'+e.message)}
+  }catch(e){setMsg('辨識失敗：'+(/Load failed|Failed to fetch/.test(e.message)?'連不上 Gemini（網路中斷、金鑰貼錯，或金鑰有多餘的字）。請按「測試金鑰」確認':e.message))}
 }
 async function doBg(m){
   setMsg2('去背中…第一次要下載模型，請稍等');
