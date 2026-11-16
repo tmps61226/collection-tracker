@@ -52,6 +52,11 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .pill svg{width:22px;height:22px}
 .plus{pointer-events:auto;width:60px;height:60px;border-radius:50%;border:0;background:#26221e;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 24px #0004}
 .plus svg{width:26px;height:26px}
+.sheet{position:fixed;inset:0;background:#0006;display:none;z-index:6;align-items:flex-end}
+.sheet.show{display:flex}
+.sheet .box{width:100%;background:var(--bg);border-radius:26px 26px 0 0;padding:16px 14px calc(18px + env(safe-area-inset-bottom,0px))}
+.sheet button{display:block;width:100%;text-align:left;border:0;background:var(--card);border-radius:20px;padding:14px 18px;margin-bottom:10px;cursor:pointer;box-shadow:0 2px 10px #3a2e1a0d}
+.sheet b{display:block;font-size:16px}.sheet small{color:var(--mu)}
 .mo{position:fixed;inset:0;background-color:var(--bg);overflow:auto;display:none;z-index:5;padding-bottom:env(safe-area-inset-bottom,0px)}
 .mo.show{display:block}
 .mh{position:sticky;top:0;background:var(--bg);display:flex;justify-content:space-between;padding:12px;padding-top:calc(12px + env(safe-area-inset-top,0px));z-index:2}
@@ -101,10 +106,11 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
   <div id="main"></div>
 </div>
 <div class="nav"><div class="pill"><button id="vg" class="on" aria-label="格狀"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg></button><button id="vl" aria-label="列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button></div><button class="plus" id="add" aria-label="新增"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
+<div class="sheet" id="sheet"><div class="box"><button data-n="have"><b>已買到了</b><small>門市、日本現場、自己去買的</small></button><button data-n="pre"><b>預購／喊單</b><small>還沒到貨，等收貨</small></button><button data-n="wish"><b>想買</b><small>先記起來，之後再決定</small></button></div></div>
 <div class="mo" id="mo"></div><div class="mo" id="so2"></div>
 
 <script>
-const SRC=['LINE社群','蝦皮','露天拍賣','FB','團購','噗浪','書店','電商','賣貨便','日本代購','其他'];
+const SRC=['LINE社群','蝦皮','露天拍賣','FB','團購','噗浪','書店','電商','賣貨便','日本代購','門市／實體店','日本現場','其他'];
 const CUR={TWD:'NT$',JPY:'¥',CNY:'CN¥',KRW:'₩',USD:'US$'},CURN={TWD:'台幣',JPY:'日幣',CNY:'人民幣',KRW:'韓圜',USD:'美金'};
 const PAY={unpaid:'未付款',deposit:'已付訂金',paid:'已付款',cod:'貨到付款'},ST={wish:'想買',pre:'預購中',have:'已到貨',sold:'已出手'};
 let itT=0,items=[],S={cats:['漢頓','玩具','衣服','隱形眼鏡','化妝品'],rates:{TWD:1,JPY:.21,CNY:4.5,KRW:.023,USD:31}},view='grid',cur=null;
@@ -240,6 +246,7 @@ function onField(ev){
   if(e.dataset.i!==undefined){const it=cur.items[+e.dataset.i];if(it){it[e.dataset.k]=e.value;upd()}return}
   const f=e.dataset.f;if(!f)return;cur[f]=e.value;
   if(f==='start'||f==='dur'||f==='unit'){const x=calcEta(cur.start,cur.dur,cur.unit);if(x){cur.eta=x;const n=MO.querySelector('[data-f="eta"]');if(n)n.value=x}}
+  if(f==='src'&&(e.value==='日本現場'||e.value==='門市／實體店')){const c=e.value==='日本現場'?'JPY':'TWD';if(cur.cur!==c){cur.cur=c;drawEd();return}}
   upd();
 }
 MO.addEventListener('input',onField);
@@ -395,7 +402,15 @@ $('main').addEventListener('click',e=>{const n=e.target.closest('[data-id]');if(
 ['q','fs','fc','so','hs','hw'].forEach(i=>$(i).addEventListener('input',render));
 $('vg').onclick=()=>{view='grid';$('vg').classList.add('on');$('vl').classList.remove('on');render()};
 $('vl').onclick=()=>{view='list';$('vl').classList.add('on');$('vg').classList.remove('on');render()};
-$('add').onclick=()=>openEd();
+$('add').onclick=()=>$('sheet').classList.add('show');
+$('sheet').addEventListener('click',e=>{
+  const b=e.target.closest('[data-n]');
+  if(!b){if(e.target.id==='sheet')$('sheet').classList.remove('show');return}
+  $('sheet').classList.remove('show');
+  openEd();
+  if(b.dataset.n==='have'){cur.status='have';cur.recvDate=today();cur.src='門市／實體店';cur.pay='paid';drawEd()}
+  if(b.dataset.n==='wish'){cur.status='wish';drawEd()}
+});
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 (async()=>{const a=await kvGet('items'),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);renderCats();render()})();
 </script></body></html>
