@@ -438,8 +438,8 @@ box 是該品項「商品縮圖／商品照片」在那張截圖裡的位置，�
     if(d.orig&&!(cur.items[0]&&cur.items[0].name===d.orig))cur.note=(cur.note?cur.note+'\n':'')+'原文品名：'+d.orig;
     let nc=0;
     if(Array.isArray(d.items))for(let k=0;k<d.items.length&&k<cur.items.length;k++){const it=d.items[k];let bx=it.box;if(bx&&!Array.isArray(bx)&&typeof bx==='object')bx=[bx.ymin,bx.xmin,bx.ymax,bx.xmax];if(typeof bx==='string')bx=bx.match(/-?\d+(?:\.\d+)?/g);if(Array.isArray(bx)&&bx.length===4){bx=bx.map(Number);const u=await cropImg(files[+it.img||0]||files[0],bx);if(u){cur.items[k].img={s:u};nc++;if(!cur.imgs.length)cur.imgs.push({s:u})}}}
-    if(!nc)for(const u of small){if(cur.imgs.length<10)cur.imgs.push({s:u})}
-    drawEd();setMsg(nc?'已填入，並自動截取 '+nc+' 張商品圖，請檢查一下再儲存':'已填入，請檢查一下內容再儲存（'+(d.items&&d.items.some(i=>i.box)?'商品圖位置不合理，無法裁切':'沒偵測到商品圖')+'，已放入原截圖，可點縮圖手動加圖）');
+    for(const u of small){if(cur.imgs.length<10)cur.imgs.push({s:u})}
+    drawEd();setMsg(nc?'已填入，自動截取 '+nc+' 張商品圖，並保留原訂單截圖，請檢查一下再儲存':'已填入，請檢查一下內容再儲存（'+(d.items&&d.items.some(i=>i.box)?'商品圖位置不合理，無法裁切':'沒偵測到商品圖')+'，已保留原截圖，可點縮圖手動加圖）');
   }catch(e){setMsg('辨識失敗：'+nice(e))}
 }
 async function doBg(m){
