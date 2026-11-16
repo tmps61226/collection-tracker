@@ -467,7 +467,7 @@ function parseShot(j){
   let t=(j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts||[]).map(p=>p.text||'').join('').replace(/```json|```/g,'').trim();
   if(!t)throw new Error('Gemini 沒有回傳內容'+(j.promptFeedback&&j.promptFeedback.blockReason?'（被擋：'+j.promptFeedback.blockReason+'）':''));
   let d;try{d=JSON.parse(t)}catch(e){const m=t.match(/[\[{][\s\S]*[\]}]/);if(!m)throw new Error('Gemini 回傳的格式讀不懂');d=JSON.parse(m[0])}
-  if(Array.isArray(d))d={items:d};
+  if(Array.isArray(d)){const o=d.find(x=>x&&typeof x==='object'&&(Array.isArray(x.items)||x.sourceType||x.seller));d=o&&!(d.length>1&&d.every(x=>x&&x.name))?o:{items:d}}
   if(!Array.isArray(d.items)){const alt=d.products||d.item||d['品項']||d['商品'];if(Array.isArray(alt))d.items=alt;else{const sub=Object.values(d).find(v=>v&&typeof v==='object'&&!Array.isArray(v)&&Array.isArray(v.items));if(sub)d=Object.assign({},d,sub);else d.items=[]}}
   d._raw=t;return d;
 }
