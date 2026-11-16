@@ -193,6 +193,13 @@ function render(){
 
 /* editor */
 const seg=(key,opts)=>`<div class="seg">${opts.map(o=>`<button data-k="${key}" data-v="${o[0]}" class="${cur[key]===o[0]?'on':''}">${o[1]}</button>`).join('')}</div>`;
+const STORES=['三麗鷗門市','Sanrio Gift Gate','Sanrio Puroland','三麗鷗專賣店','寶可夢中心','迪士尼商店','Animate','Donki 唐吉訶德','扭蛋／轉蛋','Loft','Village Vanguard','機場免稅店'];
+function storeRow(){
+  if(cur.src!=='門市／實體店'&&cur.src!=='日本現場')return fr('賣家名稱','seller','text','');
+  const used=[...new Set(items.filter(o=>o.src==='門市／實體店'||o.src==='日本現場').map(o=>o.seller).filter(Boolean))];
+  const opts=[...new Set([...used,...STORES])];
+  return `<div class="fr"><span>店家（選填）</span><input data-f="seller" list="storelist" value="${esc(cur.seller)}" placeholder="選一個或自己輸入"></div><datalist id="storelist">${opts.map(o=>`<option value="${esc(o)}">`).join('')}</datalist>`;
+}
 const fr=(label,key,type='text',ph='')=>`<div class="fr"><span>${label}</span><input data-f="${key}" type="${type}" value="${esc(cur[key])}" placeholder="${ph}" ${type==='number'?'inputmode="decimal"':''}></div>`;
 const sel=(label,key,opts)=>`<div class="fr"><span>${label}</span><select data-f="${key}">${opts.map(o=>`<option value="${esc(o[0])}" ${cur[key]===o[0]?'selected':''}>${esc(o[1])}</option>`).join('')}</select></div>`;
 function openEd(id){cur=id?JSON.parse(JSON.stringify(items.find(o=>o.id===id))):newOrder();cur._new=!id;drawEd();$('mo').classList.add('show');$('mo').scrollTop=0}
@@ -213,7 +220,7 @@ function drawEd(){
   <div class="cd">${seg('status',[['wish','想買'],['pre','預購中'],['have','已到貨'],['sold','已出手']])}
     ${sel('分類','cat',[['','未分類'],...cats.map(c=>[c,c])])}
     <div class="fr love"><span>喜愛程度</span><span>${hearts}</span></div></div>
-  <div class="cd"><h3>來源</h3>${sel('類型','src',SRC.map(s=>[s,s]))}${fr('賣家名稱','seller','text','')}${fr('連結','link','url','https://')}${fr('購買日期','buyDate','date')}</div>
+  <div class="cd"><h3>來源</h3>${sel('類型','src',SRC.map(s=>[s,s]))}${storeRow()}${fr('連結','link','url','https://')}${fr('購買日期','buyDate','date')}</div>
   <div class="cd"><h3>品項</h3>
     ${cur.items.map((it,i)=>`<div class="it"><button class="x" data-del="${i}">刪除</button>
       <div class="ir"><div class="ith" data-ip="${i}">${it.img?`<img src="${it.img.s}">`:'📷'}</div><input data-i="${i}" data-k="name" placeholder="品名" value="${esc(it.name)}"></div>
@@ -246,7 +253,7 @@ function onField(ev){
   if(e.dataset.i!==undefined){const it=cur.items[+e.dataset.i];if(it){it[e.dataset.k]=e.value;upd()}return}
   const f=e.dataset.f;if(!f)return;cur[f]=e.value;
   if(f==='start'||f==='dur'||f==='unit'){const x=calcEta(cur.start,cur.dur,cur.unit);if(x){cur.eta=x;const n=MO.querySelector('[data-f="eta"]');if(n)n.value=x}}
-  if(f==='src'&&(e.value==='日本現場'||e.value==='門市／實體店')){const c=e.value==='日本現場'?'JPY':'TWD';if(cur.cur!==c){cur.cur=c;drawEd();return}}
+  if(f==='src'){if(e.value==='日本現場'||e.value==='門市／實體店')cur.cur=e.value==='日本現場'?'JPY':'TWD';drawEd();return}
   upd();
 }
 MO.addEventListener('input',onField);
