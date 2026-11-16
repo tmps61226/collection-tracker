@@ -46,6 +46,16 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .row .im{width:60px;height:60px;flex:none;display:flex;align-items:center;justify-content:center;background:var(--tile);border-radius:16px;padding:6px}
 .row .mt{flex:1;min-width:0}.row small{color:var(--mu);display:block}
 .cell:active,.row:active{transform:scale(.97)}
+.cab{background:linear-gradient(160deg,#eef2f6,#f4eef3);border-radius:30px;padding:8px 8px 14px;box-shadow:0 2px 14px #3a2e1a14,inset 0 0 0 2px #fff}
+.shf{padding:12px 2px 0;position:relative;border-bottom:3px solid #fff;box-shadow:0 8px 8px -6px #7a8aa026;margin-bottom:10px;background:linear-gradient(#ffffff00 70%,#dfe6ee66)}
+.shr{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.sc{text-align:center;position:relative;cursor:pointer;min-width:0}
+.sc .si{aspect-ratio:1;display:flex;align-items:flex-end;justify-content:center;padding:2px 3px}
+.sc img{width:100%;height:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 1px 0 #fff) drop-shadow(0 -1px 0 #fff) drop-shadow(0 2px 2px #0002)}
+.sc .sn{font-size:11px;font-weight:600;padding:5px 0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc .sb{position:absolute;top:0;left:2px;font-size:9px;padding:0 6px;border-radius:8px;background:#fffc;color:var(--mu);z-index:1}
+.sc:active{transform:scale(.96)}
+.sc.em{border:1.5px dashed #c9ced6;border-radius:14px;aspect-ratio:.8;margin:2px 4px 8px;display:flex;align-items:center;justify-content:center;color:#b3b9c2;font-size:22px}
 .nav{position:fixed;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;gap:10px;z-index:4;pointer-events:none}
 .pill{pointer-events:auto;display:flex;gap:4px;background:#26221e;border-radius:32px;padding:6px;box-shadow:0 8px 24px #0004}
 .pill button{width:62px;height:48px;border:0;border-radius:26px;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:.55;color:#fff}
@@ -115,7 +125,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
   </div>
   <div id="main"></div>
 </div>
-<div class="nav"><div class="pill"><button id="vg" class="on" aria-label="格狀"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg></button><button id="vl" aria-label="列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button></div><button class="plus" id="add" aria-label="新增"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
+<div class="nav"><div class="pill"><button id="vg" class="on" aria-label="格狀"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg></button><button id="vl" aria-label="列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button><button id="vs" aria-label="櫃子"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M4 9.2h16M4 14.8h16"/></svg></button></div><button class="plus" id="add" aria-label="新增"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
 <div id="toast"></div>
 <div class="sheet" id="sheet"><div class="box"><button data-n="have"><b>已買到了</b><small>門市、日本現場、自己去買的</small></button><button data-n="pre"><b>預購／喊單</b><small>還沒到貨，等收貨</small></button><button data-n="wish"><b>想買</b><small>先記起來，之後再決定</small></button></div></div>
 <div class="mo" id="mo"></div><div class="mo" id="so2"></div>
@@ -238,6 +248,11 @@ function render(){
   });
   $('dt').textContent+=' · 共 '+cells.length+' 件';
   const im=c=>c.img?`<img src="${c.img}" alt="">`:'<span style="font:12px var(--mono);color:var(--mu)">無圖片</span>';
+  if(view==='shelf'){
+    const rows=[];for(let i=0;i<cells.length;i+=4)rows.push(cells.slice(i,i+4));
+    const last=rows[rows.length-1];const fill=4-last.length;
+    $('main').innerHTML=`<div class="cab">${rows.map((r,ri)=>`<div class="shf"><div class="shr">${r.map(c=>`<div class="sc" data-id="${c.o.id}">${c.tag?`<span class="sb">${c.tag}</span>`:(c.o.status==='pre'?'<span class="sb">預購中</span>':'')}<div class="si">${c.img?`<img src="${c.img}" alt="">`:'<span style="font-size:11px;color:var(--mu)">無圖</span>'}</div><div class="sn">${esc(c.name)}</div></div>`).join('')}${ri===rows.length-1?Array.from({length:fill},(_,k)=>`<div class="sc em" ${k===0?'data-add="1"':''}>${k===0?'＋':''}</div>`).join(''):''}</div></div>`).join('')}${last.length===4?'<div class="shf"><div class="shr"><div class="sc em" data-add="1">＋</div></div></div>':''}</div>`;
+    return}
   $('main').innerHTML=view==='grid'
    ?`<div class="grid">${cells.map(c=>`<div class="cell" data-id="${c.o.id}"><div class="bds">${cb(c)}</div><div class="im">${im(c)}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price)}</div></div>`).join('')}</div>`
    :`<div class="list">${cells.map(c=>{const o=c.o;return `<div class="row" data-id="${o.id}"><div class="im">${im(c)}</div><div class="mt"><div class="nm">${esc(c.name)}${cb(c)}</div><small>${esc(o.src)} ${esc(o.seller)} · ${fmt(o.buyDate)}</small><small>${c.cat?esc(c.cat)+' · ':''}${PAY[o.pay]}${o.status==='pre'&&o.eta?' · 預計 '+fmt(o.eta):''}</small></div><div class="pr">${pp(o,c.price)}</div></div>`}).join('')}</div>`;
@@ -572,11 +587,12 @@ SO.addEventListener('click',e=>{
 
 /* home events */
 $('chips').addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(b){$('fs').value=b.dataset.s;render()}});
-$('main').addEventListener('click',e=>{const n=e.target.closest('[data-id]');if(n)openEd(n.dataset.id)});
+$('main').addEventListener('click',e=>{if(e.target.closest('[data-add]')){$('sheet').classList.add('show');return}const n=e.target.closest('[data-id]');if(n)openEd(n.dataset.id)});
 ['q','fs','fc','so','hs','hw'].forEach(i=>$(i).addEventListener('input',render));
 $('fc').addEventListener('input',()=>setFc($('fc').value));
-$('vg').onclick=()=>{view='grid';$('vg').classList.add('on');$('vl').classList.remove('on');render()};
-$('vl').onclick=()=>{view='list';$('vl').classList.add('on');$('vg').classList.remove('on');render()};
+const VB={grid:'vg',list:'vl',shelf:'vs'};
+function setView(v){view=v;try{localStorage.setItem('view',v)}catch(e){}Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===v));render()}
+$('vg').onclick=()=>setView('grid');$('vl').onclick=()=>setView('list');$('vs').onclick=()=>setView('shelf');
 $('add').onclick=()=>$('sheet').classList.add('show');
 $('sheet').addEventListener('click',e=>{
   const b=e.target.closest('[data-n]');
@@ -595,5 +611,5 @@ async function autoTrimAll(){
   }
   if(ch){save();render()}
 }
-(async()=>{const a=await kvGet('items'),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);renderCats();try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}render();setTimeout(()=>autoTrimAll().catch(()=>{}),400)})();
+(async()=>{const a=await kvGet('items'),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);renderCats();try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{const v=localStorage.getItem('view');if(VB[v])view=v;Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===view))}catch(e){}render();setTimeout(()=>autoTrimAll().catch(()=>{}),400)})();
 </script></body></html>
