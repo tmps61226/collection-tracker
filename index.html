@@ -222,7 +222,7 @@ function render(){
     if(split)o.items.forEach(it=>{
       const q=+it.qty||1,n=sq(it),r=q-n;
       if(fs==='have'&&r<=0)return;if(fs==='sold'&&n<=0)return;if($('hs').checked&&r<=0)return;
-      cells.push({o,name:(it.name||'未命名')+(n>0&&r>0?' ×'+r:q>1&&n===0?' ×'+q:''),img:it.img?it.img.s:cover(o),price:(+it.price||0)*q,tag:n>=q?'已售出':n>0?'已售 '+n+'/'+q:''});
+      cells.push({o,name:(it.name||'未命名')+(n>0&&r>0?' ×'+r:q>1&&n===0?' ×'+q:''),img:it.img?it.img.s:cover(o),price:(+it.price||0)*(n>0&&r>0?r:q),tag:n>=q?'已售出':n>0?'已售 '+n+'/'+q:''});
     });
     else cells.push({o,name:title(o),img:(o.items.length===1&&o.items[0].img)?o.items[0].img.s:cover(o),price:total(o)});
   });
