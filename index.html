@@ -72,7 +72,12 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .seg button{flex:1;border:0;background:transparent;padding:8px 2px;border-radius:13px;cursor:pointer;font-size:13px}
 .seg button.on{background:var(--tx);color:var(--bg);font-weight:600}
 .hint{color:var(--mu);text-align:right;font:14px var(--num);padding:2px 0 8px}
-.btn{border:0;background:var(--chip);padding:9px 16px;border-radius:18px;cursor:pointer;margin:4px 4px 4px 0}
+.btn{border:1px solid var(--ln);background:var(--card);padding:9px 16px;border-radius:18px;cursor:pointer;margin:4px 4px 4px 0;box-shadow:0 1px 3px #3a2e1a1a;transition:transform .08s}
+.btn:active{transform:scale(.94);background:var(--tx);color:var(--bg)}
+.btn:disabled{opacity:.55}
+.it .btn{background:#fff;border-color:#d9d3c6}
+#toast{position:fixed;left:50%;bottom:calc(30px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:#26221e;color:#fff;padding:12px 20px;border-radius:24px;font-size:14px;z-index:20;opacity:0;pointer-events:none;transition:.25s;max-width:88vw;text-align:center;box-shadow:0 8px 24px #0005}
+#toast.show{opacity:1;transform:translate(-50%,0)}
 .btn.pri{background:var(--tx);color:var(--bg)}
 .thumbs{display:flex;gap:8px;overflow-x:auto;padding:12px 0}
 .th{position:relative;flex:none;width:84px;height:84px;border-radius:16px;background:var(--tile);border:3px solid transparent;cursor:pointer}
@@ -110,6 +115,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
   <div id="main"></div>
 </div>
 <div class="nav"><div class="pill"><button id="vg" class="on" aria-label="格狀"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg></button><button id="vl" aria-label="列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button></div><button class="plus" id="add" aria-label="新增"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
+<div id="toast"></div>
 <div class="sheet" id="sheet"><div class="box"><button data-n="have"><b>已買到了</b><small>門市、日本現場、自己去買的</small></button><button data-n="pre"><b>預購／喊單</b><small>還沒到貨，等收貨</small></button><button data-n="wish"><b>想買</b><small>先記起來，之後再決定</small></button></div></div>
 <div class="mo" id="mo"></div><div class="mo" id="so2"></div>
 
@@ -320,9 +326,9 @@ MO.addEventListener('click',ev=>{
     if(b.dataset.k==='status'){if(v==='have'&&!cur.recvDate)cur.recvDate=today();if(v==='sold'&&!cur.soldDate)cur.soldDate=today()}
     if(b.dataset.k==='unit'){const x=calcEta(cur.start,cur.dur,cur.unit);if(x)cur.eta=x}
     drawEd();return}
-  if(b.dataset.ibg!==undefined){doBg(cur.items[+b.dataset.ibg].img);return}
-  if(b.dataset.izm!==undefined){const m=cur.items[+b.dataset.izm].img;trimImg(m.s).then(t=>{m.s=t;drawEd()});return}
-  if(b.dataset.iun!==undefined){const m=cur.items[+b.dataset.iun].img;m.s=m.o;delete m.o;drawEd();return}
+  if(b.dataset.ibg!==undefined){busyBtn(b,'⏳ 去背中…');doBg(cur.items[+b.dataset.ibg].img);return}
+  if(b.dataset.izm!==undefined){const m=cur.items[+b.dataset.izm].img;busyBtn(b,'⏳ 處理中…');trimImg(m.s).then(t=>{const same=t===m.s;m.s=t;drawEd();toast(same?'這張圖已經沒有多餘空白了':'✓ 已放大主體')});return}
+  if(b.dataset.iun!==undefined){const m=cur.items[+b.dataset.iun].img;m.s=m.o;delete m.o;drawEd();toast('已還原原圖');return}
   if(b.dataset.irm!==undefined){delete cur.items[+b.dataset.irm].img;drawEd();return}
   if(b.dataset.del!==undefined){cur.items.splice(+b.dataset.del,1);if(!cur.items.length)cur.items.push({name:'',qty:1,price:''});drawEd();return}
   if(id==='addit'){cur.items.push({name:'',qty:1,price:''});drawEd();return}
@@ -330,14 +336,17 @@ MO.addEventListener('click',ev=>{
   if(id==='tk'){testKey();return}
   if(id==='shot'){const k=($('gk').value||'').trim();if(!k){setMsg('請先貼上 Gemini API Key');return}localStorage.setItem('gk',k);$('shotf').click()}
   if(id==='addimg')$('imgf').click();
-  if(id==='zm'){const m=cur.imgs[cur.cover];trimImg(m.s).then(t=>{m.s=t;drawEd()});return}
-  if(id==='bg')doBg(cur.imgs[cur.cover]);
-  if(id==='undo'){const m=cur.imgs[cur.cover];m.s=m.o;delete m.o;drawEd()}
+  if(id==='zm'){const m=cur.imgs[cur.cover];busyBtn(b,'⏳ 處理中…');trimImg(m.s).then(t=>{const same=t===m.s;m.s=t;drawEd();toast(same?'這張圖已經沒有多餘空白了':'✓ 已放大主體')});return}
+  if(id==='bg'){busyBtn(b,'⏳ 去背中…');doBg(cur.imgs[cur.cover])}
+  if(id==='undo'){const m=cur.imgs[cur.cover];m.s=m.o;delete m.o;drawEd();toast('已還原原圖')}
   if(id==='sv'){delete cur._new;derive(cur);cur.items=cur.items.filter((i,n)=>i.name||+i.price||n===0);const i=items.findIndex(x=>x.id===cur.id);i<0?items.unshift(cur):items[i]=cur;save();render();MO.classList.remove('show')}
   if(id==='dl'&&confirm('確定要刪除這筆訂單？')){items=items.filter(x=>x.id!==cur.id);save();render();MO.classList.remove('show')}
 });
 const setMsg=t=>{const m=$('msg');if(m)m.textContent=t};
 const setMsg2=t=>{const m=$('msg2');if(m)m.textContent=t};
+let toastT;function toast(t,ms=2400){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(toastT);if(ms)toastT=setTimeout(()=>e.classList.remove('show'),ms)}
+function busyBtn(b,t){if(b){b.disabled=true;b.textContent=t}}
+let bgBusy=false;
 function shrink(file,max=900){return new Promise(res=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/webp',.85))};im.onerror=()=>res(null);im.src=r.result};r.readAsDataURL(file)})}
 function trimImg(u){return new Promise(res=>{const im=new Image();im.onerror=()=>res(u);im.onload=()=>{try{
   const k=Math.min(1,900/Math.max(im.width,im.height)),w=Math.max(1,Math.round(im.width*k)),h=Math.max(1,Math.round(im.height*k)),c=document.createElement('canvas');c.width=w;c.height=h;
@@ -461,14 +470,16 @@ box 是該品項「商品縮圖／商品照片」在那張截圖裡的位置，�
   }catch(e){setMsg('辨識失敗：'+nice(e))}
 }
 async function doBg(m){
-  setMsg2('去背中…第一次要下載模型，請稍等');
+  if(bgBusy){toast('還在處理上一張，請稍等');drawEd();return}
+  bgBusy=true;toast('✂️ 去背中…第一次要下載模型，約 10～30 秒，請不要離開',0);
   try{
     const {removeBackground}=await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm');
     const blob=await (await fetch(m.s)).blob();const out=await removeBackground(blob);
     const u=URL.createObjectURL(out),im=new Image();
-    im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);m.o=m.s;trimImg(c.toDataURL('image/webp',.9)).then(t=>{m.s=t;drawEd()})};
+    im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);m.o=m.s;trimImg(c.toDataURL('image/webp',.9)).then(t=>{m.s=t;bgBusy=false;drawEd();toast('✓ 去背完成（想復原可按「還原原圖」）',3200)})};
+    im.onerror=()=>{bgBusy=false;drawEd();toast('去背失敗：圖片讀取錯誤',4000)};
     im.src=u;
-  }catch(e){setMsg2('去背失敗：'+e.message)}
+  }catch(e){bgBusy=false;drawEd();toast('去背失敗：'+(/fetch|network|Load failed|import/i.test(e.message)?'下載去背模型失敗，請確認網路':e.message),4500)}
 }
 
 /* settings */
