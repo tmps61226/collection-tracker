@@ -282,9 +282,25 @@ function shrink(file,max=900){return new Promise(res=>{const r=new FileReader();
 async function addImgs(files){for(const f of files){if(cur.imgs.length>=10)break;const s=await shrink(f);if(s)cur.imgs.push({s})}drawEd()}
 
 /* Gemini: screenshots -> one order */
-const GM=['gemini-flash-latest','gemini-2.5-flash','gemini-flash-lite-latest','gemini-2.5-flash-lite'];
+const GM0=['gemini-flash-latest','gemini-3.8-flash','gemini-flash-lite-latest'];
+let GMC=null;
+async function models(k){
+  if(GMC)return GMC;
+  let l=[];
+  try{
+    const ac=new AbortController(),t=setTimeout(()=>ac.abort(),8000);
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200',{signal:ac.signal,headers:{'x-goog-api-key':k}});clearTimeout(t);
+    const j=await r.json();
+    l=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes('generateContent')&&/flash/.test(m.name)&&!/image|tts|audio|live|embed|robot|computer|exp|thinking/.test(m.name)).map(m=>m.name.replace('models/',''));
+    const ver=n=>(n.match(/(\d+(?:\.\d+)?)/)||[0,0])[1]*1;
+    l.sort((a,b)=>ver(b)-ver(a)||(/lite/.test(a)?1:0)-(/lite/.test(b)?1:0));
+  }catch(e){}
+  GMC=[...new Set([...GM0,...l])].slice(0,8);
+  return GMC;
+}
 async function gem(k,body,on,ms){
   ms=ms||15000;
+  const GM=await models(k);
   let last;
   for(let r=0;r<2;r++){
     for(const m of GM){
@@ -293,11 +309,10 @@ async function gem(k,body,on,ms){
       try{
         x=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent',{method:'POST',signal:ac.signal,headers:{'Content-Type':'application/json','x-goog-api-key':k},body:JSON.stringify(body)});
         j=await x.json();
-      }catch(e){last=e.name==='AbortError'?new Error('等太久沒回應（'+m+'），換下一個模型'):e;continue}finally{clearTimeout(tm)}
+      }catch(e){last=e.name==='AbortError'?new Error('等太久沒回應（'+m+'）'):e;continue}finally{clearTimeout(tm)}
       if(x.ok)return j;
       last=new Error(j.error&&j.error.message||x.status);
-      const busy=[429,500,502,503,504].includes(x.status)||/demand|overload|quota/i.test(last.message);
-      if(!busy)throw last;
+      if(/api key|permission|billing|quota exceeded for/i.test(last.message)&&x.status!==404)throw last;
     }
     await new Promise(r=>setTimeout(r,1500));
   }
