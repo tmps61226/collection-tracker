@@ -117,7 +117,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 const SRC=['LINE社群','蝦皮','露天拍賣','FB','團購','噗浪','書店','電商','賣貨便','日本代購','門市／實體店','日本現場','朋友幫買','其他'];
 const CUR={TWD:'NT$',JPY:'¥',CNY:'CN¥',KRW:'₩',USD:'US$'},CURN={TWD:'台幣',JPY:'日幣',CNY:'人民幣',KRW:'韓圜',USD:'美金'};
 const PAY={unpaid:'未付款',deposit:'已付訂金',paid:'已付款',cod:'貨到付款'},ST={wish:'想買',pre:'預購中',have:'已到貨',sold:'已售出'};
-let itT=0,items=[],S={cats:['漢頓','玩具','衣服','隱形眼鏡','化妝品'],rates:{TWD:1,JPY:.21,CNY:4.5,KRW:.023,USD:31}},view='grid',cur=null;
+let itT=0,items=[],S={cats:['漢頓','玩具','衣服','隱形眼鏡','化妝品'],cardFee:1.5,rates:{TWD:1,JPY:.21,CNY:4.5,KRW:.023,USD:31}},view='grid',cur=null;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const iso=d=>{const z=new Date(d);return z.getFullYear()+'-'+String(z.getMonth()+1).padStart(2,'0')+'-'+String(z.getDate()).padStart(2,'0')};
@@ -159,11 +159,12 @@ const sub=o=>o.items.reduce((a,i)=>a+(+i.qty||0)*(+i.price||0),0);
 const total=o=>sub(o)+(+o.ship||0);
 const paidAmt=o=>o.pay==='paid'?total(o):o.pay==='deposit'?Math.min(+o.deposit||0,total(o)):0;
 const bal=o=>total(o)-paidAmt(o);
+const feeOf=o=>(o.fee===''||o.fee==null)?(+S.cardFee||0):(+o.fee||0);
 function effRate(o){
   if(o.cur==='TWD')return 1;
   const t=total(o);if(+o.twPaid>0&&t>0)return o.twPaid/t;
   const r=+o.rate>0?+o.rate:(+S.rates[o.cur]||1);
-  return r*(1+(o.pm==='card'?(+o.fee||0)/100:0));
+  return r*(1+(o.pm==='card'?feeOf(o)/100:0));
 }
 const tw=(o,n)=>n*effRate(o);
 const money=(o,n)=>(CUR[o.cur]||'')+Math.round(n).toLocaleString();
@@ -263,7 +264,7 @@ function drawEd(){
     <button class="btn" id="addit">＋ 新增品項</button></div>
   <div class="cd">${sel('幣別','cur',Object.keys(CUR).map(c=>[c,CURN[c]+' '+CUR[c]]))}${fr('運費','ship','number','0')}
     <div class="fr"><span>總金額</span><b id="tot"></b></div></div>
-  ${cur.cur!=='TWD'?`<div class="cd"><h3>換匯／刷卡（算成台幣用）</h3>${seg('pm',[['cash','現金換匯'],['card','刷卡'],['other','其他']])}${fr('實際匯率（1 '+CURN[cur.cur]+' = 台幣）','rate','number',String(S.rates[cur.cur]||''))}${cur.pm==='card'?fr('國外手續費 %','fee','number','例如 1.5'):''}${fr('實際扣款（台幣，選填）','twPaid','number','刷卡帳單的金額')}<div class="hint" id="fxh"></div></div>`:''}
+  ${cur.cur!=='TWD'?`<div class="cd"><h3>換匯／刷卡（算成台幣用）</h3>${seg('pm',[['cash','現金換匯'],['card','刷卡'],['other','其他']])}${fr('實際匯率（1 '+CURN[cur.cur]+' = 台幣）','rate','number',String(S.rates[cur.cur]||''))}${cur.pm==='card'?fr('國外手續費 %','fee','number','預設 '+(+S.cardFee||0)+'（可改）'):''}${fr('實際扣款（台幣，選填）','twPaid','number','刷卡帳單的金額')}<div class="hint" id="fxh"></div></div>`:''}
   <div class="cd"><h3>付款狀態</h3>${seg('pay',Object.keys(PAY).map(p=>[p,PAY[p]]))}
     ${cur.pay==='deposit'?fr('已付訂金','deposit','number','0'):''}
     <div class="fr"><span>待付金額</span><b id="bal"></b></div></div>
@@ -278,7 +279,7 @@ function upd(){
   t.textContent=money(cur,total(cur))+(cur.cur!=='TWD'?`（約 NT$${Math.round(tw(cur,total(cur))).toLocaleString()}）`:'');
   $('bal').textContent=money(cur,bal(cur));
   const h=$('hint');if(h){if(cur.eta){const r=Math.round((new Date(cur.eta+'T00:00')-new Date(today()+'T00:00'))/864e5),w=cur.start?Math.max(0,Math.round((new Date(today()+'T00:00')-new Date(cur.start+'T00:00'))/864e5)):0;h.textContent=`已等待 ${w} 天，${r>=0?'剩餘 '+r+' 天':'已逾期 '+(-r)+' 天'}`}else h.textContent=''}
-  const fh=$('fxh');if(fh){const r=effRate(cur);fh.textContent='目前算法：1 '+CURN[cur.cur]+' ≈ NT$'+(Math.round(r*10000)/10000)+(+cur.twPaid>0?'（依實際扣款）':+cur.rate>0?'（你填的匯率'+(cur.pm==='card'&&+cur.fee?'＋手續費':'')+'）':'（設定裡的預設匯率）')}
+  const fh=$('fxh');if(fh){const r=effRate(cur);fh.textContent='目前算法：1 '+CURN[cur.cur]+' ≈ NT$'+(Math.round(r*10000)/10000)+(+cur.twPaid>0?'（依實際扣款）':cur.pm==='card'&&!(+cur.rate>0)?'（預設匯率＋手續費 '+feeOf(cur)+'%）':+cur.rate>0?'（你填的匯率'+(cur.pm==='card'&&feeOf(cur)?'＋手續費 '+feeOf(cur)+'%':'')+'）':'（設定裡的預設匯率）')}
   const p=$('pf');if(p){const v=profitTW(cur);p.textContent=(v>=0?'+':'')+'NT$'+Math.round(v).toLocaleString();p.style.color=v>=0?'var(--gr)':'var(--rd)'}
 }
 const MO=$('mo');
@@ -422,6 +423,7 @@ function drawSet(){
   <div class="cd"><h3>自訂分類</h3>${S.cats.map((c,i)=>`<div class="cr"><input data-ci="${i}" value="${esc(c)}"><button data-cd="${i}">刪除</button></div>`).join('')}
     <div class="cr"><input id="newcat" placeholder="新增分類名稱"><button id="addcat" style="color:var(--ac)">新增</button></div></div>
   <div class="cd"><h3>我的暱稱（喊單截圖用來找我的留言）</h3><div class="fr"><span>暱稱</span><input id="nick" value="${esc(S.nick||'瓜呱')}" placeholder="例如：瓜呱"></div></div>
+  <div class="cd"><h3>刷卡</h3><div class="fr"><span>國外手續費 %（刷卡自動加上）</span><input id="cardfee" type="number" inputmode="decimal" step="any" value="${+S.cardFee||0}"></div></div>
   <div class="cd"><h3>匯率（換算成台幣，用於統計）</h3>${['JPY','CNY','KRW','USD'].map(c=>`<div class="fr"><span>1 ${CURN[c]} =</span><input data-rate="${c}" type="number" inputmode="decimal" step="any" value="${S.rates[c]}"></div>`).join('')}</div>
   <div class="cd"><h3>備份</h3><button class="btn" id="ex">匯出備份</button><button class="btn" id="im">匯入備份</button><input type="file" id="imf" accept=".json" hidden>
     <div class="msg">資料只存在這個瀏覽器，建議定期匯出備份。</div></div>`;
@@ -430,6 +432,7 @@ $('gear').onclick=()=>{drawSet();SO.classList.add('show')};
 SO.addEventListener('change',e=>{
   const t=e.target;
   if(t.dataset.ci!==undefined){const i=+t.dataset.ci,old=S.cats[i],v=t.value.trim();if(v&&v!==old){S.cats[i]=v;items.forEach(o=>{if(o.cat===old)o.cat=v});save();renderCats();render()}else t.value=old}
+  if(t.id==='cardfee'){S.cardFee=+t.value||0;save();render()}
   if(t.id==='nick'){S.nick=t.value.trim()||'瓜呱';save()}
   if(t.dataset.rate){S.rates[t.dataset.rate]=+t.value||S.rates[t.dataset.rate];save();render()}
   if(t.id==='imf'&&t.files[0]){const r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result),its=Array.isArray(d)?d:d.items;if(!Array.isArray(its))throw 0;if(confirm('匯入 '+its.length+' 筆資料，會取代目前的資料，確定嗎？')){items=its.map(mig);if(d.settings&&d.settings.cats)S=Object.assign(S,d.settings);save();renderCats();render();drawSet()}}catch(x){alert('檔案格式不正確')}};r.readAsText(t.files[0])}
