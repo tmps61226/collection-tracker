@@ -192,16 +192,24 @@ const cover=o=>o.imgs&&o.imgs[o.cover]?o.imgs[o.cover].s:(o.imgs&&o.imgs[0]?o.im
 
 /* home */
 function renderCats(){const v=$('fc').value;$('fc').innerHTML='<option value="all">全部分類</option>'+S.cats.map(c=>`<option>${esc(c)}</option>`).join('');$('fc').value=[...$('fc').options].some(o=>o.value===v)?v:'all'}
+function setFc(v){try{localStorage.setItem('fcSel',v)}catch(e){}}
+function scoped(fc){
+  if(fc==='all')return items;
+  const out=[];items.forEach(o=>{const f=o.items.filter(i=>ic(o,i)===fc);if(!f.length)return;if(f.length===o.items.length){out.push(o);return}
+    const r=sub(o)?f.reduce((a,i)=>a+(+i.qty||0)*(+i.price||0),0)/sub(o):0;
+    out.push(Object.assign({},o,{items:f,ship:(+o.ship||0)*r,deposit:(+o.deposit||0)*r,twPaid:o.twPaid?+o.twPaid*r:o.twPaid}))});
+  return out}
 function render(){
-  const act=items.filter(o=>o.status!=='wish');
+  const st=scoped($('fc').value);
+  const act=st.filter(o=>o.status!=='wish');
   const inv=act.reduce((a,o)=>a+tw(o,paidAmt(o)),0);
-  const pend=items.filter(o=>o.status==='pre'||o.status==='have').reduce((a,o)=>a+tw(o,bal(o)),0);
-  const rec=items.reduce((a,o)=>a+soldRev(o),0);
+  const pend=st.filter(o=>o.status==='pre'||o.status==='have').reduce((a,o)=>a+tw(o,bal(o)),0);
+  const rec=st.reduce((a,o)=>a+soldRev(o),0);
   const m=n=>'NT$'+Math.round(n).toLocaleString();
-  const ym=today().slice(0,7),mi=items.filter(o=>(o.buyDate||'').startsWith(ym)&&o.status!=='wish');
+  const ym=today().slice(0,7),mi=st.filter(o=>(o.buyDate||'').startsWith(ym)&&o.status!=='wish');
   const rec5=[];[...items].sort((a,b)=>(b.buyDate||'').localeCompare(a.buyDate||'')).forEach(o=>{o.items.forEach(it=>{if(it.img&&rec5.length<5)rec5.push(it.img.s)});if(o.imgs&&o.imgs[o.cover]&&rec5.length<5&&!o.items.some(i=>i.img))rec5.push(o.imgs[o.cover].s)});
   $('stats').innerHTML=`<div class="sum"><div><small>本月</small><b>${mi.length}<i>筆訂單</i></b><small>${m(mi.reduce((a,o)=>a+tw(o,total(o)),0))}</small></div><div class="stkrow">${rec5.map(x=>`<img src="${x}" alt="">`).join('')}</div></div>
-  <div class="mini">${[['總投入',S.hide?HID:m(inv)],['待付尾款',m(pend)],['預購中',items.filter(o=>o.status==='pre').length+' 件'],['售出回血',m(rec)]].map(x=>`<div><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}</div>`;
+  <div class="mini">${[['總投入',S.hide?HID:m(inv)],['待付尾款',m(pend)],['預購中',st.filter(o=>o.status==='pre').length+' 件'],['售出回血',m(rec)]].map(x=>`<div><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}</div>`;
   $('eye').innerHTML=EYE[S.hide?1:0];
   $('dt').textContent=new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
   $('chips').innerHTML=[['all','全部'],['pre','預購中'],['have','已到貨'],['wish','想買'],['sold','已售出']].map(c=>`<button class="chip ${$('fs').value===c[0]?'on':''}" data-s="${c[0]}">${c[1]}</button>`).join('');
@@ -566,6 +574,7 @@ SO.addEventListener('click',e=>{
 $('chips').addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(b){$('fs').value=b.dataset.s;render()}});
 $('main').addEventListener('click',e=>{const n=e.target.closest('[data-id]');if(n)openEd(n.dataset.id)});
 ['q','fs','fc','so','hs','hw'].forEach(i=>$(i).addEventListener('input',render));
+$('fc').addEventListener('input',()=>setFc($('fc').value));
 $('vg').onclick=()=>{view='grid';$('vg').classList.add('on');$('vl').classList.remove('on');render()};
 $('vl').onclick=()=>{view='list';$('vl').classList.add('on');$('vg').classList.remove('on');render()};
 $('add').onclick=()=>$('sheet').classList.add('show');
@@ -586,5 +595,5 @@ async function autoTrimAll(){
   }
   if(ch){save();render()}
 }
-(async()=>{const a=await kvGet('items'),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);renderCats();render();setTimeout(()=>autoTrimAll().catch(()=>{}),400)})();
+(async()=>{const a=await kvGet('items'),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);renderCats();try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}render();setTimeout(()=>autoTrimAll().catch(()=>{}),400)})();
 </script></body></html>
