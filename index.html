@@ -101,11 +101,11 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
   <div id="stats"></div>
   <input class="sr" id="q" placeholder="搜尋品名、賣家、備註">
   <div class="chips" id="chips"></div>
-  <select id="fs" hidden><option value="all">全部</option><option value="pre">預購中</option><option value="have">已到貨</option><option value="wish">想買</option><option value="sold">已出手</option></select>
+  <select id="fs" hidden><option value="all">全部</option><option value="pre">預購中</option><option value="have">已到貨</option><option value="wish">想買</option><option value="sold">已售出</option></select>
   <div class="bar">
     <select id="fc"></select>
     <select id="so"><option value="buy">購買時間</option><option value="eta">預計到貨</option><option value="price">價格高低</option></select>
-    <label><input type="checkbox" id="hs">隱藏已出</label><label><input type="checkbox" id="hw">隱藏種草</label>
+    <label><input type="checkbox" id="hs">隱藏已售</label><label><input type="checkbox" id="hw">隱藏種草</label>
   </div>
   <div id="main"></div>
 </div>
@@ -116,7 +116,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 <script>
 const SRC=['LINE社群','蝦皮','露天拍賣','FB','團購','噗浪','書店','電商','賣貨便','日本代購','門市／實體店','日本現場','朋友幫買','其他'];
 const CUR={TWD:'NT$',JPY:'¥',CNY:'CN¥',KRW:'₩',USD:'US$'},CURN={TWD:'台幣',JPY:'日幣',CNY:'人民幣',KRW:'韓圜',USD:'美金'};
-const PAY={unpaid:'未付款',deposit:'已付訂金',paid:'已付款',cod:'貨到付款'},ST={wish:'想買',pre:'預購中',have:'已到貨',sold:'已出手'};
+const PAY={unpaid:'未付款',deposit:'已付訂金',paid:'已付款',cod:'貨到付款'},ST={wish:'想買',pre:'預購中',have:'已到貨',sold:'已售出'};
 let itT=0,items=[],S={cats:['漢頓','玩具','衣服','隱形眼鏡','化妝品'],rates:{TWD:1,JPY:.21,CNY:4.5,KRW:.023,USD:31}},view='grid',cur=null;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -183,9 +183,9 @@ function render(){
   const ym=today().slice(0,7),mi=items.filter(o=>(o.buyDate||'').startsWith(ym)&&o.status!=='wish');
   const rec5=[];[...items].sort((a,b)=>(b.buyDate||'').localeCompare(a.buyDate||'')).forEach(o=>{o.items.forEach(it=>{if(it.img&&rec5.length<5)rec5.push(it.img.s)});if(o.imgs&&o.imgs[o.cover]&&rec5.length<5&&!o.items.some(i=>i.img))rec5.push(o.imgs[o.cover].s)});
   $('stats').innerHTML=`<div class="sum"><div><small>This Month</small><b>${mi.length}<i>筆訂單</i></b><small>${m(mi.reduce((a,o)=>a+tw(o,total(o)),0))}</small></div><div class="stkrow">${rec5.map(x=>`<img src="${x}" alt="">`).join('')}</div></div>
-  <div class="mini">${[['總投入',m(inv)],['待付尾款',m(pend)],['預購中',items.filter(o=>o.status==='pre').length+' 件'],['已出售回血',m(rec)]].map(x=>`<div><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}</div>`;
+  <div class="mini">${[['總投入',m(inv)],['待付尾款',m(pend)],['預購中',items.filter(o=>o.status==='pre').length+' 件'],['售出回血',m(rec)]].map(x=>`<div><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}</div>`;
   $('dt').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
-  $('chips').innerHTML=[['all','全部'],['pre','預購中'],['have','已到貨'],['wish','想買'],['sold','已出手']].map(c=>`<button class="chip ${$('fs').value===c[0]?'on':''}" data-s="${c[0]}">${c[1]}</button>`).join('');
+  $('chips').innerHTML=[['all','全部'],['pre','預購中'],['have','已到貨'],['wish','想買'],['sold','已售出']].map(c=>`<button class="chip ${$('fs').value===c[0]?'on':''}" data-s="${c[0]}">${c[1]}</button>`).join('');
   const q=$('q').value.trim().toLowerCase(),fs=$('fs').value,fc=$('fc').value,so=$('so').value;
   let l=items.filter(o=>{
     if(fs!=='all'&&!(fs==='sold'?(o.status==='sold'||soldUnits(o)>0):o.status===fs))return false;if(fc!=='all'&&o.cat!==fc)return false;
@@ -204,7 +204,7 @@ function render(){
     if(split)o.items.forEach(it=>{
       const q=+it.qty||1,n=sq(it),r=q-n;
       if(fs==='have'&&r<=0)return;if(fs==='sold'&&n<=0)return;if($('hs').checked&&r<=0)return;
-      cells.push({o,name:(it.name||'未命名')+(n>0&&r>0?' ×'+r:q>1&&n===0?' ×'+q:''),img:it.img?it.img.s:cover(o),price:(+it.price||0)*q,tag:n>=q?'已出手':n>0?'已出 '+n+'/'+q:''});
+      cells.push({o,name:(it.name||'未命名')+(n>0&&r>0?' ×'+r:q>1&&n===0?' ×'+q:''),img:it.img?it.img.s:cover(o),price:(+it.price||0)*q,tag:n>=q?'已售出':n>0?'已售 '+n+'/'+q:''});
     });
     else cells.push({o,name:title(o),img:(o.items.length===1&&o.items[0].img)?o.items[0].img.s:cover(o),price:total(o)});
   });
@@ -242,7 +242,7 @@ function drawEd(){
     <button class="btn" id="addimg">＋ 新增圖片</button><input type="file" id="imgf" accept="image/*" multiple hidden>
     ${cover(cur)?(cur.imgs[cur.cover]&&cur.imgs[cur.cover].o?'<button class="btn" id="undo">還原封面原圖</button>':'<button class="btn" id="bg">✂️ 封面去背</button>'):''}
     <div class="msg" id="msg2"></div></div>
-  <div class="cd">${seg('status',[['wish','想買'],['pre','預購中'],['have','已到貨'],['sold','已出手']])}
+  <div class="cd">${seg('status',[['wish','想買'],['pre','預購中'],['have','已到貨'],['sold','已售出']])}
     ${sel('分類','cat',[['','未分類'],...cats.map(c=>[c,c])])}
     <div class="fr love"><span>喜愛程度</span><span>${hearts}</span></div></div>
   <div class="cd"><h3>來源</h3>${sel('類型','src',SRC.map(s=>[s,s]))}${storeRow()}${fr('連結','link','url','https://')}${fr('購買日期','buyDate','date')}</div>
@@ -250,7 +250,7 @@ function drawEd(){
     ${cur.items.map((it,i)=>`<div class="it"><button class="x" data-del="${i}">刪除</button>
       <div class="ir"><div class="ith" data-ip="${i}">${it.img?`<img src="${it.img.s}">`:'📷'}</div><input data-i="${i}" data-k="name" placeholder="品名" value="${esc(it.name)}"></div>
       <div class="two"><input data-i="${i}" data-k="qty" type="number" inputmode="numeric" placeholder="數量" value="${esc(it.qty)}"><input data-i="${i}" data-k="price" type="number" inputmode="decimal" placeholder="單價" value="${esc(it.price)}"></div>
-      ${cur.status==='have'||cur.status==='sold'?`<div class="sell"><span>已出手</span><button data-sq="${i}" data-d="-1">−</button><b>${sq(it)} / ${+it.qty||1}</b><button data-sq="${i}" data-d="1">＋</button>${sq(it)?`<input data-i="${i}" data-k="sp" type="number" inputmode="decimal" placeholder="賣了多少（台幣總額）" value="${esc(it.sp||'')}">`:''}</div>`:''}
+      ${cur.status==='have'||cur.status==='sold'?`<div class="sell"><span>已售出</span><button data-sq="${i}" data-d="-1">−</button><b>${sq(it)} / ${+it.qty||1}</b><button data-sq="${i}" data-d="1">＋</button>${sq(it)?`<input data-i="${i}" data-k="sp" type="number" inputmode="decimal" placeholder="賣了多少（台幣總額）" value="${esc(it.sp||'')}">`:''}</div>`:''}
       ${it.img?`<div style="margin-top:6px">${it.img.o?`<button class="btn" data-iun="${i}">還原原圖</button>`:`<button class="btn" data-ibg="${i}">✂️ 去背</button>`}<button class="btn" data-irm="${i}">移除圖片</button></div>`:''}</div>`).join('')}
     <input type="file" id="itf" accept="image/*" hidden>
     <div class="msg">到貨後，每個品項會在收藏櫃各自顯示。點左邊的縮圖，可以替這個品項單獨加照片、去背。</div>
@@ -262,7 +262,7 @@ function drawEd(){
     <div class="fr"><span>待付金額</span><b id="bal"></b></div></div>
   ${cur.status==='pre'?`<div class="cd"><h3>預計到貨</h3>${fr('工期開始','start','date')}${fr('工期長度','dur','number','')}${seg('unit',[['month','月'],['day','自然日'],['work','工作日']])}${fr('預計到貨日','eta','date')}<div class="hint" id="hint"></div></div>`:''}
   ${cur.status==='have'||cur.status==='sold'?`<div class="cd">${fr('收貨日期','recvDate','date')}</div>`:''}
-  ${cur.status==='sold'||soldUnits(cur)>0?`<div class="cd"><h3>出售（已出 ${soldUnits(cur)} / ${units(cur)} 件）</h3>${fr('出售日期','soldDate','date')}<div class="fr"><span>已出手部分淨賺／虧損</span><b id="pf"></b></div></div>`:''}
+  ${cur.status==='sold'||soldUnits(cur)>0?`<div class="cd"><h3>出售（已售 ${soldUnits(cur)} / ${units(cur)} 件）</h3>${fr('出售日期','soldDate','date')}<div class="fr"><span>已售出部分淨賺／虧損</span><b id="pf"></b></div></div>`:''}
   <div class="cd"><div class="fr"><textarea data-f="note" placeholder="備註（可選）">${esc(cur.note)}</textarea></div></div>`;
   upd();
 }
