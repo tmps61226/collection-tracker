@@ -146,7 +146,7 @@ function mig(o){
   if(o.preorder&&o.start&&o.dur){const e=calcEta(o.start,o.dur,o.unit);if(e)n.eta=e}
   return migSold(n);
 }
-function newOrder(){return {id:'o'+Date.now(),status:'pre',src:'LINE社群',seller:'',link:'',cat:S.cats[0]||'',items:[{name:'',qty:1,price:''}],cur:'TWD',ship:0,pay:'paid',deposit:0,buyDate:today(),start:today(),dur:'',unit:'month',eta:'',recvDate:'',love:3,note:'',imgs:[],cover:0,soldPrice:'',soldDate:''}}
+function newOrder(){return {id:'o'+Date.now(),status:'pre',src:'LINE社群',seller:'',link:'',cat:S.cats[0]||'',items:[{name:'',qty:1,price:''}],cur:'TWD',ship:0,pay:'paid',deposit:0,buyDate:today(),start:today(),dur:'',unit:'month',eta:'',recvDate:'',love:3,note:'',imgs:[],cover:0,soldPrice:'',soldDate:'',pm:'cash',rate:'',fee:'',twPaid:''}}
 
 /* calc */
 function calcEta(start,dur,unit){
@@ -159,7 +159,13 @@ const sub=o=>o.items.reduce((a,i)=>a+(+i.qty||0)*(+i.price||0),0);
 const total=o=>sub(o)+(+o.ship||0);
 const paidAmt=o=>o.pay==='paid'?total(o):o.pay==='deposit'?Math.min(+o.deposit||0,total(o)):0;
 const bal=o=>total(o)-paidAmt(o);
-const tw=(o,n)=>n*(+S.rates[o.cur]||1);
+function effRate(o){
+  if(o.cur==='TWD')return 1;
+  const t=total(o);if(+o.twPaid>0&&t>0)return o.twPaid/t;
+  const r=+o.rate>0?+o.rate:(+S.rates[o.cur]||1);
+  return r*(1+(o.pm==='card'?(+o.fee||0)/100:0));
+}
+const tw=(o,n)=>n*effRate(o);
 const money=(o,n)=>(CUR[o.cur]||'')+Math.round(n).toLocaleString();
 const sq=i=>Math.max(0,Math.min(+i.sq||0,+i.qty||1));
 const units=o=>o.items.reduce((a,i)=>a+(+i.qty||1),0);
@@ -257,6 +263,7 @@ function drawEd(){
     <button class="btn" id="addit">＋ 新增品項</button></div>
   <div class="cd">${sel('幣別','cur',Object.keys(CUR).map(c=>[c,CURN[c]+' '+CUR[c]]))}${fr('運費','ship','number','0')}
     <div class="fr"><span>總金額</span><b id="tot"></b></div></div>
+  ${cur.cur!=='TWD'?`<div class="cd"><h3>換匯／刷卡（算成台幣用）</h3>${seg('pm',[['cash','現金換匯'],['card','刷卡'],['other','其他']])}${fr('實際匯率（1 '+CURN[cur.cur]+' = 台幣）','rate','number',String(S.rates[cur.cur]||''))}${cur.pm==='card'?fr('國外手續費 %','fee','number','例如 1.5'):''}${fr('實際扣款（台幣，選填）','twPaid','number','刷卡帳單的金額')}<div class="hint" id="fxh"></div></div>`:''}
   <div class="cd"><h3>付款狀態</h3>${seg('pay',Object.keys(PAY).map(p=>[p,PAY[p]]))}
     ${cur.pay==='deposit'?fr('已付訂金','deposit','number','0'):''}
     <div class="fr"><span>待付金額</span><b id="bal"></b></div></div>
@@ -271,6 +278,7 @@ function upd(){
   t.textContent=money(cur,total(cur))+(cur.cur!=='TWD'?`（約 NT$${Math.round(tw(cur,total(cur))).toLocaleString()}）`:'');
   $('bal').textContent=money(cur,bal(cur));
   const h=$('hint');if(h){if(cur.eta){const r=Math.round((new Date(cur.eta+'T00:00')-new Date(today()+'T00:00'))/864e5),w=cur.start?Math.max(0,Math.round((new Date(today()+'T00:00')-new Date(cur.start+'T00:00'))/864e5)):0;h.textContent=`已等待 ${w} 天，${r>=0?'剩餘 '+r+' 天':'已逾期 '+(-r)+' 天'}`}else h.textContent=''}
+  const fh=$('fxh');if(fh){const r=effRate(cur);fh.textContent='目前算法：1 '+CURN[cur.cur]+' ≈ NT$'+(Math.round(r*10000)/10000)+(+cur.twPaid>0?'（依實際扣款）':+cur.rate>0?'（你填的匯率'+(cur.pm==='card'&&+cur.fee?'＋手續費':'')+'）':'（設定裡的預設匯率）')}
   const p=$('pf');if(p){const v=profitTW(cur);p.textContent=(v>=0?'+':'')+'NT$'+Math.round(v).toLocaleString();p.style.color=v>=0?'var(--gr)':'var(--rd)'}
 }
 const MO=$('mo');
