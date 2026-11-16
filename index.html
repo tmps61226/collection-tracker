@@ -337,6 +337,12 @@ MO.addEventListener('click',ev=>{
 const setMsg=t=>{const m=$('msg');if(m)m.textContent=t};
 const setMsg2=t=>{const m=$('msg2');if(m)m.textContent=t};
 function shrink(file,max=900){return new Promise(res=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/webp',.85))};im.onerror=()=>res(null);im.src=r.result};r.readAsDataURL(file)})}
+function cropImg(file,box){return new Promise(res=>{try{const r=new FileReader();r.onerror=()=>res(null);r.onload=()=>{const im=new Image();im.onerror=()=>res(null);im.onload=()=>{
+  let [y1,x1,y2,x2]=box.map(Number);if([y1,x1,y2,x2].some(v=>!isFinite(v)))return res(null);
+  const W=im.naturalWidth,H=im.naturalHeight,px=.015*1000;y1=Math.max(0,y1-px);x1=Math.max(0,x1-px);y2=Math.min(1000,y2+px);x2=Math.min(1000,x2+px);
+  const sx=x1/1000*W,sy=y1/1000*H,sw=(x2-x1)/1000*W,sh=(y2-y1)/1000*H;if(sw<30||sh<30)return res(null);
+  const k=Math.min(1,700/Math.max(sw,sh)),c=document.createElement('canvas');c.width=Math.round(sw*k);c.height=Math.round(sh*k);
+  c.getContext('2d').drawImage(im,sx,sy,sw,sh,0,0,c.width,c.height);res(c.toDataURL('image/webp',.9))};im.src=r.result};r.readAsDataURL(file)}catch(e){res(null)}})}
 async function addImgs(files){for(const f of files){if(cur.imgs.length>=10)break;const s=await shrink(f);if(s)cur.imgs.push({s})}drawEd()}
 
 /* Gemini: screenshots -> one order */
@@ -387,7 +393,8 @@ async function doShot(files){
   setMsg('辨識中，請稍等…');
   try{
     const prompt=`你是繁體中文訂單辨識器。以下 ${files.length} 張圖片屬於同一筆預購或訂單（可能是LINE社群喊單截圖、商品型錄、蝦皮、賣貨便、日拍等）。請整合成一筆訂單，只回傳 JSON：
-{"sourceType":"${SRC.join('|')} 其中之一","seller":"賣家或代購名稱","link":"","buyDate":"YYYY-MM-DD或空字串","currency":"TWD|JPY|CNY|KRW|USD","ship":運費數字,"pay":"unpaid|deposit|paid|cod","deposit":已付訂金數字,"eta":"預計到貨日YYYY-MM-DD或空字串","category":"從這些分類挑一個：${S.cats.join('、')}，沒有就空字串","items":[{"name":"品名","qty":數量,"price":單價數字}],"orig":"圖上的原文品名"}
+{"sourceType":"${SRC.join('|')} 其中之一","seller":"賣家或代購名稱","link":"","buyDate":"YYYY-MM-DD或空字串","currency":"TWD|JPY|CNY|KRW|USD","ship":運費數字,"pay":"unpaid|deposit|paid|cod","deposit":已付訂金數字,"eta":"預計到貨日YYYY-MM-DD或空字串","category":"從這些分類挑一個：${S.cats.join('、')}，沒有就空字串","items":[{"name":"品名","qty":數量,"price":單價數字,"img":該商品照片出現在第幾張圖（從0開始）,"box":[ymin,xmin,ymax,xmax]}],"orig":"圖上的原文品名"}
+box 是該品項「商品縮圖／商品照片」在那張截圖裡的位置，座標為 0～1000 的相對值（左上角為原點），只框商品照片本身，不要框店家頭像、Logo、按鈕或文字；每個品項各自框自己的照片；看不到商品照片就不要給 box。
 規則：品名請整理成台灣常用的完整繁體中文，例如「哥吉拉×三麗鷗 漢頓 填充玩偶吊飾」，角色、款式、商品類型都要寫出，看不清楚的不要亂猜。price 只填實際購買的單價，不要填日幣定價、原價或廣告價格。同一筆訂單有多個品項就列多筆。看不出來的欄位用空字串或0。
 【喊單模式】若圖片是LINE社群／LINE VOOM的團購貼文加留言串：貼文通常有商品照片、系列名稱、價格（例如「指定款150$」）、貼文時間與開單者（seller 填開單者名稱）。留言串裡每個人用「款式名+數量」喊單（如「漢頓 +1」「花小兔 +2」）。請只找暱稱為「${S.nick||'瓜呱'}」的留言（含頭像相同、同名的多則留言），這些才是我的訂單：每則留言就是一個品項，name 寫成「系列名 款式名 商品類型」（款式名取自留言，系列與商品類型取自貼文照片與文字），qty 取自「+數字」（沒寫就是1），price 取自貼文價格（指定款價格適用於所選款式，不要填別人的）。buyDate 用我留言的時間。別人的留言一律忽略。若貼文寫「預購」，status 填 "pre"。若沒有找到我的留言，items 留空並在 orig 說明原因。
 在 JSON 裡多加一個欄位 "status":"pre|wish|have 或空字串"。`;
@@ -404,8 +411,10 @@ async function doShot(files){
     if(Array.isArray(d.items)&&d.items.length)cur.items=d.items.map(i=>({name:i.name||'',qty:+i.qty||1,price:+i.price||''}));
     if(d.eta){cur.eta=d.eta;cur.status='pre'}else if(['pre','wish','have'].includes(d.status))cur.status=d.status;
     if(d.orig&&!(cur.items[0]&&cur.items[0].name===d.orig))cur.note=(cur.note?cur.note+'\n':'')+'原文品名：'+d.orig;
-    for(const u of small){if(cur.imgs.length<10)cur.imgs.push({s:u})}
-    drawEd();setMsg('已填入，請檢查一下內容再儲存');
+    let nc=0;
+    if(Array.isArray(d.items))for(let k=0;k<d.items.length&&k<cur.items.length;k++){const it=d.items[k];if(Array.isArray(it.box)&&it.box.length===4){const u=await cropImg(files[+it.img||0]||files[0],it.box);if(u){cur.items[k].img={s:u};nc++;if(!cur.imgs.length)cur.imgs.push({s:u})}}}
+    if(!nc)for(const u of small){if(cur.imgs.length<10)cur.imgs.push({s:u})}
+    drawEd();setMsg(nc?'已填入，並自動截取 '+nc+' 張商品圖，請檢查一下再儲存':'已填入，請檢查一下內容再儲存（沒找到商品圖，已放入原截圖）');
   }catch(e){setMsg('辨識失敗：'+(/Load failed|Failed to fetch/.test(e.message)?'連不上 Gemini（網路中斷、金鑰貼錯，或金鑰有多餘的字）。請按「測試金鑰」確認':e.message))}
 }
 async function doBg(m){
