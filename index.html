@@ -293,11 +293,11 @@ function drawEd(){
     ${cur.items.map((it,i)=>`<div class="it"><button class="x" data-del="${i}">刪除</button>
       <div class="ir"><div class="ith" data-ip="${i}">${it.img?`<img src="${it.img.s}">`:'📷'}</div><input data-i="${i}" data-k="name" placeholder="品名" value="${esc(it.name)}"></div>
       <div class="fr" style="padding:6px 0"><span>分類</span><select data-i="${i}" data-k="cat"><option value="">同訂單（${esc(cur.cat||'未分類')}）</option>${(S.cats.includes(it.cat)||!it.cat?S.cats:[...S.cats,it.cat]).map(c=>`<option value="${esc(c)}" ${it.cat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
-      <div class="two"><input data-i="${i}" data-k="qty" type="number" inputmode="numeric" placeholder="數量" value="${esc(it.qty)}"><input data-i="${i}" data-k="price" type="number" inputmode="decimal" placeholder="單價" value="${esc(it.price)}"></div>
+      ${(+it.qty||1)>1?`<div style="margin:4px 0 6px"><button class="btn" data-split="${i}">＋ 拆出一款（盲盒不同款式）</button></div>`:''}<div class="two"><input data-i="${i}" data-k="qty" type="number" inputmode="numeric" placeholder="數量" value="${esc(it.qty)}"><input data-i="${i}" data-k="price" type="number" inputmode="decimal" placeholder="單價" value="${esc(it.price)}"></div>
       ${cur.status==='have'||cur.status==='sold'?`<div class="sell"><span>已售出</span><button data-sq="${i}" data-d="-1">−</button><b>${sq(it)} / ${+it.qty||1}</b><button data-sq="${i}" data-d="1">＋</button>${sq(it)?`<input data-i="${i}" data-k="sp" type="number" inputmode="decimal" placeholder="賣了多少（台幣總額）" value="${esc(it.sp||'')}">`:''}</div>`:''}
       ${it.img?`<div style="margin-top:6px">${it.img.o?`<button class="btn" data-iun="${i}">還原原圖</button>`:`<button class="btn" data-ibg="${i}">✂️ 去背</button>`}<button class="btn" data-izm="${i}">🔍 放大主體</button><button class="btn" data-irm="${i}">移除圖片</button></div>`:''}</div>`).join('')}
     <input type="file" id="itf" accept="image/*" hidden>
-    <div class="msg">到貨後，每個品項會在收藏櫃各自顯示。點左邊的縮圖，可以替這個品項單獨加照片、去背。</div>
+    <div class="msg">到貨後，每個品項會在收藏櫃各自顯示。點左邊的縮圖，可以替這個品項單獨加照片、去背。盲盒有不同款式時，按「拆出一款」，每一款各自放照片；抽到重複的款式，就把數量留在那一款。</div>
     <button class="btn" id="addit">＋ 新增品項</button></div>
   <div class="cd">${sel('幣別','cur',Object.keys(CUR).map(c=>[c,CURN[c]+' '+CUR[c]]))}${fr('運費','ship','number','0')}
     <div class="fr"><span>總金額</span><b id="tot"></b></div></div>
@@ -358,6 +358,9 @@ MO.addEventListener('click',ev=>{
   if(b.dataset.izm!==undefined){const m=cur.items[+b.dataset.izm].img;busyBtn(b,'⏳ 處理中…');trimImg(m.s).then(t=>{const same=t===m.s;m.s=t;drawEd();toast(same?'這張圖已經沒有多餘空白了':'✓ 已放大主體')});return}
   if(b.dataset.iun!==undefined){const m=cur.items[+b.dataset.iun].img;m.s=m.o;delete m.o;drawEd();toast('已還原原圖');return}
   if(b.dataset.irm!==undefined){delete cur.items[+b.dataset.irm].img;drawEd();return}
+  if(b.dataset.split!==undefined){const i=+b.dataset.split,it=cur.items[i],q=+it.qty||1;if(q<2)return;
+    it.qty=q-1;if(+it.sq>it.qty){it.sq=it.qty}
+    const n={name:it.name,qty:1,price:it.price};if(it.cat)n.cat=it.cat;cur.items.splice(i+1,0,n);drawEd();toast('已拆出一款，可以改名字、加照片');return}
   if(b.dataset.del!==undefined){cur.items.splice(+b.dataset.del,1);if(!cur.items.length)cur.items.push({name:'',qty:1,price:''});drawEd();return}
   if(id==='addit'){cur.items.push({name:'',qty:1,price:''});drawEd();return}
   if(id==='cx')MO.classList.remove('show');
