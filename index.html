@@ -21,7 +21,7 @@ body{margin:0;background-color:var(--bg);background-image:url("data:image/svg+xm
 .stkrow img{width:52px;height:52px;object-fit:contain;margin-right:-16px;filter:drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 2px 3px #0003)}
 .mini{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .mini div{background:var(--card);border-radius:18px;padding:10px 14px;box-shadow:0 2px 10px #3a2e1a0d}
-.mini span{font-size:11px;color:var(--mu)}.mini b{display:block;font:600 21px var(--num);margin-top:3px;line-height:1.15}
+.mini.cnt .cc small{font-size:11px;color:var(--mu)}.mini.cnt .cc b i{font:600 12px var(--num);margin-left:2px;color:var(--mu)}.mini span{font-size:11px;color:var(--mu)}.mini b{display:block;font:600 21px var(--num);margin-top:3px;line-height:1.15}
 input,select,textarea,button{font:inherit;color:var(--tx)}
 .sr{width:100%;padding:12px 16px;border-radius:16px;border:0;background:var(--card);margin-bottom:10px;box-shadow:0 2px 10px #3a2e1a0d}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
@@ -287,6 +287,7 @@ function render(){
   const rec5=[];[...items].sort((a,b)=>(b.buyDate||'').localeCompare(a.buyDate||'')).forEach(o=>{o.items.forEach(it=>{if(it.img&&rec5.length<5)rec5.push(it.img.s)});if(o.imgs&&o.imgs[o.cover]&&rec5.length<5&&!o.items.some(i=>i.img))rec5.push(o.imgs[o.cover].s)});
   $('stats').innerHTML=`<div class="sum"><div><small>本月</small><b>${mi.length}<i>筆訂單</i></b><small>${S.hide?HID:m(mi.reduce((a,o)=>a+tw(o,total(o)),0))}</small></div><div class="stkrow">${rec5.map(x=>`<img src="${x}" alt="">`).join('')}</div></div>
   <div class="mini">${[['總投入',S.hide?HID:m(inv)],['待付尾款',m(pend)],['預購中',st.filter(o=>o.status==='pre').length+' 件'],['售出回血',m(rec)]].map(x=>`<div><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}</div>`;
+  {const cc=(S.cnt||[]).filter(c=>S.cats.includes(c));if(cc.length){const cnt=cc.map(c=>{let have=0,pre=0;items.forEach(o=>{if(o.status==='wish')return;o.items.forEach(it=>{if(ic(o,it)!==c||ip(o,it)==='1')return;const q=+it.qty||1;if(got(o,it))have+=q;else if(o.status==='pre')pre+=q})});return `<div class="cc"><span>${esc(c)}總數</span><b>${have}<i>件</i></b>${pre?`<small>預購中 ${pre}</small>`:''}</div>`}).join('');$('stats').insertAdjacentHTML('beforeend',`<div class="mini cnt">${cnt}</div>`)}}
   $('eye').innerHTML=EYE[S.hide?1:0];
   $('dt').textContent=new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
   $('chips').innerHTML=[['all','全部'],['pre','預購中'],['have','已到貨'],['wish','想買'],['sold','已售出']].map(c=>`<button class="chip ${$('fs').value===c[0]?'on':''}" data-s="${c[0]}">${c[1]}</button>`).join('');
@@ -662,7 +663,7 @@ async function reShot(){
   drawEd()}
 const GUARD=30;
 const guardOK=()=>gUse()<GUARD||confirm('今天這支手機已經送出約 '+gUse()+' 次辨識請求了（免費額度有限，每個模型約 20 次）。\n還要再辨識嗎？');
-const gsel=()=>{const g=lsGet('glass');return /^[1-5]$/.test(g)?g:'1'};
+const gsel=()=>{const g=lsGet('glass');return /^[1-5]$/.test(g)?g:'4'};
 /* background recognition queue: survives leaving the app, resumes when you come back */
 let jobs=[],jr=false,jgen=0,jobMsg='';
 const saveJobs=async()=>{try{const d=await db(),t=d.transaction('kv','readwrite');t.objectStore('kv').put(jobs,'jobs')}catch(e){}};
@@ -796,6 +797,7 @@ function drawSet(){
   SO.innerHTML=`<div class="mh"><button id="sx">完成</button><span></span></div>
   <div class="cd"><h3>自訂分類</h3>${S.cats.map((c,i)=>`<div class="cr"><input data-ci="${i}" value="${esc(c)}"><button data-cd="${i}">刪除</button></div>`).join('')}
     <div class="cr"><input id="newcat" placeholder="新增分類名稱"><button id="addcat" style="color:var(--ac)">新增</button></div></div>
+  <div class="cd"><h3>首頁顯示各分類總數</h3>${S.cats.map(c=>`<div class="fr"><span>${esc(c)}</span><input data-cnt="${esc(c)}" type="checkbox" ${(S.cnt||[]).includes(c)?'checked':''} style="flex:none;width:auto"></div>`).join('')}<div class="msg">勾選的分類會在首頁顯示「已到貨件數」，有預購中的也會標出來（代買的不算）。想要娃娃、扭蛋、徽章、小物：<button id="addcommon" class="chip">一鍵加入這四個分類</button></div></div>
   <div class="cd"><h3>收藏櫃不顯示的分類</h3>${S.cats.map((c,i)=>`<div class="fr"><span>${esc(c)}</span><input data-hid="${esc(c)}" type="checkbox" ${(S.hid||[]).includes(c)?'checked':''} style="flex:none;width:auto"></div>`).join('')}<div class="msg">勾選的分類平常不會出現在收藏櫃和統計裡；在上面「全部分類」直接選那個分類，還是看得到。</div></div>
   ${(S.srcX||[]).length?`<div class="cd"><h3>自訂購買來源</h3>${S.srcX.map((c,i)=>`<div class="cr"><input value="${esc(c)}" readonly><button data-xd="${i}">刪除</button></div>`).join('')}<div class="msg">刪除後，已經用這個來源的訂單不受影響。</div></div>`:''}
   <div class="cd"><h3>收藏櫃樣式</h3><div id="gsws">${[['1','經典層板'],['2','圓形底座'],['3','格子櫃'],['4','貼紙卡'],['5','彩色卡']].map(([k,n])=>`<div class="gsw${gsel()===k?' on':''}" data-gl="${k}"><div class="cab g${k}"><div class="shf"><div class="shr"><div class="sc"><div class="si"><i class="dot" style="background:#8fd3e0"></i></div></div><div class="sc"><div class="si"><i class="dot" style="background:#f4a9b8"></i></div></div><div class="sc"><div class="si"><i class="dot" style="background:#f6d77a"></i></div></div></div></div></div>${n}</div>`).join('')}</div><div class="fr"><span>預購商品置頂（玻璃櫃）</span><input id="pretop" type="checkbox" ${S.preTop!==false?'checked':''} style="flex:none;width:auto"></div></div>
@@ -819,6 +821,7 @@ $('gear').onclick=()=>{drawSet();SO.classList.add('show')};
 SO.addEventListener('change',e=>{
   const t=e.target;
   if(t.dataset.ci!==undefined){const i=+t.dataset.ci,old=S.cats[i],v=t.value.trim();if(v&&v!==old){S.cats[i]=v;S.hid=(S.hid||[]).map(x=>x===old?v:x);items.forEach(o=>{if(o.cat===old)o.cat=v;o.items.forEach(i=>{if(i.cat===old)i.cat=v})});save();renderCats();render()}else t.value=old}
+  if(t.dataset.cnt!==undefined){const c=t.dataset.cnt;S.cnt=(S.cnt||[]).filter(x=>x!==c);if(t.checked)S.cnt.push(c);save();render();return}
   if(t.dataset.hid!==undefined){const c=t.dataset.hid;S.hid=(S.hid||[]).filter(x=>x!==c);if(t.checked)S.hid.push(c);save();render()}
   if(t.id==='pretop'){S.preTop=t.checked;save();render()}
   if(t.id==='ahp'){S.ahp=t.checked;save();render()}
@@ -836,6 +839,7 @@ SO.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   if(b.id==='sx'){SO.classList.remove('show');renderCats();render()}
   if(b.dataset.cd!==undefined){if(confirm('刪除這個分類？（已使用的訂單不會被刪除）')){S.cats.splice(+b.dataset.cd,1);save();drawSet()}}
+  if(b.id==='addcommon'){['娃娃','扭蛋','徽章','小物'].forEach(c=>{if(!S.cats.includes(c))S.cats.push(c);S.cnt=S.cnt||[];if(!S.cnt.includes(c))S.cnt.push(c)});save();renderCats();render();drawSet();return}
   if(b.id==='addcat'){const v=$('newcat').value.trim();if(v&&!S.cats.includes(v)){S.cats.push(v);save();drawSet()}}
   if(b.id==='im')$('imf').click();
   if(b.id==='ex')doBackup();
