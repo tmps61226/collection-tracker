@@ -313,7 +313,7 @@ function render(){
   const cells=[];
   l.forEach(o=>{
     const mixed=o.items.length>1&&(new Set(o.items.map(i=>ic(o,i))).size>1||new Set(o.items.map(i=>ip(o,i))).size>1);
-    const split=mixed||((o.status==='have'||o.status==='sold')&&(o.items.length>1||soldUnits(o)>0))||(o.status==='pre'&&o.items.some(i=>i.got));
+    const split=mixed||((o.status==='have'||o.status==='sold')&&(o.items.length>1||soldUnits(o)>0))||(o.status==='pre'&&(o.items.length>1||o.items.some(i=>i.got)));
     if(split)o.items.forEach(it=>{
       const q=+it.qty||1,n=sq(it),r=q-n;
       const gt=o.status==='pre'&&!!it.got;if(o.status==='pre'&&((fs==='have'&&!gt)||(fs==='pre'&&gt)))return;
