@@ -238,11 +238,15 @@ const cover=o=>o.imgs&&o.imgs[o.cover]?o.imgs[o.cover].s:(o.imgs&&o.imgs[0]?o.im
 function renderCats(){const v=$('fc').value;$('fc').innerHTML='<option value="all">全部分類</option>'+S.cats.map(c=>`<option>${esc(c)}</option>`).join('');$('fc').value=[...$('fc').options].some(o=>o.value===v)?v:'all'}
 function setFc(v){try{localStorage.setItem('fcSel',v)}catch(e){}}
 const ip=(o,it)=>(it&&it.proxy)||o.proxy||'0';
+const friendNet=o=>{ // 朋友付的 − 朋友品項應分攤的成本 (正=多收)
+  const fp=+o.fpaid||0;if(!fp)return null;const fr=o.items.filter(i=>ip(o,i)==='1'),mine=o.items.filter(i=>ip(o,i)!=='1');if(!fr.length||!mine.length)return null;
+  const sb=a=>a.reduce((x,i)=>x+(+i.qty||0)*(+i.price||0),0),fs=sb(fr),all=sb(o.items),fair=fs+(all?(+o.ship||0)*fs/all:0);return{fp,fair,net:fp-fair,mineSub:sb(mine)}};
 const vis=(o,it,fc)=>{if(it.hide&&!$('hh').checked)return false;const m=$('hp').value,p=ip(o,it)==='1';if(m==='hide'&&p)return false;if(m==='only')return p&&(fc==='all'||ic(o,it)===fc);if(fc==='all'&&(S.hid||[]).includes(ic(o,it)))return false;return fc==='all'||ic(o,it)===fc};
 function scoped(fc){
   const out=[];items.forEach(o=>{const f=o.items.filter(i=>vis(o,i,fc));if(!f.length)return;if(f.length===o.items.length){out.push(o);return}
     const r=sub(o)?f.reduce((a,i)=>a+(+i.qty||0)*(+i.price||0),0)/sub(o):0;
-    out.push(Object.assign({},o,{items:f,ship:(+o.ship||0)*r,deposit:(+o.deposit||0)*r,twPaid:o.twPaid?+o.twPaid*r:o.twPaid}))});
+    let adj=0;const fn=friendNet(o);if(fn&&fn.mineSub&&o.items.filter(i=>ip(o,i)==='1').every(i=>!f.includes(i))){const fsub=f.reduce((a,i)=>a+(+i.qty||0)*(+i.price||0),0);adj=fn.net*Math.min(1,fsub/fn.mineSub)}
+    out.push(Object.assign({},o,{items:f,ship:(+o.ship||0)*r-adj,deposit:(+o.deposit||0)*r,twPaid:o.twPaid?+o.twPaid*r:o.twPaid}))});
   return out}
 function render(){
   const st=scoped($('fc').value);renderBk();renderAr(st);
@@ -370,6 +374,7 @@ function drawEd(){
     <input type="file" id="itf" accept="image/*" hidden>
     <div class="msg">到貨後，每個品項會在收藏櫃各自顯示。點左邊的縮圖，可以替這個品項單獨加照片、去背。盲盒有不同款式時，按「拆出一款」，每一款各自放照片；抽到重複的款式，就把數量留在那一款。</div>
     <button class="btn" id="addit">＋ 新增品項</button>${cur.items.filter(i=>i.img&&!i.img.o).length?`<button class="btn" id="bgord">✂️ 全部品項去背（${cur.items.filter(i=>i.img&&!i.img.o).length} 張）</button>`:''}${dupGroups(cur).length?`<button class="btn" id="mrg">合併相同品項（${dupGroups(cur).length} 組）</button>`:''}</div>
+  ${cur.items.some(i=>ip(cur,i)==='1')&&cur.items.some(i=>ip(cur,i)!=='1')?`<div class="cd"><h3>朋友分攤</h3>${fr('朋友付你的金額','fpaid','number','例如 189')}<div class="msg" id="fph" style="margin-top:6px"></div></div>`:''}
   <div class="cd">${sel('幣別','cur',Object.keys(CUR).map(c=>[c,CURN[c]+' '+CUR[c]]))}${fr('運費','ship','number','0')}
     <div class="fr"><span>總金額</span><b id="tot"></b></div></div>
   ${true?`<div class="cd"><h3>${cur.cur==='TWD'?'付款方式／刷卡手續費':'換匯／刷卡（算成台幣用）'}</h3>${seg('pm',cur.cur==='TWD'?[['cash','現金／一般'],['card','刷卡（國外手續費）']]:[['cash','現金換匯'],['card','刷卡'],['other','其他']])}${cur.cur==='TWD'?'':fr('實際匯率（1 '+CURN[cur.cur]+' = 台幣）','rate','number',String(S.rates[cur.cur]||''))}${cur.pm==='card'?fr('國外手續費 %','fee','number','預設 '+(+S.cardFee||0)+'（可改）'):''}${fr('實際扣款（台幣，選填）','twPaid','number','刷卡帳單的金額')}<div class="hint" id="fxh"></div></div>`:''}
@@ -386,6 +391,7 @@ function upd(){
   const t=$('tot');if(!t)return;
   t.textContent=money(cur,total(cur))+(cur.cur!=='TWD'||effRate(cur)!==1?`（約 NT$${Math.round(tw(cur,total(cur))).toLocaleString()}）`:'');
   $('bal').textContent=money(cur,bal(cur));
+  const fh2=$('fph');if(fh2){const f=friendNet(cur);fh2.textContent=f?`朋友的品項成本 ${money(cur,f.fair)}（含分攤運費），朋友付你 ${money(cur,f.fp)}，${f.net>=0?'多收 '+money(cur,f.net):'少收 '+money(cur,-f.net)}。收藏櫃與統計裡，這筆你自己的實際成本 = ${money(cur,f.mineSub+(+cur.ship||0)*f.mineSub/sub(cur)-f.net)}。`:'填入朋友實際付給你的總額（含運費分攤），app 會自動算出你多收或少收多少，並從你的成本裡扣掉。'}
   const h=$('hint');if(h){if(cur.eta){const r=Math.round((new Date(cur.eta+'T00:00')-new Date(today()+'T00:00'))/864e5),w=cur.start?Math.max(0,Math.round((new Date(today()+'T00:00')-new Date(cur.start+'T00:00'))/864e5)):0;h.textContent=`已等待 ${w} 天，${r>=0?'剩餘 '+r+' 天':'已逾期 '+(-r)+' 天'}`}else h.textContent=''}
   const fh=$('fxh');if(fh){const r=effRate(cur);fh.textContent='目前算法：1 '+CURN[cur.cur]+' ≈ NT$'+(Math.round(r*10000)/10000)+(+cur.twPaid>0?'（依實際扣款）':cur.pm==='card'&&!(+cur.rate>0)?'（預設匯率＋手續費 '+feeOf(cur)+'%）':+cur.rate>0?'（你填的匯率'+(cur.pm==='card'&&feeOf(cur)?'＋手續費 '+feeOf(cur)+'%':'')+'）':'（設定裡的預設匯率）')}
   const p=$('pf');if(p){const v=profitTW(cur);p.textContent=(v>=0?'+':'')+'NT$'+Math.round(v).toLocaleString();p.style.color=v>=0?'var(--gr)':'var(--rd)'}
