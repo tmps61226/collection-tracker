@@ -353,7 +353,7 @@ function drawEd(){
   <div class="mh"><button id="cx">取消</button><span>${cur._new?'':'<button class="dl" id="dl">刪除</button> '}<button class="sv" id="sv">儲存</button></span></div>
   <div class="cd"><h3>截圖自動填表（可一次選多張，視為同一筆訂單）</h3>
     <div class="fr"><span>Gemini Key</span><input id="gk" type="password" placeholder="貼上免費金鑰" value="${esc(k)}"></div>
-    <div><button class="btn pri" id="shot">上傳訂單截圖</button><button class="btn" id="tk">測試金鑰</button><input type="file" id="shotf" accept="image/*" multiple hidden><div class="msg" id="msg">辨識完成後請檢查內容，錯的可以直接改</div><div class="msg" id="gu"></div></div></div>
+    <div><button class="btn pri" id="shot">上傳訂單截圖</button>${cur.imgs.length?'<button class="btn" id="reshot">🔄 重新偵測</button>':''}<button class="btn" id="tk">測試金鑰</button><input type="file" id="shotf" accept="image/*" multiple hidden><div class="msg" id="msg">辨識完成後請檢查內容，錯的可以直接改</div><div class="msg" id="gu"></div></div></div>
   <div class="cd"><h3>商品圖片（點一下設為封面）</h3>
     <div class="thumbs">${cur.imgs.map((m,i)=>`<div class="th ${i===cur.cover?'cv':''}" data-c="${i}"><img src="${m.s}">${i===cur.cover?'<b>封面</b>':''}<i data-rm="${i}">×</i></div>`).join('')}</div>
     <button class="btn" id="addimg">＋ 新增圖片</button><input type="file" id="imgf" accept="image/*" multiple hidden>
@@ -446,6 +446,7 @@ MO.addEventListener('click',ev=>{
   if(id==='addit'){cur.items.push({name:'',qty:1,price:''});drawEd();return}
   if(id==='cx'){MO.classList.remove('show');backDetail()}
   if(id==='tk'){testKey();return}
+  if(id==='reshot'){reShot();return}
   if(id==='shot'){const k=($('gk').value||'').trim();if(!k){setMsg('請先貼上 Gemini API Key');return}localStorage.setItem('gk',k);$('shotf').click()}
   if(id==='addimg')$('imgf').click();
   if(id==='zm'){const m=cur.imgs[cur.cover];busyBtn(b,'⏳ 處理中…');trimImg(m.s).then(t=>{const same=t===m.s;m.s=t;drawEd();toast(same?'這張圖已經沒有多餘空白了':'✓ 已放大主體')});return}
@@ -594,7 +595,18 @@ async function callShot(k,parts,schema,on){
   if(schema)body.generationConfig.responseSchema=SHOT_SCHEMA();
   return parseShot(await gem(k,body,on,40000));
 }
-async function doShot(files){
+async function reShot(){
+  const k=(localStorage.getItem('gk')||'').replace(/[^\x21-\x7e]/g,'');if(!k){setMsg('請先貼上 Gemini API Key');return}
+  const dims=u=>new Promise(r=>{const i=new Image();i.onload=()=>r(i.height/i.width);i.onerror=()=>r(0);i.src=u});
+  const shots=[];for(const m of cur.imgs){if(m.sh||(await dims(m.s))>1.5)shots.push(m)}
+  if(!shots.length){setMsg('這筆訂單沒有保留訂單截圖，請按「上傳訂單截圖」重新選圖');return}
+  if(!confirm('用這筆訂單已存的 '+shots.length+' 張截圖重新辨識？\n品項、金額、日期會被新結果覆蓋；每個品項的圖片、朋友代買、已售數量會保留。'))return;
+  const old=cur.items.map(i=>Object.assign({},i)),files=[];
+  for(const m of shots)files.push(new File([await (await fetch(m.s)).blob()],'s.webp',{type:'image/webp'}));
+  await doShot(files,true);
+  cur.items.forEach((it,q)=>{const o=old[q];if(!o)return;['img','proxy','hide','sq','sp'].forEach(f=>{if(o[f]!==undefined)it[f]=o[f]})});
+  drawEd()}
+async function doShot(files,re){
   const k=(localStorage.getItem('gk')||'').replace(/[^\x21-\x7e]/g,'');if(!k){setMsg('請先貼上 Gemini API Key');return}
   setMsg('辨識中，請稍等…');
   try{
@@ -624,8 +636,8 @@ async function doShot(files){
     if(cur.status==='have'&&!cur.recvDate)cur.recvDate=today();
     if(d.orig&&!(cur.items[0]&&cur.items[0].name===d.orig))cur.note=(cur.note?cur.note+'\n':'')+'原文品名：'+d.orig;
     let nc=0;
-    if(good.length)for(let q=0;q<good.length&&q<cur.items.length;q++){const it=good[q];let bx=it.box;if(bx&&!Array.isArray(bx)&&typeof bx==='object')bx=[bx.ymin,bx.xmin,bx.ymax,bx.xmax];if(typeof bx==='string')bx=bx.match(/-?\d+(?:\.\d+)?/g);if(Array.isArray(bx)&&bx.length===4){bx=bx.map(Number);let u=await cropImg(files[+it.img||0]||files[0],bx);if(u)u=await trimImg(u);if(u){cur.items[q].img={s:u};if(!nc){cur.imgs.unshift({s:u});cur.cover=0}nc++}}}
-    for(const u of small){if(cur.imgs.length<10)cur.imgs.push({s:u})}
+    if(good.length&&!re)for(let q=0;q<good.length&&q<cur.items.length;q++){const it=good[q];let bx=it.box;if(bx&&!Array.isArray(bx)&&typeof bx==='object')bx=[bx.ymin,bx.xmin,bx.ymax,bx.xmax];if(typeof bx==='string')bx=bx.match(/-?\d+(?:\.\d+)?/g);if(Array.isArray(bx)&&bx.length===4){bx=bx.map(Number);let u=await cropImg(files[+it.img||0]||files[0],bx);if(u)u=await trimImg(u);if(u){cur.items[q].img={s:u};if(!nc){cur.imgs.unshift({s:u});cur.cover=0}nc++}}}
+    if(!re)for(const u of small){if(cur.imgs.length<10)cur.imgs.push({s:u,sh:1})}
     drawEd();
     if(!good.length)setMsg('沒辨識出品項（Gemini 回傳：'+d._raw.slice(0,90).replace(/\s+/g,' ')+'…）。請手動填，或換更清楚的截圖再試。');
     else setMsg('已填入 '+good.length+' 個品項'+(nc?'，自動截取 '+nc+' 張商品圖':'，沒偵測到商品圖，可點縮圖手動加圖')+'；原截圖已保留，請檢查一下再儲存');
