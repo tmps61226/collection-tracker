@@ -48,13 +48,15 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .cell:active,.row:active{transform:scale(.97)}
 .hb{position:absolute;top:4px;right:4px;z-index:2;width:26px;height:26px;border-radius:50%;border:0;background:#ffffffcc;color:var(--mu);display:flex;align-items:center;justify-content:center;padding:0;box-shadow:0 1px 4px #0002}.hb svg{width:15px;height:15px}.hid{opacity:.45}
 .row{position:relative}.row .hb{top:50%;right:8px;transform:translateY(-50%)}
-.cab{background:linear-gradient(160deg,#eef2f6,#f4eef3);border-radius:30px;padding:8px 8px 14px;box-shadow:0 2px 14px #3a2e1a14,inset 0 0 0 2px #fff}
-.shf{padding:12px 2px 0;position:relative;border-bottom:3px solid #fff;box-shadow:0 8px 8px -6px #7a8aa026;margin-bottom:10px;background:linear-gradient(#ffffff00 70%,#dfe6ee66)}
+.cab{position:relative;background:linear-gradient(155deg,#e9eff7 0%,#f6f1f8 55%,#e8f1f4 100%);border-radius:34px;padding:10px 10px 16px;border:3px solid #ffffffd9;box-shadow:0 10px 30px #6a7a9a26,inset 0 0 28px #ffffffb3,inset 0 -12px 24px #b9c8e022;overflow:hidden}
+.cab::before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,#ffffff00 40%,#ffffff66 47%,#ffffff00 54%);pointer-events:none;z-index:3}
+.shf{padding:14px 0 0;position:relative;margin-bottom:12px}
+.shf::after{content:"";position:absolute;left:-10px;right:-10px;bottom:-9px;height:10px;background:linear-gradient(#ffffffee,#cfdcec99 70%,#cfdcec00);border-top:2px solid #fff;box-shadow:0 6px 10px #7a8aa033}
 .shr{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
 .sc{text-align:center;position:relative;cursor:pointer;min-width:0}
-.sc .si{aspect-ratio:1;display:flex;align-items:flex-end;justify-content:center;padding:2px 3px}
+.sc .si{aspect-ratio:1;display:flex;align-items:flex-end;justify-content:center;padding:0 2px}
 .sc img{width:100%;height:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 1px 0 #fff) drop-shadow(0 -1px 0 #fff) drop-shadow(0 2px 2px #0002)}
-.sc .sn{font-size:11px;font-weight:600;padding:5px 0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc .sn{font-size:12px;font-weight:700;padding:6px 0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sc .sb{position:absolute;top:0;left:2px;font-size:9px;padding:0 6px;border-radius:8px;background:#fffc;color:var(--mu);z-index:1}
 .sc:active{transform:scale(.96)}
 .sc.em{border:1.5px dashed #c9ced6;border-radius:14px;aspect-ratio:.8;margin:2px 4px 8px;display:flex;align-items:center;justify-content:center;color:#b3b9c2;font-size:22px}
@@ -136,7 +138,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 const SRC=['LINE社群','蝦皮','露天拍賣','FB','團購','噗浪','書店','電商','賣貨便','日本代購','門市／實體店','日本現場','朋友幫買','其他'];
 const CUR={TWD:'NT$',JPY:'¥',CNY:'CN¥',KRW:'₩',USD:'US$'},CURN={TWD:'台幣',JPY:'日幣',CNY:'人民幣',KRW:'韓圜',USD:'美金'};
 const PAY={unpaid:'未付款',deposit:'已付訂金',paid:'已付款',cod:'貨到付款'},ST={wish:'想買',pre:'預購中',have:'已到貨',sold:'已售出'};
-let itT=0,items=[],S={cats:['漢頓','玩具','衣服','隱形眼鏡','化妝品'],cardFee:1.5,rates:{TWD:1,JPY:.21,CNY:4.5,KRW:.023,USD:31}},view='grid',cur=null;
+let itT=0,items=[],S={cats:['漢頓','玩具','衣服','隱形眼鏡','化妝品'],cardFee:1.5,rates:{TWD:1,JPY:.21,CNY:4.5,KRW:.023,USD:31}},view='shelf',cur=null;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const iso=d=>{const z=new Date(d);return z.getFullYear()+'-'+String(z.getMonth()+1).padStart(2,'0')+'-'+String(z.getDate()).padStart(2,'0')};
