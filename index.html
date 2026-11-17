@@ -296,6 +296,7 @@ function storeRow(){
   return `<div class="fr"><span>店家（選填）</span><input data-f="seller" list="storelist" value="${esc(cur.seller)}" placeholder="選一個或自己輸入"></div><datalist id="storelist">${opts.map(o=>`<option value="${esc(o)}">`).join('')}</datalist>`;
 }
 const fr=(label,key,type='text',ph='')=>`<div class="fr"><span>${label}</span><input data-f="${key}" type="${type}" value="${esc(cur[key])}" placeholder="${ph}" ${type==='number'?'inputmode="decimal"':''}></div>`;
+const srcOpts=()=>{const l=SRC.slice(0,-1).concat(S.srcX||[],SRC.slice(-1));if(cur&&cur.src&&!l.includes(cur.src))l.splice(l.length-1,0,cur.src);return l.map(x=>[x,x]).concat([['__new','＋ 自訂來源…']])};
 const sel=(label,key,opts)=>`<div class="fr"><span>${label}</span><select data-f="${key}">${opts.map(o=>`<option value="${esc(o[0])}" ${cur[key]===o[0]?'selected':''}>${esc(o[1])}</option>`).join('')}</select></div>`;
 let dvState=null;
 function openDetail(id,ix){
@@ -349,7 +350,7 @@ function drawEd(){
   <div class="cd">${seg('status',[['wish','想買'],['pre','預購中'],['have','已到貨'],['sold','已售出']])}
     ${seg('proxy',[['0','整筆是我的'],['1','整筆是幫朋友買']])+sel('分類（預設）','cat',[['','未分類'],...cats.map(c=>[c,c])])}
     <div class="fr love"><span>喜愛程度</span><span>${hearts}</span></div></div>
-  <div class="cd"><h3>來源</h3>${sel('類型','src',SRC.map(s=>[s,s]))}${storeRow()}${fr('連結','link','url','https://')}${fr('購買日期','buyDate','date')}${fr('發售日','rel','date')}</div>
+  <div class="cd"><h3>來源</h3>${sel('類型','src',srcOpts())}${storeRow()}${fr('連結','link','url','https://')}${fr('購買日期','buyDate','date')}${fr('發售日','rel','date')}</div>
   <div class="cd"><h3>品項</h3>
     ${cur.items.map((it,i)=>`<div class="it"><button class="x" data-del="${i}">刪除</button>
       <div class="ir"><div class="ith" data-ip="${i}">${it.img?`<img src="${it.img.s}">`:'📷'}</div><input data-i="${i}" data-k="name" placeholder="品名" value="${esc(it.name)}"></div>
@@ -385,7 +386,9 @@ const MO=$('mo');
 function onField(ev){
   const e=ev.target;
   if(e.dataset.i!==undefined){const it=cur.items[+e.dataset.i];if(it){it[e.dataset.k]=e.value;upd()}return}
-  const f=e.dataset.f;if(!f)return;cur[f]=e.value;
+  const f=e.dataset.f;if(!f)return;
+  if(f==='src'&&e.value==='__new'){const v=(prompt('新的購買來源名稱（例如：Yahoo拍賣、朋友A）')||'').trim();if(v){if(!SRC.includes(v)&&!(S.srcX||[]).includes(v)){S.srcX=(S.srcX||[]).concat(v);save()}cur.src=v}drawEd();return}
+  cur[f]=e.value;
   if(f==='start'||f==='dur'||f==='unit'){const x=calcEta(cur.start,cur.dur,cur.unit);if(x){cur.eta=x;const n=MO.querySelector('[data-f="eta"]');if(n)n.value=x}}
   if(f==='src'){if(e.value==='日本現場'||e.value==='門市／實體店')cur.cur=e.value==='日本現場'?'JPY':'TWD';drawEd();return}
   upd();
@@ -625,6 +628,7 @@ function drawSet(){
   <div class="cd"><h3>自訂分類</h3>${S.cats.map((c,i)=>`<div class="cr"><input data-ci="${i}" value="${esc(c)}"><button data-cd="${i}">刪除</button></div>`).join('')}
     <div class="cr"><input id="newcat" placeholder="新增分類名稱"><button id="addcat" style="color:var(--ac)">新增</button></div></div>
   <div class="cd"><h3>收藏櫃不顯示的分類</h3>${S.cats.map((c,i)=>`<div class="fr"><span>${esc(c)}</span><input data-hid="${esc(c)}" type="checkbox" ${(S.hid||[]).includes(c)?'checked':''} style="flex:none;width:auto"></div>`).join('')}<div class="msg">勾選的分類平常不會出現在收藏櫃和統計裡；在上面「全部分類」直接選那個分類，還是看得到。</div></div>
+  ${(S.srcX||[]).length?`<div class="cd"><h3>自訂購買來源</h3>${S.srcX.map((c,i)=>`<div class="cr"><input value="${esc(c)}" readonly><button data-xd="${i}">刪除</button></div>`).join('')}<div class="msg">刪除後，已經用這個來源的訂單不受影響。</div></div>`:''}
   <div class="cd"><h3>我的暱稱（喊單截圖用來找我的留言）</h3><div class="fr"><span>暱稱</span><input id="nick" value="${esc(S.nick||'瓜呱')}" placeholder="例如：瓜呱"></div></div>
   <div class="cd"><h3>隱藏總投入</h3><div class="fr"><span>首頁不顯示「總投入」金額</span><input id="hideamt" type="checkbox" ${S.hide?'checked':''} style="flex:none;width:auto"></div><div class="msg">開啟後，總投入、價格、總額、淨賺都顯示 ＊＊＊。輸入價格時還是看得到自己打的數字。首頁右上角的眼睛也可以隨時切換。</div></div>
   <div class="cd"><h3>刷卡</h3><div class="fr"><span>國外手續費 %（刷卡自動加上）</span><input id="cardfee" type="number" inputmode="decimal" step="any" value="${+S.cardFee||0}"></div></div>
@@ -662,6 +666,7 @@ SO.addEventListener('click',e=>{
   if(b.id==='im')$('imf').click();
   if(b.id==='ex')doBackup();
   if(b.id==='bgall')bgAll();
+  if(b.dataset.xd!==undefined){S.srcX.splice(+b.dataset.xd,1);save();drawSet()}
   if(b.id==='syup')syncUp();
   if(b.id==='sydn')syncDown();
   if(b.id==='syrs')restorePrev();
