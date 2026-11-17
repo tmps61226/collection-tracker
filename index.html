@@ -659,11 +659,11 @@ SO.addEventListener('click',e=>{
 const BK_DAYS=7;
 function lastBk(){try{return +localStorage.getItem('lastBackup')||0}catch(e){return 0}}
 async function doBackup(){
-  const name='collection-backup-'+today()+'.json',blob=new Blob([JSON.stringify({items,settings:S})],{type:'application/json'});
+  const name='collection-backup-'+today()+'.json',blob=new Blob([JSON.stringify({items,settings:S},(k,v)=>k==='o'&&typeof v==='string'&&v.startsWith('data:')?undefined:v)],{type:'application/json'});
   try{const f=new File([blob],name,{type:'application/json'});
     if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'收藏櫃備份'});markBk();return true}}catch(e){if(e&&e.name==='AbortError')return false}
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();markBk();return true}
-function markBk(){try{localStorage.setItem('lastBackup',String(Date.now()));localStorage.removeItem('bkSnooze')}catch(e){}renderBk();if(SO.classList.contains('show'))drawSet();toast('✓ 已備份，記得存到「檔案」或 iCloud',3500)}
+function markBk(){try{localStorage.setItem('lastBackup',String(Date.now()));localStorage.removeItem('bkSnooze')}catch(e){}renderBk();if(SO.classList.contains('show'))drawSet();toast('✓ 已備份（若是用分享選單，請確認有選「儲存到檔案」）',4500)}
 function renderBk(){
   const el=$('bk');if(!el)return;let sn=0;try{sn=+localStorage.getItem('bkSnooze')||0}catch(e){}
   const l=lastBk(),d=l?Math.floor((Date.now()-l)/864e5):999;
