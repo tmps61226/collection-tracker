@@ -92,6 +92,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 #dv{z-index:5}#mo{z-index:6}
 .dvi{display:flex;justify-content:center;align-items:flex-end;height:250px;padding:4px 20px 0}.dvi img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 3px 5px #0003)}
 .dvb{padding:0 20px 40px}.dvn{font-weight:800;font-size:24px;line-height:1.25;margin:10px 0 4px}.dvs{color:var(--mu);font-size:14px;margin-bottom:6px}.dvh{color:var(--heart);font-size:20px;letter-spacing:2px;margin:8px 0 6px}
+.dr.di span{flex:1;min-width:0;word-break:break-word}.dr.di b{flex:none;white-space:nowrap}.inote{display:block;font-size:13px;color:var(--mu);margin-top:3px;white-space:pre-wrap}
 .dr{display:flex;justify-content:space-between;gap:16px;padding:13px 0;border-bottom:1px solid var(--ln);align-items:flex-start}.dr span{color:var(--mu);flex:none}.dr b{font-weight:600;text-align:right;min-width:0;word-break:break-word}.dr b .tw{display:block;font-size:14px;color:#c4705c;font-weight:400}.dr b a{color:var(--tx)}
 .dbt{display:block;width:100%;margin-top:14px;padding:15px;border-radius:30px;border:1.5px solid var(--tx);background:transparent;color:var(--tx);font-size:16px;font-weight:700}.dbt.red{border:0;color:var(--rd);font-weight:600;margin-top:4px}
 .mh{position:sticky;top:0;background:var(--bg);display:flex;justify-content:space-between;padding:12px;padding-top:calc(12px + env(safe-area-inset-top,0px));z-index:2}
@@ -318,8 +319,8 @@ function openDetail(id,ix){
   const R=(l,v)=>(v||v===0)&&v!==''?`<div class="dr"><span>${l}</span><b>${v}</b></div>`:'';
   const q=+it.qty||1,n=sq(it),late=o.status==='pre'&&o.eta&&o.eta<today();
   let rows='';
-  if(single){rows+=R('單價',pp(o,+it.price||0))+R('數量',q+' 件'+(n>0?`（已售 ${n}）`:''))+(q>1?R('小計',pp(o,(+it.price||0)*q)):'')}
-  else rows+=o.items.map(i=>R(esc(i.name||'未命名')+' ×'+(+i.qty||1),pp(o,(+i.price||0)*(+i.qty||1)))).join('');
+  if(single){rows+=R('單價',pp(o,+it.price||0))+R('數量',q+' 件'+(n>0?`（已售 ${n}）`:''))+(q>1?R('小計',pp(o,(+it.price||0)*q)):'')+(it.note?R('備註',esc(it.note)):'')}
+  else rows+=o.items.map(i=>`<div class="dr di"><span>${esc(i.name||'未命名')} ×${+i.qty||1}${i.note?`<small class="inote">${esc(i.note)}</small>`:''}</span><b>${pp(o,(+i.price||0)*(+i.qty||1))}</b></div>`).join('');
   rows+=R('運費',+o.ship?money(o,+o.ship):'')+(single&&o.items.length>1||!single?'':'');
   if(!(o.items.length===1&&!+o.ship))rows+=R('訂單總額',pp(o,total(o)));
   if(+o.twPaid>0)rows+=R('實際扣款','NT$'+Math.round(o.twPaid).toLocaleString());
@@ -366,6 +367,7 @@ function drawEd(){
   <div class="cd"><h3>品項</h3>
     ${cur.items.map((it,i)=>`<div class="it"><button class="x" data-del="${i}">刪除</button>
       <div class="ir"><div class="ith" data-ip="${i}">${it.img?`<img src="${it.img.s}">`:'📷'}</div><input data-i="${i}" data-k="name" placeholder="品名" value="${esc(it.name)}"></div>
+      <input data-i="${i}" data-k="note" placeholder="這個品項的備註（選填）" value="${esc(it.note||'')}" style="width:100%;margin:2px 0 6px">
       <div class="fr" style="padding:6px 0"><span>歸屬</span><select data-i="${i}" data-k="proxy"><option value="" ${!it.proxy?'selected':''}>同訂單（${(cur.proxy||'0')==='1'?'朋友的':'我的'}）</option><option value="0" ${it.proxy==='0'?'selected':''}>我的</option><option value="1" ${it.proxy==='1'?'selected':''}>幫朋友買（不算我的）</option></select></div>
       <div class="fr" style="padding:6px 0"><span>分類</span><select data-i="${i}" data-k="cat"><option value="">同訂單（${esc(cur.cat||'未分類')}）</option>${(S.cats.includes(it.cat)||!it.cat?S.cats:[...S.cats,it.cat]).map(c=>`<option value="${esc(c)}" ${it.cat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
       ${(+it.qty||1)>1?`<div style="margin:4px 0 6px"><button class="btn" data-split="${i}">＋ 拆出一款（盲盒不同款式）</button></div>`:''}<div class="two"><input data-i="${i}" data-k="qty" type="number" inputmode="numeric" placeholder="數量" value="${esc(it.qty)}"><input data-i="${i}" data-k="price" type="number" inputmode="decimal" placeholder="單價" value="${esc(it.price)}"></div>
