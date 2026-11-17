@@ -21,7 +21,7 @@ body{margin:0;background-color:var(--bg);background-image:url("data:image/svg+xm
 .stkrow img{width:52px;height:52px;object-fit:contain;margin-right:-16px;filter:drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 2px 3px #0003)}
 .mini{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .mini div{background:var(--card);border-radius:18px;padding:10px 14px;box-shadow:0 2px 10px #3a2e1a0d}
-.mini.cnt .cc small{font-size:11px;color:var(--mu)}.mini.cnt .cc b i{font:600 12px var(--num);margin-left:2px;color:var(--mu)}.mini span{font-size:11px;color:var(--mu)}.mini b{display:block;font:600 21px var(--num);margin-top:3px;line-height:1.15}
+.kh{font-size:12px;color:var(--mu);margin:4px 4px 6px;display:flex;justify-content:space-between}.kh button{border:0;background:var(--chip);border-radius:10px;font-size:11px;padding:2px 8px;color:var(--tx)}.mini.cnt{grid-template-columns:repeat(3,1fr);gap:6px}.mini.cnt .cc{cursor:pointer;padding:8px 10px}.mini.cnt b{font-size:19px}.mini.cnt .cc.on{outline:2px solid #26221d}.mini.cnt .cc small{font-size:11px;color:var(--mu)}.mini.cnt .cc b i{font:600 12px var(--num);margin-left:2px;color:var(--mu)}.mini span{font-size:11px;color:var(--mu)}.mini b{display:block;font:600 21px var(--num);margin-top:3px;line-height:1.15}
 input,select,textarea,button{font:inherit;color:var(--tx)}
 .sr{width:100%;padding:12px 16px;border-radius:16px;border:0;background:var(--card);margin-bottom:10px;box-shadow:0 2px 10px #3a2e1a0d}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
@@ -67,10 +67,12 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .cab::after{content:"";position:absolute;left:12px;right:12px;top:0;height:42px;border-radius:0 0 50% 50%/0 0 100% 100%;background:linear-gradient(#ffffffb3,#ffffff00);pointer-events:none;z-index:3;opacity:.7}
 .cab.g1{background:linear-gradient(135deg,#ffffff8c,#ffffff40);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 12px 30px #3a2e1a1a,inset 0 1.5px 0 #fff,inset 0 -1.5px 0 #8a806e26}
 .cab.g1::before,.cab.g1::after,.cab.g2::before,.cab.g2::after,.cab.g3::before,.cab.g3::after,.cab.g4::before,.cab.g4::after,.cab.g5::before,.cab.g5::after{display:none}
+/* badges 不擋圖 */
+.sc .bds{position:static;flex-direction:row;flex-wrap:nowrap;gap:3px;min-height:16px;margin:0 0 3px 1px;align-items:center}.sc .bd{font-size:10px;padding:1px 6px;line-height:1.3;white-space:nowrap}
 /* 2 圓形底座 3 格子櫃 4 貼紙卡 5 彩色卡：結構不同 */
-.cab.g2,.cab.g3,.cab.g4,.cab.g5{-webkit-backdrop-filter:none;backdrop-filter:none;overflow:visible}
-.cab.g2 .shf::after,.cab.g3 .shf::after,.cab.g4 .shf::after,.cab.g5 .shf::after{display:none}
-.cab.g2,.cab.g4,.cab.g5{background:none;border:0;box-shadow:none;padding:0}
+.cab.g2,.cab.g3,.cab.g5{-webkit-backdrop-filter:none;backdrop-filter:none;overflow:visible}
+.cab.g2 .shf::after,.cab.g3 .shf::after,.cab.g5 .shf::after{display:none}.cab.g4{background:linear-gradient(135deg,#ffffff8c,#ffffff40);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 12px 30px #3a2e1a1a,inset 0 1.5px 0 #fff,inset 0 -1.5px 0 #8a806e26}
+.cab.g2,.cab.g5{background:none;border:0;box-shadow:none;padding:0}
 .cab.g2 .shf{margin-bottom:10px}.cab.g2 .shr{gap:6px 6px}
 .cab.g2 .sc .si{border-radius:50%;background:radial-gradient(circle at 50% 38%,#fff,#f4f1ea);box-shadow:0 7px 14px #3a2e1a1f,inset 0 -5px 9px #3a2e1a0f;padding:13%;align-items:center;margin:0 3px}
 .cab.g2 .sc img{object-position:center}
@@ -78,7 +80,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .cab.g3 .shf{padding:0;margin:0 0 6px}.cab.g3 .shf:last-child{margin:0}.cab.g3 .shr{gap:6px}
 .cab.g3 .sc{background:#f8f6f0;border-radius:12px;box-shadow:inset 0 4px 9px #2a4a4233,inset 0 -1px 0 #fff;padding:6px 2px 2px}
 .cab.g3 .sc.em{border:0;background:#eef2ef;box-shadow:inset 0 4px 9px #2a4a421f;margin:0;aspect-ratio:auto;min-height:100%}
-.cab.g4 .shf{padding:8px 0 0;margin-bottom:14px}.cab.g4 .shr{gap:14px 8px}
+.cab.g4 .shf{padding:10px 0 14px;margin-bottom:8px}.cab.g4 .shr{gap:14px 8px}
 .cab.g4 .sc:not(.em){background:#fff;border-radius:6px;padding:8px 5px 3px;box-shadow:0 5px 12px #3a2e1a1f,0 0 0 1px #3a2e1a0d;transform:rotate(-1.6deg)}
 .cab.g4 .sc:not(.em):nth-child(even){transform:rotate(1.4deg)}.cab.g4 .sc:not(.em):nth-child(3n){transform:rotate(-.6deg)}
 .cab.g4 .sc:not(.em)::after{content:"";position:absolute;top:-6px;left:50%;width:30px;height:12px;margin-left:-15px;background:#f6d77ab3;transform:rotate(-3deg);border-radius:1px}
@@ -262,6 +264,7 @@ const title=o=>{const f=o.items.find(i=>i.name)||o.items[0]||{};return (f.name||
 const cover=o=>o.imgs&&o.imgs[o.cover]?o.imgs[o.cover].s:(o.imgs&&o.imgs[0]?o.imgs[0].s:'');
 
 /* home */
+function mig79(){if(S.mig79)return;S.mig79=1;['娃娃','扭蛋','徽章','小物'].forEach(c=>{if(S.cats.includes(c)&&!items.some(o=>o.cat===c||o.items.some(i=>i.cat===c)))S.cats=S.cats.filter(x=>x!==c)});delete S.cnt}
 function renderCats(){const v=$('fc').value;$('fc').innerHTML='<option value="all">全部分類</option>'+S.cats.map(c=>`<option>${esc(c)}</option>`).join('');$('fc').value=[...$('fc').options].some(o=>o.value===v)?v:'all'}
 function setFc(v){try{localStorage.setItem('fcSel',v)}catch(e){}}
 const ip=(o,it)=>(it&&it.proxy)||o.proxy||'0';
@@ -269,7 +272,8 @@ const friendNet=o=>{ // 朋友付的 − 朋友品項應分攤的成本 (正=多
   const fp=+o.fpaid||0;if(!fp)return null;const fr=o.items.filter(i=>ip(o,i)==='1'),mine=o.items.filter(i=>ip(o,i)!=='1');if(!fr.length||!mine.length)return null;
   const sb=a=>a.reduce((x,i)=>x+(+i.qty||0)*(+i.price||0),0),fs=sb(fr),all=sb(o.items),fair=fs+(all?(+o.ship||0)*fs/all:0);return{fp,fair,net:fp-fair,mineSub:sb(mine)}};
 const got=(o,it)=>o.status==='have'||o.status==='sold'||(o.status==='pre'&&!!it.got);
-const vis=(o,it,fc)=>{if(it.hide&&!$('hh').checked)return false;const m=$('hp').value,p=ip(o,it)==='1';if(p&&S.ahp!==false&&got(o,it)&&!$('hh').checked)return false;if(m==='hide'&&p)return false;if(m==='only')return p&&(fc==='all'||ic(o,it)===fc);if(fc==='all'&&(S.hid||[]).includes(ic(o,it)))return false;return fc==='all'||ic(o,it)===fc};
+let kindF='';const KD=()=>S.kinds||['娃娃','扭蛋','公仔','小物','徽章'];
+const vis=(o,it,fc)=>{if(it.hide&&!$('hh').checked)return false;if(kindF&&(it.kind||'')!==kindF)return false;const m=$('hp').value,p=ip(o,it)==='1';if(p&&S.ahp!==false&&got(o,it)&&!$('hh').checked)return false;if(m==='hide'&&p)return false;if(m==='only')return p&&(fc==='all'||ic(o,it)===fc);if(fc==='all'&&(S.hid||[]).includes(ic(o,it)))return false;return fc==='all'||ic(o,it)===fc};
 function scoped(fc){
   const out=[];items.forEach(o=>{const f=o.items.filter(i=>vis(o,i,fc));if(!f.length)return;if(f.length===o.items.length){out.push(o);return}
     const r=sub(o)?f.reduce((a,i)=>a+(+i.qty||0)*(+i.price||0),0)/sub(o):0;
@@ -277,7 +281,7 @@ function scoped(fc){
     out.push(Object.assign({},o,{items:f,ship:(+o.ship||0)*r-adj,deposit:(+o.deposit||0)*r,twPaid:o.twPaid?+o.twPaid*r:o.twPaid}))});
   return out}
 function render(){
-  const st=scoped($('fc').value);renderBk();renderAr(st);
+  mig79();const st=scoped($('fc').value);renderBk();renderAr(st);
   const act=st.filter(o=>o.status!=='wish');
   const inv=act.reduce((a,o)=>a+tw(o,paidAmt(o)),0);
   const pend=st.filter(o=>o.status==='pre'||o.status==='have').reduce((a,o)=>a+tw(o,bal(o)),0);
@@ -287,7 +291,9 @@ function render(){
   const rec5=[];[...items].sort((a,b)=>(b.buyDate||'').localeCompare(a.buyDate||'')).forEach(o=>{o.items.forEach(it=>{if(it.img&&rec5.length<5)rec5.push(it.img.s)});if(o.imgs&&o.imgs[o.cover]&&rec5.length<5&&!o.items.some(i=>i.img))rec5.push(o.imgs[o.cover].s)});
   $('stats').innerHTML=`<div class="sum"><div><small>本月</small><b>${mi.length}<i>筆訂單</i></b><small>${S.hide?HID:m(mi.reduce((a,o)=>a+tw(o,total(o)),0))}</small></div><div class="stkrow">${rec5.map(x=>`<img src="${x}" alt="">`).join('')}</div></div>
   <div class="mini">${[['總投入',S.hide?HID:m(inv)],['待付尾款',m(pend)],['預購中',st.filter(o=>o.status==='pre').length+' 件'],['售出回血',m(rec)]].map(x=>`<div><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}</div>`;
-  {const cc=(S.cnt||[]).filter(c=>S.cats.includes(c));if(cc.length){const cnt=cc.map(c=>{let have=0,pre=0;items.forEach(o=>{if(o.status==='wish')return;o.items.forEach(it=>{if(ic(o,it)!==c||ip(o,it)==='1')return;const q=+it.qty||1;if(got(o,it))have+=q;else if(o.status==='pre')pre+=q})});return `<div class="cc"><span>${esc(c)}總數</span><b>${have}<i>件</i></b>${pre?`<small>預購中 ${pre}</small>`:''}</div>`}).join('');$('stats').insertAdjacentHTML('beforeend',`<div class="mini cnt">${cnt}</div>`)}}
+  {const fc=$('fc').value,tot={},pre={};let nk=0,nkp=0;items.forEach(o=>{if(o.status==='wish')return;o.items.forEach(it=>{const c=ic(o,it);if(ip(o,it)==='1')return;if(fc==='all'?(S.hid||[]).includes(c):c!==fc)return;const q=+it.qty||1,k=it.kind||'',g=got(o,it);if(!g&&o.status!=='pre')return;if(!k){g?nk+=q:nkp+=q;return}if(g)tot[k]=(tot[k]||0)+q;else pre[k]=(pre[k]||0)+q})});
+   const ks=[...new Set([...KD(),...Object.keys(tot),...Object.keys(pre)])];const card=(k,h,p,lab)=>`<div class="cc${kindF===k&&k?' on':''}" data-kf="${esc(k)}"><span>${esc(lab||k+'總數')}</span><b>${h}<i>件</i></b>${p?`<small>預購中 ${p}</small>`:''}</div>`;
+   $('stats').insertAdjacentHTML('beforeend',`<div class="kh">${fc==='all'?'全部':esc(fc)}・各標籤總數${kindF?`<button data-kf="">取消篩選</button>`:''}</div><div class="mini cnt">${ks.map(k=>card(k,tot[k]||0,pre[k]||0)).join('')}${nk||nkp?card('',nk,nkp,'未標籤'):''}</div>`)}
   $('eye').innerHTML=EYE[S.hide?1:0];
   $('dt').textContent=new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
   $('chips').innerHTML=[['all','全部'],['pre','預購中'],['have','已到貨'],['wish','想買'],['sold','已售出']].map(c=>`<button class="chip ${$('fs').value===c[0]?'on':''}" data-s="${c[0]}">${c[1]}</button>`).join('');
@@ -401,6 +407,7 @@ function drawEd(){
       <input data-i="${i}" data-k="note" placeholder="這個品項的備註（選填）" value="${esc(it.note||'')}" style="width:100%;margin:2px 0 6px">
       <div class="fr" style="padding:6px 0"><span>歸屬</span><select data-i="${i}" data-k="proxy"><option value="" ${!it.proxy?'selected':''}>同訂單（${(cur.proxy||'0')==='1'?'朋友的':'我的'}）</option><option value="0" ${it.proxy==='0'?'selected':''}>我的</option><option value="1" ${it.proxy==='1'?'selected':''}>幫朋友買（不算我的）</option></select></div>
       <div class="fr" style="padding:6px 0"><span>分類</span><select data-i="${i}" data-k="cat"><option value="">同訂單（${esc(cur.cat||'未分類')}）</option>${(S.cats.includes(it.cat)||!it.cat?S.cats:[...S.cats,it.cat]).map(c=>`<option value="${esc(c)}" ${it.cat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
+      <div class="fr" style="padding:6px 0"><span>標籤</span><select data-i="${i}" data-k="kind"><option value="">未標籤</option>${(KD().includes(it.kind)||!it.kind?KD():[...KD(),it.kind]).map(k=>`<option ${it.kind===k?'selected':''}>${esc(k)}</option>`).join('')}</select></div>
       ${(+it.qty||1)>1?`<div style="margin:4px 0 6px"><button class="btn" data-split="${i}">＋ 拆出一款（盲盒不同款式）</button></div>`:''}<div class="two"><input data-i="${i}" data-k="qty" type="number" inputmode="numeric" placeholder="數量" value="${esc(it.qty)}"><input data-i="${i}" data-k="price" type="number" inputmode="decimal" placeholder="單價" value="${esc(it.price)}"></div>
       ${cur.status==='have'||cur.status==='sold'?`<div class="sell"><span>已售出</span><button data-sq="${i}" data-d="-1">−</button><b>${sq(it)} / ${+it.qty||1}</b><button data-sq="${i}" data-d="1">＋</button>${sq(it)?`<input data-i="${i}" data-k="sp" type="number" inputmode="decimal" placeholder="賣了多少（台幣總額）" value="${esc(it.sp||'')}">`:''}</div>`:''}
       ${it.img?`<div style="margin-top:6px">${it.img.o?`<button class="btn" data-iun="${i}">還原原圖</button><button class="btn" data-icl="${i}">🧹 清殘影</button>`:`<button class="btn" data-ibg="${i}">✂️ 去背</button>`}<button class="btn" data-icr="${i}">✂ 裁切</button><button class="btn" data-izm="${i}">🔍 放大主體</button><button class="btn" data-irm="${i}">移除圖片</button></div>`:''}</div>`).join('')}
@@ -797,10 +804,10 @@ function drawSet(){
   SO.innerHTML=`<div class="mh"><button id="sx">完成</button><span></span></div>
   <div class="cd"><h3>自訂分類</h3>${S.cats.map((c,i)=>`<div class="cr"><input data-ci="${i}" value="${esc(c)}"><button data-cd="${i}">刪除</button></div>`).join('')}
     <div class="cr"><input id="newcat" placeholder="新增分類名稱"><button id="addcat" style="color:var(--ac)">新增</button></div></div>
-  <div class="cd"><h3>首頁顯示各分類總數</h3>${S.cats.map(c=>`<div class="fr"><span>${esc(c)}</span><input data-cnt="${esc(c)}" type="checkbox" ${(S.cnt||[]).includes(c)?'checked':''} style="flex:none;width:auto"></div>`).join('')}<div class="msg">勾選的分類會在首頁顯示「已到貨件數」，有預購中的也會標出來（代買的不算）。想要娃娃、扭蛋、徽章、小物：<button id="addcommon" class="chip">一鍵加入這四個分類</button></div></div>
+  <div class="cd"><h3>標籤（娃娃、扭蛋、公仔、小物…）</h3>${KD().map((k,i)=>`<div class="cr"><input data-ki="${i}" value="${esc(k)}"><button data-kd="${i}">刪除</button></div>`).join('')}<div class="cr"><input id="newkind" placeholder="新增標籤"><button id="addkind">新增</button></div><div class="msg">每個品項可以在編輯頁選標籤，首頁會顯示目前分類（例如漢頓）裡各標籤的總數，點數字卡可以只看那個標籤。<button id="autokind" class="chip">依品名自動貼標籤</button></div></div>
   <div class="cd"><h3>收藏櫃不顯示的分類</h3>${S.cats.map((c,i)=>`<div class="fr"><span>${esc(c)}</span><input data-hid="${esc(c)}" type="checkbox" ${(S.hid||[]).includes(c)?'checked':''} style="flex:none;width:auto"></div>`).join('')}<div class="msg">勾選的分類平常不會出現在收藏櫃和統計裡；在上面「全部分類」直接選那個分類，還是看得到。</div></div>
   ${(S.srcX||[]).length?`<div class="cd"><h3>自訂購買來源</h3>${S.srcX.map((c,i)=>`<div class="cr"><input value="${esc(c)}" readonly><button data-xd="${i}">刪除</button></div>`).join('')}<div class="msg">刪除後，已經用這個來源的訂單不受影響。</div></div>`:''}
-  <div class="cd"><h3>收藏櫃樣式</h3><div id="gsws">${[['1','經典層板'],['2','圓形底座'],['3','格子櫃'],['4','貼紙卡'],['5','彩色卡']].map(([k,n])=>`<div class="gsw${gsel()===k?' on':''}" data-gl="${k}"><div class="cab g${k}"><div class="shf"><div class="shr"><div class="sc"><div class="si"><i class="dot" style="background:#8fd3e0"></i></div></div><div class="sc"><div class="si"><i class="dot" style="background:#f4a9b8"></i></div></div><div class="sc"><div class="si"><i class="dot" style="background:#f6d77a"></i></div></div></div></div></div>${n}</div>`).join('')}</div><div class="fr"><span>預購商品置頂（玻璃櫃）</span><input id="pretop" type="checkbox" ${S.preTop!==false?'checked':''} style="flex:none;width:auto"></div></div>
+  <div class="cd"><h3>收藏櫃樣式</h3><div id="gsws">${[['1','經典層板'],['2','圓形底座'],['3','格子櫃'],['4','玻璃櫃＋貼紙卡'],['5','彩色卡']].map(([k,n])=>`<div class="gsw${gsel()===k?' on':''}" data-gl="${k}"><div class="cab g${k}"><div class="shf"><div class="shr"><div class="sc"><div class="si"><i class="dot" style="background:#8fd3e0"></i></div></div><div class="sc"><div class="si"><i class="dot" style="background:#f4a9b8"></i></div></div><div class="sc"><div class="si"><i class="dot" style="background:#f6d77a"></i></div></div></div></div></div>${n}</div>`).join('')}</div><div class="fr"><span>預購商品置頂（玻璃櫃）</span><input id="pretop" type="checkbox" ${S.preTop!==false?'checked':''} style="flex:none;width:auto"></div></div>
   <div class="cd"><h3>朋友代買</h3><div class="fr"><span>朋友的東西到貨後自動隱藏</span><input id="ahp" type="checkbox" ${S.ahp!==false?'checked':''} style="flex:none;width:auto"></div><div class="msg">開啟後，幫朋友買的品項一旦標為「已到貨」，就不再出現在收藏櫃（含「含代買」「只看代買」），所以「只看代買」會剩下還沒到的。想看時，勾上方的「顯示已隱藏」。</div></div>
   <div class="cd"><h3>我的暱稱（喊單截圖用來找我的留言）</h3><div class="fr"><span>暱稱</span><input id="nick" value="${esc(S.nick||'瓜呱')}" placeholder="例如：瓜呱"></div></div>
   <div class="cd"><h3>隱藏總投入</h3><div class="fr"><span>首頁不顯示「總投入」金額</span><input id="hideamt" type="checkbox" ${S.hide?'checked':''} style="flex:none;width:auto"></div><div class="msg">開啟後，總投入、價格、總額、淨賺都顯示 ＊＊＊。輸入價格時還是看得到自己打的數字。首頁右上角的眼睛也可以隨時切換。</div></div>
@@ -817,11 +824,12 @@ function drawSet(){
     <div class="msg">資料只存在這支手機。匯出時選「儲存到檔案」→ iCloud Drive，換手機或資料不見時用「匯入備份」就能還原。</div></div>`;
 }
 $('eye').onclick=()=>{S.hide=!S.hide;save();render()};
+document.addEventListener('click',e=>{const k=e.target.closest('[data-kf]');if(k&&$('stats').contains(k)){const v=k.dataset.kf;kindF=(kindF===v?'':v);render()}});
 $('gear').onclick=()=>{drawSet();SO.classList.add('show')};
 SO.addEventListener('change',e=>{
   const t=e.target;
   if(t.dataset.ci!==undefined){const i=+t.dataset.ci,old=S.cats[i],v=t.value.trim();if(v&&v!==old){S.cats[i]=v;S.hid=(S.hid||[]).map(x=>x===old?v:x);items.forEach(o=>{if(o.cat===old)o.cat=v;o.items.forEach(i=>{if(i.cat===old)i.cat=v})});save();renderCats();render()}else t.value=old}
-  if(t.dataset.cnt!==undefined){const c=t.dataset.cnt;S.cnt=(S.cnt||[]).filter(x=>x!==c);if(t.checked)S.cnt.push(c);save();render();return}
+  if(t.dataset.ki!==undefined){const i=+t.dataset.ki,old=KD()[i],v=t.value.trim();if(v&&v!==old){S.kinds=[...KD()];S.kinds[i]=v;items.forEach(o=>o.items.forEach(it=>{if(it.kind===old)it.kind=v}));save();render()}return}
   if(t.dataset.hid!==undefined){const c=t.dataset.hid;S.hid=(S.hid||[]).filter(x=>x!==c);if(t.checked)S.hid.push(c);save();render()}
   if(t.id==='pretop'){S.preTop=t.checked;save();render()}
   if(t.id==='ahp'){S.ahp=t.checked;save();render()}
@@ -839,7 +847,9 @@ SO.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   if(b.id==='sx'){SO.classList.remove('show');renderCats();render()}
   if(b.dataset.cd!==undefined){if(confirm('刪除這個分類？（已使用的訂單不會被刪除）')){S.cats.splice(+b.dataset.cd,1);save();drawSet()}}
-  if(b.id==='addcommon'){['娃娃','扭蛋','徽章','小物'].forEach(c=>{if(!S.cats.includes(c))S.cats.push(c);S.cnt=S.cnt||[];if(!S.cnt.includes(c))S.cnt.push(c)});save();renderCats();render();drawSet();return}
+  if(b.id==='addkind'){const v=$('newkind').value.trim();if(v&&!KD().includes(v)){S.kinds=[...KD(),v];save();drawSet();render()}return}
+  if(b.dataset.kd!==undefined){const k=KD()[+b.dataset.kd];if(confirm('刪除標籤「'+k+'」？已貼的品項會變成未標籤。')){S.kinds=KD().filter(x=>x!==k);items.forEach(o=>o.items.forEach(it=>{if(it.kind===k)delete it.kind}));save();drawSet();render()}return}
+  if(b.id==='autokind'){const M=[['扭蛋',/扭蛋|轉蛋|蛋|盲盒|盒玩/],['徽章',/徽章|胸章|別針/],['公仔',/公仔|景品|模型|figure/i],['娃娃',/娃娃|玩偶|吊飾|絨|毛絨|玩偶/]];let n=0;items.forEach(o=>o.items.forEach(it=>{if(it.kind)return;const m=M.find(x=>x[1].test(it.name||''));if(m&&KD().includes(m[0])){it.kind=m[0];n++}}));save();render();alert('已幫 '+n+' 個品項貼上標籤，其餘可在品項編輯頁自己選。');return}
   if(b.id==='addcat'){const v=$('newcat').value.trim();if(v&&!S.cats.includes(v)){S.cats.push(v);save();drawSet()}}
   if(b.id==='im')$('imf').click();
   if(b.id==='ex')doBackup();
