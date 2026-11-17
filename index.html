@@ -65,6 +65,12 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
  box-shadow:0 14px 34px #3a2e1a1f,0 2px 6px #3a2e1a14,inset 0 1.5px 0 #fff,inset 0 -1.5px 0 #8a806e2e,inset 1.5px 0 0 #ffffffb3,inset -1.5px 0 0 #ffffff80,inset 0 0 36px #ffffffa6}
 .cab::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:3;background:linear-gradient(112deg,#ffffff00 18%,#ffffff8c 24%,#ffffff00 30%,#ffffff00 56%,#ffffff59 60%,#ffffff00 64%)}
 .cab::after{content:"";position:absolute;left:12px;right:12px;top:0;height:42px;border-radius:0 0 50% 50%/0 0 100% 100%;background:linear-gradient(#ffffffb3,#ffffff00);pointer-events:none;z-index:3;opacity:.7}
+.cab.g1{background:linear-gradient(135deg,#ffffff8c,#ffffff40);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 12px 30px #3a2e1a1a,inset 0 1.5px 0 #fff,inset 0 -1.5px 0 #8a806e26}
+.cab.g1::before,.cab.g1::after,.cab.g2::before,.cab.g3::before,.cab.g3::after,.cab.g4::before,.cab.g4::after{display:none}
+.cab.g2{background:linear-gradient(180deg,#ffffff8c,#ffffff33)}.cab.g2::after{opacity:.28}
+.cab.g3{background:#ffffff80;-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:0 12px 30px #3a2e1a14,inset 0 0 30px #ffffffb3}
+.cab.g4{background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none;border:1.5px solid #ffffffd9;box-shadow:0 8px 22px #3a2e1a12,inset 0 0 0 1px #8a806e14}
+.gsw{display:inline-block;width:calc(33% - 6px);margin:0 3px 10px;text-align:center;font-size:13px;color:var(--mu);cursor:pointer;vertical-align:top}.gsw .cab{height:58px;padding:6px 6px 0;border-radius:16px;margin-bottom:5px;background-clip:padding-box}.gsw .shf{height:100%;margin:0}.gsw.on{color:var(--tx);font-weight:700}.gsw.on .cab{outline:2px solid #26221d;outline-offset:1px}
 .shf{padding:14px 0 0;position:relative;margin-bottom:14px}
 .shf::after{content:"";position:absolute;left:-10px;right:-10px;bottom:-10px;height:11px;background:linear-gradient(#ffffffed 0%,#f3f1ec99 45%,#d9d4c859 100%);border-top:1.5px solid #fff;border-bottom:1px solid #8a806e40;box-shadow:0 9px 12px -3px #3a2e1a2e,inset 0 1px 0 #fff}
 .shr{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
@@ -294,9 +300,10 @@ function render(){
   $('dt').textContent+=' · 共 '+cells.length+' 件';
   const im=c=>c.img?`<img src="${c.img}" alt="">`:'<span style="font:12px var(--mono);color:var(--mu)">無圖片</span>';
   if(view==='shelf'){
+    if(S.preTop!==false){const isP=c=>c.o.status==='pre'&&c.st!=='have'&&!c.tag;cells.splice(0,cells.length,...cells.filter(isP),...cells.filter(c=>!isP(c)))}
     const rows=[];for(let i=0;i<cells.length;i+=4)rows.push(cells.slice(i,i+4));
     const last=rows[rows.length-1];const fill=4-last.length;
-    $('main').innerHTML=`<div class="cab">${rows.map((r,ri)=>`<div class="shf"><div class="shr">${r.map(c=>`<div class="sc${c.hid?' hid':''}" data-id="${c.o.id}" data-ix="${c.ix}">${HB(c)}<div class="bds">${cb(c)}</div><div class="si">${c.img?`<img src="${c.img}" alt="">`:'<span style="font-size:11px;color:var(--mu)">無圖</span>'}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price)}</div></div>`).join('')}${ri===rows.length-1?Array.from({length:fill},(_,k)=>`<div class="sc em" ${k===0?'data-add="1"':''}>${k===0?'＋':''}</div>`).join(''):''}</div></div>`).join('')}${last.length===4?'<div class="shf"><div class="shr"><div class="sc em" data-add="1">＋</div></div></div>':''}</div>`;
+    $('main').innerHTML=`<div class="cab g${lsGet('glass')||'1'}">${rows.map((r,ri)=>`<div class="shf"><div class="shr">${r.map(c=>`<div class="sc${c.hid?' hid':''}" data-id="${c.o.id}" data-ix="${c.ix}">${HB(c)}<div class="bds">${cb(c)}</div><div class="si">${c.img?`<img src="${c.img}" alt="">`:'<span style="font-size:11px;color:var(--mu)">無圖</span>'}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price)}</div></div>`).join('')}${ri===rows.length-1?Array.from({length:fill},(_,k)=>`<div class="sc em" ${k===0?'data-add="1"':''}>${k===0?'＋':''}</div>`).join(''):''}</div></div>`).join('')}${last.length===4?'<div class="shf"><div class="shr"><div class="sc em" data-add="1">＋</div></div></div>':''}</div>`;
     return}
   $('main').innerHTML=view==='grid'
    ?`<div class="grid">${cells.map(c=>`<div class="cell${c.hid?' hid':''}" data-id="${c.o.id}" data-ix="${c.ix}">${HB(c)}<div class="bds">${cb(c)}</div><div class="im">${im(c)}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price)}</div></div>`).join('')}</div>`
@@ -773,6 +780,7 @@ function drawSet(){
     <div class="cr"><input id="newcat" placeholder="新增分類名稱"><button id="addcat" style="color:var(--ac)">新增</button></div></div>
   <div class="cd"><h3>收藏櫃不顯示的分類</h3>${S.cats.map((c,i)=>`<div class="fr"><span>${esc(c)}</span><input data-hid="${esc(c)}" type="checkbox" ${(S.hid||[]).includes(c)?'checked':''} style="flex:none;width:auto"></div>`).join('')}<div class="msg">勾選的分類平常不會出現在收藏櫃和統計裡；在上面「全部分類」直接選那個分類，還是看得到。</div></div>
   ${(S.srcX||[]).length?`<div class="cd"><h3>自訂購買來源</h3>${S.srcX.map((c,i)=>`<div class="cr"><input value="${esc(c)}" readonly><button data-xd="${i}">刪除</button></div>`).join('')}<div class="msg">刪除後，已經用這個來源的訂單不受影響。</div></div>`:''}
+  <div class="cd"><h3>玻璃櫃樣式</h3><div id="gsws">${[['0','斜光反射（舊）'],['1','清透（無反光）'],['2','柔光（只有頂部一點）'],['3','霧面'],['4','極簡透明框']].map(([k,n])=>`<div class="gsw${(lsGet('glass')||'1')===k?' on':''}" data-gl="${k}"><div class="cab g${k}"><div class="shf"></div></div>${n}</div>`).join('')}</div><div class="fr"><span>預購商品置頂（玻璃櫃）</span><input id="pretop" type="checkbox" ${S.preTop!==false?'checked':''} style="flex:none;width:auto"></div></div>
   <div class="cd"><h3>朋友代買</h3><div class="fr"><span>朋友的東西到貨後自動隱藏</span><input id="ahp" type="checkbox" ${S.ahp!==false?'checked':''} style="flex:none;width:auto"></div><div class="msg">開啟後，幫朋友買的品項一旦標為「已到貨」，就不再出現在收藏櫃（含「含代買」「只看代買」），所以「只看代買」會剩下還沒到的。想看時，勾上方的「顯示已隱藏」。</div></div>
   <div class="cd"><h3>我的暱稱（喊單截圖用來找我的留言）</h3><div class="fr"><span>暱稱</span><input id="nick" value="${esc(S.nick||'瓜呱')}" placeholder="例如：瓜呱"></div></div>
   <div class="cd"><h3>隱藏總投入</h3><div class="fr"><span>首頁不顯示「總投入」金額</span><input id="hideamt" type="checkbox" ${S.hide?'checked':''} style="flex:none;width:auto"></div><div class="msg">開啟後，總投入、價格、總額、淨賺都顯示 ＊＊＊。輸入價格時還是看得到自己打的數字。首頁右上角的眼睛也可以隨時切換。</div></div>
@@ -794,6 +802,7 @@ SO.addEventListener('change',e=>{
   const t=e.target;
   if(t.dataset.ci!==undefined){const i=+t.dataset.ci,old=S.cats[i],v=t.value.trim();if(v&&v!==old){S.cats[i]=v;S.hid=(S.hid||[]).map(x=>x===old?v:x);items.forEach(o=>{if(o.cat===old)o.cat=v;o.items.forEach(i=>{if(i.cat===old)i.cat=v})});save();renderCats();render()}else t.value=old}
   if(t.dataset.hid!==undefined){const c=t.dataset.hid;S.hid=(S.hid||[]).filter(x=>x!==c);if(t.checked)S.hid.push(c);save();render()}
+  if(t.id==='pretop'){S.preTop=t.checked;save();render()}
   if(t.id==='ahp'){S.ahp=t.checked;save();render()}
   if(t.id==='hideamt'){S.hide=t.checked;save();render()}
   if(t.id==='cardfee'){S.cardFee=+t.value||0;save();render()}
@@ -805,6 +814,7 @@ SO.addEventListener('change',e=>{
   if(t.id==='imf'&&t.files[0]){const r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result),its=Array.isArray(d)?d:d.items;if(!Array.isArray(its))throw 0;if(confirm('匯入 '+its.length+' 筆資料，會取代目前的資料，確定嗎？')){items=its.map(mig);if(d.settings&&d.settings.cats)S=Object.assign(S,d.settings);save();renderCats();render();drawSet()}}catch(x){alert('檔案格式不正確')}};r.readAsText(t.files[0])}
 });
 SO.addEventListener('click',e=>{
+  const gl=e.target.closest('[data-gl]');if(gl){lsSet('glass',gl.dataset.gl);render();drawSet();return}
   const b=e.target.closest('button');if(!b)return;
   if(b.id==='sx'){SO.classList.remove('show');renderCats();render()}
   if(b.dataset.cd!==undefined){if(confirm('刪除這個分類？（已使用的訂單不會被刪除）')){S.cats.splice(+b.dataset.cd,1);save();drawSet()}}
@@ -922,8 +932,9 @@ function renderAr(st){
   const now=new Date(today()+'T00:00'),L=st.filter(o=>o.status==='pre'&&o.eta).map(o=>({o,d:Math.round((new Date(o.eta+'T00:00')-now)/864e5)})).filter(x=>x.d<=7).sort((a,b)=>a.d-b.d);
   if(!L.length){el.innerHTML='';return}
   const lab=d=>d<0?`<em class="late">逾期 ${-d} 天</em>`:d===0?'<em class="soon">今天</em>':`<em class="soon">${d} 天後</em>`;
-  el.innerHTML=`<div class="note"><b>預購動態</b>${L.slice(0,5).map(x=>`<div class="ar" data-ar="${x.o.id}"><span class="t">${esc(title(x.o))}</span>${lab(x.d)}</div>`).join('')}${L.length>5?`<small>還有 ${L.length-5} 筆</small>`:''}</div>`}
-$('ar').addEventListener('click',e=>{const r=e.target.closest('[data-ar]');if(r)openDetail(r.dataset.ar,-1)});
+  const open=lsGet('arOpen')==='1',late=L.filter(x=>x.d<0).length;
+  el.innerHTML=`<div class="note"><b class="artg" data-artg="1" style="display:flex;justify-content:space-between;cursor:pointer"><span>預購動態 · ${L.length} 筆${late?` <em class="late">${late} 筆逾期</em>`:''}</span><span style="color:var(--mu)">${open?'收起 ▴':'展開 ▾'}</span></b>${!open?'':L.slice(0,5).map(x=>`<div class="ar" data-ar="${x.o.id}"><span class="t">${esc(title(x.o))}</span>${lab(x.d)}</div>`).join('')}${open&&L.length>5?`<small>還有 ${L.length-5} 筆</small>`:''}</div>`}
+$('ar').addEventListener('click',e=>{if(e.target.closest('[data-artg]')){lsSet('arOpen',lsGet('arOpen')==='1'?'0':'1');render();return}const r=e.target.closest('[data-ar]');if(r)openDetail(r.dataset.ar,-1)});
 /* gemini usage */
 const gDay=()=>Math.floor((Date.now()-8*36e5)/864e5);
 function gUse(){try{const u=JSON.parse(localStorage.getItem('gu')||'{}');return u.d===gDay()?u.n:0}catch(e){return 0}}
