@@ -36,6 +36,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .cell img,.row img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 2px 3px #0003)}
 .nm{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pr{color:var(--mu);font:15px var(--num)}
+.cs{font-style:normal;font-size:.7em;margin-right:1px;letter-spacing:.02em}
 .tw .nt{font-style:normal;font-size:.68em;margin-right:2px;letter-spacing:.02em}
 .pr .tw{display:block;text-align:center;font-size:14px;color:#c4705c;margin-top:-1px}
 .bd{display:inline-block;font-size:11px;padding:1px 8px;border-radius:10px;background:var(--chip);color:var(--mu);margin-left:4px}
@@ -991,4 +992,14 @@ async function autoTrimAll(){
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){autoPull();}else if(autoOn()&&lsGet('dirty')==='1'&&lsGet('syncSha'))syncUp(true)});
 (async()=>{const a=await kvGet('items'),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);renderCats();try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{const h=localStorage.getItem('hp2')||(localStorage.getItem('hp')==='0'?'all':'hide');$('hp').value=h}catch(e){}
 try{const v=localStorage.getItem('view');if(VB[v])view=v;Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===view))}catch(e){}render();setTimeout(()=>autoTrimAll().catch(()=>{}),400);jobs=[];saveJobs();setTimeout(autoPull,1500)})();
+
+/* shrink every "NT$" next to numerals (Hoefler old-style figures make caps look big) */
+(function(){
+  const skip={SCRIPT:1,STYLE:1,INPUT:1,TEXTAREA:1,OPTION:1,SELECT:1,TITLE:1};
+  function walk(root){
+    const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>{const p=n.parentNode;if(!p||skip[p.nodeName]||(p.classList&&(p.classList.contains('cs')||p.classList.contains('nt'))))return NodeFilter.FILTER_REJECT;return n.nodeValue.indexOf('NT$')>=0?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT}});
+    const L=[];while(w.nextNode())L.push(w.currentNode);
+    L.forEach(n=>{const parts=n.nodeValue.split('NT$'),f=document.createDocumentFragment();parts.forEach((t,i)=>{if(i){const e=document.createElement('i');e.className='cs';e.textContent='NT$';f.appendChild(e)}if(t)f.appendChild(document.createTextNode(t))});n.parentNode.replaceChild(f,n)})}
+  let q=0;new MutationObserver(()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;walk(document.body)})}).observe(document.body,{childList:true,subtree:true,characterData:true});
+  walk(document.body)})();
 </script></body></html>
