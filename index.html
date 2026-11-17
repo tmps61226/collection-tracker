@@ -85,6 +85,10 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .sheet b{display:block;font-size:16px}.sheet small{color:var(--mu)}
 .mo{position:fixed;inset:0;background-color:var(--bg);overflow:auto;display:none;z-index:5;padding-bottom:env(safe-area-inset-bottom,0px)}
 .mo.show{display:block}
+.note{background:var(--card);border-radius:20px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 10px #3a2e1a0d}
+.note b{display:block;font-size:14px;margin-bottom:4px}.note small{display:block;color:var(--mu);font-size:12.5px;line-height:1.5}
+.note .nb{display:flex;gap:8px;margin-top:10px}.note .nb button{border:0;border-radius:18px;padding:9px 16px;font-size:14px;font-weight:600;background:var(--chip);color:var(--tx)}.note .nb button.pri{background:#26221e;color:#fff}
+.ar{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--ln);cursor:pointer}.ar:first-of-type{border-top:0}.ar span.t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;font-weight:600}.ar em{font-style:normal;font-size:12px;padding:2px 9px;border-radius:10px;background:var(--chip);color:var(--mu);flex:none}.ar em.late{background:#f6d9d3;color:#b05545}.ar em.soon{background:#26406b;color:#fff}
 #dv{z-index:5}#mo{z-index:6}
 .dvi{display:flex;justify-content:center;align-items:flex-end;height:250px;padding:4px 20px 0}.dvi img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 3px 5px #0003)}
 .dvb{padding:0 20px 40px}.dvn{font-weight:800;font-size:24px;line-height:1.25;margin:10px 0 4px}.dvs{color:var(--mu);font-size:14px;margin-bottom:6px}.dvh{color:var(--heart);font-size:20px;letter-spacing:2px;margin:8px 0 6px}
@@ -136,6 +140,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
   <div class="top"><button class="circ" id="gear" aria-label="設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg></button><div><div class="ttl">收藏櫃</div><div class="dt" id="dt"></div></div><button class="circ" id="eye" aria-label="隱藏金額"></button></div>
   <div id="stats"></div>
   <input class="sr" id="q" placeholder="搜尋品名、賣家、備註">
+  <div id="bk"></div><div id="ar"></div>
   <div class="chips" id="chips"></div>
   <select id="fs" hidden><option value="all">全部</option><option value="pre">預購中</option><option value="have">已到貨</option><option value="wish">想買</option><option value="sold">已售出</option></select>
   <div class="bar">
@@ -232,7 +237,7 @@ function scoped(fc){
     out.push(Object.assign({},o,{items:f,ship:(+o.ship||0)*r,deposit:(+o.deposit||0)*r,twPaid:o.twPaid?+o.twPaid*r:o.twPaid}))});
   return out}
 function render(){
-  const st=scoped($('fc').value);
+  const st=scoped($('fc').value);renderBk();renderAr(st);
   const act=st.filter(o=>o.status!=='wish');
   const inv=act.reduce((a,o)=>a+tw(o,paidAmt(o)),0);
   const pend=st.filter(o=>o.status==='pre'||o.status==='have').reduce((a,o)=>a+tw(o,bal(o)),0);
@@ -335,7 +340,7 @@ function drawEd(){
   <div class="mh"><button id="cx">取消</button><span>${cur._new?'':'<button class="dl" id="dl">刪除</button> '}<button class="sv" id="sv">儲存</button></span></div>
   <div class="cd"><h3>截圖自動填表（可一次選多張，視為同一筆訂單）</h3>
     <div class="fr"><span>Gemini Key</span><input id="gk" type="password" placeholder="貼上免費金鑰" value="${esc(k)}"></div>
-    <div><button class="btn pri" id="shot">上傳訂單截圖</button><button class="btn" id="tk">測試金鑰</button><input type="file" id="shotf" accept="image/*" multiple hidden><div class="msg" id="msg">辨識完成後請檢查內容，錯的可以直接改</div></div></div>
+    <div><button class="btn pri" id="shot">上傳訂單截圖</button><button class="btn" id="tk">測試金鑰</button><input type="file" id="shotf" accept="image/*" multiple hidden><div class="msg" id="msg">辨識完成後請檢查內容，錯的可以直接改</div><div class="msg" id="gu"></div></div></div>
   <div class="cd"><h3>商品圖片（點一下設為封面）</h3>
     <div class="thumbs">${cur.imgs.map((m,i)=>`<div class="th ${i===cur.cover?'cv':''}" data-c="${i}"><img src="${m.s}">${i===cur.cover?'<b>封面</b>':''}<i data-rm="${i}">×</i></div>`).join('')}</div>
     <button class="btn" id="addimg">＋ 新增圖片</button><input type="file" id="imgf" accept="image/*" multiple hidden>
@@ -355,7 +360,7 @@ function drawEd(){
       ${it.img?`<div style="margin-top:6px">${it.img.o?`<button class="btn" data-iun="${i}">還原原圖</button>`:`<button class="btn" data-ibg="${i}">✂️ 去背</button>`}<button class="btn" data-izm="${i}">🔍 放大主體</button><button class="btn" data-irm="${i}">移除圖片</button></div>`:''}</div>`).join('')}
     <input type="file" id="itf" accept="image/*" hidden>
     <div class="msg">到貨後，每個品項會在收藏櫃各自顯示。點左邊的縮圖，可以替這個品項單獨加照片、去背。盲盒有不同款式時，按「拆出一款」，每一款各自放照片；抽到重複的款式，就把數量留在那一款。</div>
-    <button class="btn" id="addit">＋ 新增品項</button></div>
+    <button class="btn" id="addit">＋ 新增品項</button>${dupGroups(cur).length?`<button class="btn" id="mrg">合併相同品項（${dupGroups(cur).length} 組）</button>`:''}</div>
   <div class="cd">${sel('幣別','cur',Object.keys(CUR).map(c=>[c,CURN[c]+' '+CUR[c]]))}${fr('運費','ship','number','0')}
     <div class="fr"><span>總金額</span><b id="tot"></b></div></div>
   ${true?`<div class="cd"><h3>${cur.cur==='TWD'?'付款方式／刷卡手續費':'換匯／刷卡（算成台幣用）'}</h3>${seg('pm',cur.cur==='TWD'?[['cash','現金／一般'],['card','刷卡（國外手續費）']]:[['cash','現金換匯'],['card','刷卡'],['other','其他']])}${cur.cur==='TWD'?'':fr('實際匯率（1 '+CURN[cur.cur]+' = 台幣）','rate','number',String(S.rates[cur.cur]||''))}${cur.pm==='card'?fr('國外手續費 %','fee','number','預設 '+(+S.cardFee||0)+'（可改）'):''}${fr('實際扣款（台幣，選填）','twPaid','number','刷卡帳單的金額')}<div class="hint" id="fxh"></div></div>`:''}
@@ -366,7 +371,7 @@ function drawEd(){
   ${cur.status==='have'||cur.status==='sold'?`<div class="cd">${fr('收貨日期','recvDate','date')}</div>`:''}
   ${cur.status==='sold'||soldUnits(cur)>0?`<div class="cd"><h3>出售（已售 ${soldUnits(cur)} / ${units(cur)} 件）</h3>${fr('出售日期','soldDate','date')}<div class="fr"><span>已售出部分淨賺／虧損</span><b id="pf"></b></div></div>`:''}
   <div class="cd"><div class="fr"><textarea data-f="note" placeholder="備註（可選）">${esc(cur.note)}</textarea></div></div>`;
-  upd();
+  upd();updGu();
 }
 function upd(){
   const t=$('tot');if(!t)return;
@@ -425,6 +430,7 @@ MO.addEventListener('click',ev=>{
   if(id==='shot'){const k=($('gk').value||'').trim();if(!k){setMsg('請先貼上 Gemini API Key');return}localStorage.setItem('gk',k);$('shotf').click()}
   if(id==='addimg')$('imgf').click();
   if(id==='zm'){const m=cur.imgs[cur.cover];busyBtn(b,'⏳ 處理中…');trimImg(m.s).then(t=>{const same=t===m.s;m.s=t;drawEd();toast(same?'這張圖已經沒有多餘空白了':'✓ 已放大主體')});return}
+  if(id==='mrg'){const n=mergeDups(cur);drawEd();toast('已合併，數量已加總（共少了 '+n+' 列）');return}
   if(id==='bg'){busyBtn(b,'⏳ 去背中…');doBg(cur.imgs[cur.cover])}
   if(id==='undo'){const m=cur.imgs[cur.cover];m.s=m.o;delete m.o;drawEd();toast('已還原原圖')}
   if(id==='sv'){delete cur._new;derive(cur);cur.items=cur.items.filter((i,n)=>i.name||+i.price||n===0);const i=items.findIndex(x=>x.id===cur.id);i<0?items.unshift(cur):items[i]=cur;save();render();MO.classList.remove('show');backDetail()}
@@ -498,7 +504,7 @@ async function gem(k,body,on,ms){
     for(const m of GM){
       if(dead.has(m))continue;
       if(on)on(m);
-      let x,j;const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),ms);
+      let x,j;const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),ms);gCount();
       try{
         x=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent',{method:'POST',signal:ac.signal,headers:{'Content-Type':'application/json','x-goog-api-key':k},body:JSON.stringify(body)});
         j=await x.json();
@@ -623,8 +629,9 @@ function drawSet(){
   <div class="cd"><h3>隱藏總投入</h3><div class="fr"><span>首頁不顯示「總投入」金額</span><input id="hideamt" type="checkbox" ${S.hide?'checked':''} style="flex:none;width:auto"></div><div class="msg">開啟後，總投入、價格、總額、淨賺都顯示 ＊＊＊。輸入價格時還是看得到自己打的數字。首頁右上角的眼睛也可以隨時切換。</div></div>
   <div class="cd"><h3>刷卡</h3><div class="fr"><span>國外手續費 %（刷卡自動加上）</span><input id="cardfee" type="number" inputmode="decimal" step="any" value="${+S.cardFee||0}"></div></div>
   <div class="cd"><h3>匯率（換算成台幣，用於統計）</h3>${['JPY','CNY','KRW','USD'].map(c=>`<div class="fr"><span>1 ${CURN[c]} =</span><input data-rate="${c}" type="number" inputmode="decimal" step="any" value="${S.rates[c]}"></div>`).join('')}</div>
-  <div class="cd"><h3>備份</h3><button class="btn" id="ex">匯出備份</button><button class="btn" id="im">匯入備份</button><input type="file" id="imf" accept=".json" hidden>
-    <div class="msg">資料只存在這個瀏覽器，建議定期匯出備份。</div></div>`;
+  <div class="cd"><h3>商品圖</h3><button class="btn" id="bgall">✂️ 全部商品去背</button><div class="msg">替還沒去背的商品圖一次去背，櫃子會更好看。需要網路，張數多時請保持畫面開著。</div></div>
+  <div class="cd"><h3>備份</h3><div class="msg" style="margin:0 0 8px">${lastBk()?'上次備份：'+Math.floor((Date.now()-lastBk())/864e5)+' 天前':'還沒備份過'}（超過 7 天首頁會提醒）</div><button class="btn" id="ex">匯出備份</button><button class="btn" id="im">匯入備份</button><input type="file" id="imf" accept=".json" hidden>
+    <div class="msg">資料只存在這支手機。匯出時選「儲存到檔案」→ iCloud Drive，換手機或資料不見時用「匯入備份」就能還原。</div></div>`;
 }
 $('eye').onclick=()=>{S.hide=!S.hide;save();render()};
 $('gear').onclick=()=>{drawSet();SO.classList.add('show')};
@@ -644,9 +651,61 @@ SO.addEventListener('click',e=>{
   if(b.dataset.cd!==undefined){if(confirm('刪除這個分類？（已使用的訂單不會被刪除）')){S.cats.splice(+b.dataset.cd,1);save();drawSet()}}
   if(b.id==='addcat'){const v=$('newcat').value.trim();if(v&&!S.cats.includes(v)){S.cats.push(v);save();drawSet()}}
   if(b.id==='im')$('imf').click();
-  if(b.id==='ex'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({items,settings:S})],{type:'application/json'}));a.download='collection-backup-'+today()+'.json';document.body.appendChild(a);a.click();a.remove()}
+  if(b.id==='ex')doBackup();
+  if(b.id==='bgall')bgAll();
 });
 
+/* backup */
+const BK_DAYS=7;
+function lastBk(){try{return +localStorage.getItem('lastBackup')||0}catch(e){return 0}}
+async function doBackup(){
+  const name='collection-backup-'+today()+'.json',blob=new Blob([JSON.stringify({items,settings:S})],{type:'application/json'});
+  try{const f=new File([blob],name,{type:'application/json'});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'收藏櫃備份'});markBk();return true}}catch(e){if(e&&e.name==='AbortError')return false}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();markBk();return true}
+function markBk(){try{localStorage.setItem('lastBackup',String(Date.now()));localStorage.removeItem('bkSnooze')}catch(e){}renderBk();if(SO.classList.contains('show'))drawSet();toast('✓ 已備份，記得存到「檔案」或 iCloud',3500)}
+function renderBk(){
+  const el=$('bk');if(!el)return;let sn=0;try{sn=+localStorage.getItem('bkSnooze')||0}catch(e){}
+  const l=lastBk(),d=l?Math.floor((Date.now()-l)/864e5):999;
+  if(!items.length||d<BK_DAYS||Date.now()<sn){el.innerHTML='';return}
+  el.innerHTML=`<div class="note"><b>該備份了</b><small>${l?'已 '+d+' 天沒備份。':'還沒備份過。'}你的 ${items.length} 筆資料只存在這支手機，清除瀏覽資料或換手機就會消失。</small><div class="nb"><button class="pri" data-bk="now">立即備份</button><button data-bk="later">之後再說</button></div></div>`}
+$('bk').addEventListener('click',e=>{const b=e.target.closest('[data-bk]');if(!b)return;if(b.dataset.bk==='now')doBackup();else{try{localStorage.setItem('bkSnooze',String(Date.now()+2*864e5))}catch(x){}renderBk()}});
+/* arrivals */
+function renderAr(st){
+  const el=$('ar');if(!el)return;
+  const now=new Date(today()+'T00:00'),L=st.filter(o=>o.status==='pre'&&o.eta).map(o=>({o,d:Math.round((new Date(o.eta+'T00:00')-now)/864e5)})).filter(x=>x.d<=7).sort((a,b)=>a.d-b.d);
+  if(!L.length){el.innerHTML='';return}
+  const lab=d=>d<0?`<em class="late">逾期 ${-d} 天</em>`:d===0?'<em class="soon">今天</em>':`<em class="soon">${d} 天後</em>`;
+  el.innerHTML=`<div class="note"><b>預購動態</b>${L.slice(0,5).map(x=>`<div class="ar" data-ar="${x.o.id}"><span class="t">${esc(title(x.o))}</span>${lab(x.d)}</div>`).join('')}${L.length>5?`<small>還有 ${L.length-5} 筆</small>`:''}</div>`}
+$('ar').addEventListener('click',e=>{const r=e.target.closest('[data-ar]');if(r)openDetail(r.dataset.ar,-1)});
+/* gemini usage */
+const gDay=()=>Math.floor((Date.now()-8*36e5)/864e5);
+function gUse(){try{const u=JSON.parse(localStorage.getItem('gu')||'{}');return u.d===gDay()?u.n:0}catch(e){return 0}}
+function gCount(){try{localStorage.setItem('gu',JSON.stringify({d:gDay(),n:gUse()+1}))}catch(e){}updGu()}
+function updGu(){const el=$('gu');if(!el)return;const n=gUse();el.textContent='今天這支手機已送出約 '+n+' 次辨識請求（免費額度每個模型約 20 次，台灣時間 16:00 重置）'+(n>=15?'，快用完了':'');el.style.color=n>=15?'var(--rd)':''}
+/* batch bg removal */
+let bgAllRun=false;
+async function bgOne(m){
+  const {removeBackground}=await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm');
+  const out=await removeBackground(await (await fetch(m.s)).blob());
+  const u=URL.createObjectURL(out);
+  const c=await new Promise((res,rej)=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);res(c)};im.onerror=()=>rej(new Error('圖片讀取錯誤'));im.src=u});
+  m.o=m.s;m.s=await trimImg(c.toDataURL('image/webp',.9))}
+async function bgAll(){
+  if(bgAllRun||bgBusy){toast('還在處理中，請稍等');return}
+  const T=[];items.forEach(o=>{o.items.forEach(i=>{if(i.img&&!i.img.o)T.push(i.img)});if(o.imgs&&o.imgs[o.cover]&&!o.imgs[o.cover].o&&!o.items.some(i=>i.img))T.push(o.imgs[o.cover])});
+  if(!T.length){toast('沒有需要去背的圖片了');return}
+  if(!confirm('要替 '+T.length+' 張商品圖去背嗎？\n第一次要下載模型，每張約數秒，請保持畫面開著、不要離開。\n去背過的可以逐張按「還原原圖」。'))return;
+  bgAllRun=true;let ok=0;
+  try{for(let i=0;i<T.length;i++){toast('✂️ 去背中 '+(i+1)+' / '+T.length+'…',0);try{await bgOne(T[i]);ok++;if(ok%3===0){await save();render()}}catch(e){if(i===0&&ok===0)throw e}}
+    await save();render();toast('✓ 完成，成功 '+ok+' / '+T.length+' 張',4500)}
+  catch(e){toast('去背失敗：'+(/fetch|network|Load failed|import/i.test(e.message)?'下載去背模型失敗，請確認網路':e.message),5000)}
+  bgAllRun=false;if(SO.classList.contains('show'))drawSet()}
+/* merge duplicate items */
+function dupGroups(o){const m={};o.items.forEach((i,n)=>{const k=[(i.name||'').trim(),+i.price||0,i.cat||'',i.proxy||''].join('|');if(!(i.name||'').trim())return;(m[k]=m[k]||[]).push(n)});return Object.values(m).filter(g=>g.length>1)}
+function mergeDups(o){const g=dupGroups(o);if(!g.length)return 0;const drop=new Set();
+  g.forEach(idx=>{const a=o.items[idx[0]];idx.slice(1).forEach(n=>{const b=o.items[n];a.qty=(+a.qty||1)+(+b.qty||1);a.sq=sq(a)+sq(b);if(+b.sp)a.sp=(+a.sp||0)+(+b.sp);if(!a.img&&b.img)a.img=b.img;drop.add(n)})});
+  o.items=o.items.filter((_,n)=>!drop.has(n));return drop.size}
 /* home events */
 $('chips').addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(b){$('fs').value=b.dataset.s;render()}});
 $('main').addEventListener('click',e=>{const hb=e.target.closest('[data-hide]');if(hb){e.stopPropagation();const [id,ix]=hb.dataset.hide.split('|'),o=items.find(x=>x.id===id);if(o){const its=+ix>=0?[o.items[+ix]]:o.items,v=!its.every(i=>i.hide);its.forEach(i=>{if(v)i.hide=true;else delete i.hide});save();render();toast(v?'已隱藏，勾選「顯示已隱藏」可找回':'已取消隱藏')}return}
