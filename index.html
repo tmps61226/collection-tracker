@@ -459,7 +459,7 @@ function busyBtn(b,t){if(b){b.disabled=true;b.textContent=t}}
 let bgBusy=false,rbMod;
 async function rmBg(blob){
   if(!rbMod){let err;for(const u of ['https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm','https://esm.sh/@imgly/background-removal@1.5.5']){try{rbMod=await import(u);break}catch(e){err=e}}if(!rbMod)throw new Error('載入去背程式失敗（'+((err&&err.message)||'網路')+'）')}
-  let last;for(const c of [{model:'isnet_quint8'},{model:'isnet_quint8',publicPath:'https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.5.5/dist/'}]){try{return await rbMod.removeBackground(blob,c)}catch(e){last=e}}
+  let last;for(const c of [{model:'isnet_fp16'},{model:'isnet_quint8'},{model:'isnet_fp16',publicPath:'https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.5.5/dist/'}]){try{return await rbMod.removeBackground(blob,c)}catch(e){last=e}}
   throw new Error('去背模型下載或執行失敗（'+((last&&last.message)||last)+'）')}
 function shrink(file,max=640){return new Promise(res=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/webp',.78))};im.onerror=()=>res(null);im.src=r.result};r.readAsDataURL(file)})}
 function trimImg(u){return new Promise(res=>{const im=new Image();im.onerror=()=>res(u);im.onload=()=>{try{
@@ -641,11 +641,11 @@ async function doBg(m){
 /* cutout cleanup: remove faint haze + stray specks */
 function cleanCut(u){return new Promise(res=>{const im=new Image();im.onerror=()=>res(u);im.onload=()=>{try{
   const w=im.width,h=im.height,c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.drawImage(im,0,0);const d=g.getImageData(0,0,w,h),a=d.data,N=w*h;
-  for(let i=0;i<N;i++){const al=a[i*4+3];a[i*4+3]=al<80?0:al>200?255:Math.round((al-80)/120*255)}
+  for(let i=0;i<N;i++){if(a[i*4+3]<24)a[i*4+3]=0}
   const lab=new Int32Array(N),sz=[0],st=new Int32Array(N);let n=0;
   for(let i=0;i<N;i++){if(lab[i]||!a[i*4+3])continue;n++;let sp=0,cnt=0;st[sp++]=i;lab[i]=n;
     while(sp){const p=st[--sp];cnt++;const x=p%w,y=(p-x)/w;for(let dy=-1;dy<=1;dy++){const yy=y+dy;if(yy<0||yy>=h)continue;for(let dx=-1;dx<=1;dx++){const xx=x+dx;if(xx<0||xx>=w)continue;const q=yy*w+xx;if(!lab[q]&&a[q*4+3]){lab[q]=n;st[sp++]=q}}}}sz.push(cnt)}
-  const mx=Math.max(0,...sz);for(let i=0;i<N;i++){const l=lab[i];if(l&&sz[l]<mx*.04)a[i*4+3]=0}
+  const mx=Math.max(0,...sz);for(let i=0;i<N;i++){const l=lab[i];if(l&&sz[l]<mx*.03)a[i*4+3]=0}
   g.putImageData(d,0,0);trimImg(c.toDataURL('image/webp',.9)).then(res)}catch(e){res(u)}};im.src=u})}
 /* manual crop */
 function openCrop(m){
@@ -682,7 +682,7 @@ function drawSet(){
   <div class="cd"><h3>隱藏總投入</h3><div class="fr"><span>首頁不顯示「總投入」金額</span><input id="hideamt" type="checkbox" ${S.hide?'checked':''} style="flex:none;width:auto"></div><div class="msg">開啟後，總投入、價格、總額、淨賺都顯示 ＊＊＊。輸入價格時還是看得到自己打的數字。首頁右上角的眼睛也可以隨時切換。</div></div>
   <div class="cd"><h3>刷卡</h3><div class="fr"><span>國外手續費 %（刷卡自動加上）</span><input id="cardfee" type="number" inputmode="decimal" step="any" value="${+S.cardFee||0}"></div></div>
   <div class="cd"><h3>匯率（換算成台幣，用於統計）</h3>${['JPY','CNY','KRW','USD'].map(c=>`<div class="fr"><span>1 ${CURN[c]} =</span><input data-rate="${c}" type="number" inputmode="decimal" step="any" value="${S.rates[c]}"></div>`).join('')}</div>
-  <div class="cd"><h3>商品圖</h3><button class="btn" id="bgall">✂️ 全部商品去背</button><button class="btn" id="cleanall">🧹 全部去背圖清殘影</button><button class="btn" id="cmpimg">🗜 縮小全部圖片</button><div class="msg">替還沒去背的商品圖一次去背，櫃子會更好看。需要網路，張數多時請保持畫面開著。</div></div>
+  <div class="cd"><h3>商品圖</h3><button class="btn" id="bgall">✂️ 全部商品去背</button><button class="btn" id="unall">↩ 全部還原原圖</button><button class="btn" id="cleanall">🧹 全部去背圖清殘影</button><button class="btn" id="cmpimg">🗜 縮小全部圖片</button><div class="msg">替還沒去背的商品圖一次去背，櫃子會更好看。需要網路，張數多時請保持畫面開著。</div></div>
   <div class="cd"><h3>☁️ 雲端同步（你自己的私人 GitHub）</h3><div class="msg" style="margin:0 0 8px">${syncMsg()}</div>
     <div class="fr"><span>金鑰</span><input id="ghtok" type="password" autocomplete="off" placeholder="github_pat_…" value="${esc(GH().t)}"></div>
     <div class="fr"><span>倉庫</span><input id="ghrepo" value="${esc(GH().r)}" placeholder="帳號/倉庫名"></div>
@@ -721,6 +721,7 @@ SO.addEventListener('click',e=>{
   if(b.id==='syrs')restorePrev();
   if(b.id==='cmpimg')cmpImgs();
   if(b.id==='cleanall')cleanAll();
+  if(b.id==='unall'){const T=[];items.forEach(o=>{o.items.forEach(i=>{if(i.img&&i.img.o)T.push(i.img)});(o.imgs||[]).forEach(m=>{if(m&&m.o)T.push(m)})});if(!T.length){toast('沒有去背過的圖');return}if(confirm('把 '+T.length+' 張去背圖都還原成原圖？之後可以再按「全部商品去背」重做。')){T.forEach(m=>{m.s=m.o;delete m.o});save();render();toast('✓ 已還原 '+T.length+' 張')}}
 });
 
 async function cleanAll(){
