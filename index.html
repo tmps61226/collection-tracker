@@ -36,7 +36,8 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .cell img,.row img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 2px 3px #0003)}
 .nm{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pr{color:var(--mu);font:15px var(--num)}
-.pr .tw{display:block;font-size:14px;color:#c4705c;margin-top:-1px}
+.tw .nt{font-style:normal;font-size:.68em;margin-right:2px;letter-spacing:.02em}
+.pr .tw{display:block;text-align:center;font-size:14px;color:#c4705c;margin-top:-1px}
 .bd{display:inline-block;font-size:11px;padding:1px 8px;border-radius:10px;background:var(--chip);color:var(--mu);margin-left:4px}
 .cell .bds,.sc .bds,.row .bds{position:absolute;top:2px;left:2px;z-index:1;display:flex;flex-direction:column;align-items:flex-start;gap:3px}.cell .bd,.sc .bd,.row .bd{margin:0}
 .row .im{position:relative;width:64px;height:64px}.row .bds{top:-4px;left:-6px}
@@ -223,7 +224,7 @@ const EYE=['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wi
 const HID='＊＊＊';
 const ic=(o,it)=>(it&&it.cat)||o.cat||'';
 const HB=c=>`<button class="hb" data-hide="${c.o.id}|${c.ix}" aria-label="${c.hid?'取消隱藏':'隱藏'}">${c.hid?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/><path d="M4 20L20 4"/></svg>'}</button>`;
-const pp=(o,n)=>money(o,n)+(o.cur!=='TWD'||effRate(o)!==1?`<span class="tw">≈ NT$${Math.round(tw(o,n)).toLocaleString()}</span>`:'');
+const pp=(o,n)=>money(o,n)+(o.cur!=='TWD'||effRate(o)!==1?`<span class="tw"><i class="nt">NT$</i>${Math.round(tw(o,n)).toLocaleString()}</span>`:'');
 const money=(o,n)=>(CUR[o.cur]||'')+Math.round(n).toLocaleString();
 const sq=i=>Math.max(0,Math.min(+i.sq||0,+i.qty||1));
 const units=o=>o.items.reduce((a,i)=>a+(+i.qty||1),0);
