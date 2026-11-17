@@ -422,7 +422,7 @@ MO.addEventListener('change',ev=>{
   if(e.id==='gk')localStorage.setItem('gk',e.value.trim());
   if(e.id==='itf'&&e.files[0]){shrink(e.files[0]).then(u=>{if(u&&cur.items[itT]){cur.items[itT].img={s:u};drawEd()}})}
   if(e.id==='imgf'&&e.files.length)addImgs([...e.files]);
-  if(e.id==='shotf'&&e.files.length){if(cur&&cur._new)enqueueShots([...e.files]);else doShot([...e.files])}
+  if(e.id==='shotf'&&e.files.length){if(cur&&cur._new)enqueueShots([...e.files]);else if(guardOK())doShot([...e.files])}
 });
 MO.addEventListener('click',ev=>{
   const t=ev.target,b=t.closest('button'),h=t.closest('[data-h]'),rm=t.closest('[data-rm]'),th=t.closest('[data-c]');
@@ -546,7 +546,7 @@ async function gem(k,body,on,ms){
   GM=GM.concat(slow);if(!GM.length)GM=GM0b.slice();
   let last,tries=0;
   for(const m of GM){
-    if(tries>=4)break;tries++;
+    if(tries>=3)break;tries++;
     if(on)on(m);
     let think=(h.nt&&h.nt[m])?null:thinkOff(m),x,j;
     for(let t2=0;t2<2;t2++){
@@ -627,18 +627,22 @@ async function reShot(){
   const dims=u=>new Promise(r=>{const i=new Image();i.onload=()=>r(i.height/i.width);i.onerror=()=>r(0);i.src=u});
   const shots=[];for(const m of cur.imgs){if(m.sh||(await dims(m.s))>1.5)shots.push(m)}
   if(!shots.length){setMsg('這筆訂單沒有保留訂單截圖，請按「上傳訂單截圖」重新選圖');return}
+  if(!guardOK())return;
   if(!confirm('用這筆訂單已存的 '+shots.length+' 張截圖重新辨識？\n品項、金額、日期會被新結果覆蓋；每個品項的圖片、朋友代買、已售數量會保留。'))return;
   const old=cur.items.map(i=>Object.assign({},i)),files=[];
   for(const m of shots)files.push(new File([await (await fetch(m.s)).blob()],'s.webp',{type:'image/webp'}));
   await doShot(files,true);
   cur.items.forEach((it,q)=>{const o=old[q];if(!o)return;['img','proxy','hide','sq','sp'].forEach(f=>{if(o[f]!==undefined)it[f]=o[f]})});
   drawEd()}
+const GUARD=30;
+const guardOK=()=>gUse()<GUARD||confirm('今天這支手機已經送出約 '+gUse()+' 次辨識請求了（免費額度有限，每個模型約 20 次）。\n還要再辨識嗎？');
 /* background recognition queue: survives leaving the app, resumes when you come back */
 let jobs=[],jr=false,jgen=0,jobMsg='';
 const saveJobs=async()=>{try{const d=await db(),t=d.transaction('kv','readwrite');t.objectStore('kv').put(jobs,'jobs')}catch(e){}};
 async function loadJobs(){jobs=(await kvGet('jobs'))||[];jobs.forEach(j=>{if(j.st==='run')j.st='q'})}
 async function enqueueShots(files){
   const k=(localStorage.getItem('gk')||'').replace(/[^\x21-\x7e]/g,'');if(!k){setMsg('請先貼上 Gemini API Key');return}
+  if(!guardOK()){setMsg('已取消');return}
   setMsg('準備中…');const imgs=[];for(const f of files){const u=await shrink(f,1400);if(u)imgs.push(u)}
   if(!imgs.length){setMsg('圖片讀取失敗');return}
   jobs.push({id:'j'+Date.now(),imgs,st:'q',t:Date.now(),tries:0});await saveJobs();
@@ -649,6 +653,7 @@ async function runJobs(){
     if(my!==jgen)return;
     if(document.hidden)break;
     const j=jobs.find(x=>x.st==='q');if(!j)break;
+    if(gUse()>=GUARD*2&&!j.ok){j.st='err';j.err='今天的請求次數已經很多（'+gUse()+' 次），先暫停以免浪費額度；確定要繼續請按重試';await saveJobs();renderJobs();continue}
     j.st='run';j.at=Date.now();await saveJobs();renderJobs();
     const files=[];for(const u of j.imgs)files.push(new File([await (await fetch(u)).blob()],'s.webp',{type:'image/webp'}));
     const O=newOrder();O.id='o'+Date.now()+Math.random().toString(36).slice(2,5);delete O._new;
@@ -656,7 +661,7 @@ async function runJobs(){
     if(my!==jgen)return;
     if(r&&r.ok){derive(O);O.chk=1;items.unshift(O);j.st='done';jobs=jobs.filter(x=>x!==j);await save();await saveJobs();render();renderJobs();toast('✓ 有一筆訂單辨識完成，請確認',3500)}
     else{const net=document.hidden||/fetch|network|Load failed|連線|連不上|網路中斷|逾時|等太久|timeout|abort/i.test((r&&r.err)||'');
-      j.err=(r&&r.err)||'辨識失敗';j.tries=(j.tries||0)+(/離開畫面/.test(j.err)?0:1);j.st=(net&&!(r&&r.quota)&&j.tries<4)?'q':'err';await saveJobs();renderJobs();if(j.st==='q')break}
+      j.err=(r&&r.err)||'辨識失敗';j.tries=(j.tries||0)+(/離開畫面/.test(j.err)?0:1);j.st=(net&&!(r&&r.quota)&&j.tries<2)?'q':'err';await saveJobs();renderJobs();if(j.st==='q')break}
   }}finally{if(my===jgen)jr=false}}
 function kickJobs(force){const run=jobs.find(j=>j.st==='run');if(jr&&(force||(run&&Date.now()-(run.at||0)>300000))){jgen++;jr=false;jobs.forEach(j=>{if(j.st==='run')j.st='q'})}runJobs()}
 setInterval(()=>{if(jobs.some(j=>j.st==='run'))renderJobs()},5000);
@@ -669,12 +674,12 @@ function renderJobs(){
    +(chk.length?`<b>✨ 辨識完成，請確認（${chk.length}）</b>`+chk.slice(0,6).map(o=>`<div class="ar" data-jo="${o.id}"><span class="t">${esc(title(o))}</span><span><button class="jbtn" data-jok="${o.id}">沒問題</button></span></div>`).join(''):'')+'</div>'}
 $('jb').addEventListener('click',e=>{
   const g=a=>e.target.closest('['+a+']');let b;
-  if(b=g('data-jr')){const j=jobs.find(x=>x.id===b.dataset.jr);if(j){j.st='q';j.tries=0;saveJobs();renderJobs();kickJobs(true)}return}
+  if(b=g('data-jr')){const j=jobs.find(x=>x.id===b.dataset.jr);if(j){j.st='q';j.tries=0;j.ok=1;saveJobs();renderJobs();kickJobs(true)}return}
   if(b=g('data-jd')){jobs=jobs.filter(x=>x.id!==b.dataset.jd);jgen++;jr=false;saveJobs();renderJobs();runJobs();return}
   if(b=g('data-jok')){const o=items.find(x=>x.id===b.dataset.jok);if(o){delete o.chk;save();renderJobs()}return}
   if(b=g('data-jo'))openDetail(b.dataset.jo,-1)});
 async function doShot(files,re,O,quiet){
-  O=O||cur;const M=t=>{if(quiet){jobMsg=t;renderJobs()}else setMsg(t)},DE=()=>{if(!quiet)drawEd()};
+  O=O||cur;const g0=gReq;const M=t=>{if(quiet){jobMsg=t;renderJobs()}else setMsg(t)},DE=()=>{if(!quiet)drawEd()};
   const k=(localStorage.getItem('gk')||'').replace(/[^\x21-\x7e]/g,'');if(!k){M('請先貼上 Gemini API Key');return{ok:false,err:'還沒填 Gemini 金鑰（設定裡貼上）',quota:true}}
   M('辨識中，請稍等…');
   try{
@@ -709,7 +714,7 @@ async function doShot(files,re,O,quiet){
     if(!re)for(const u of small){if(O.imgs.length<10)O.imgs.push({s:u,sh:1})}
     DE();
     if(!good.length)M('沒辨識出品項（Gemini 回傳：'+d._raw.slice(0,90).replace(/\s+/g,' ')+'…）。請手動填，或換更清楚的截圖再試。');
-    else M('已填入 '+good.length+' 個品項'+(nc?'，自動截取 '+nc+' 張商品圖':'，沒偵測到商品圖，可點縮圖手動加圖')+'；原截圖已保留，請檢查一下再儲存');
+    else M('（這次用了 '+(gReq-g0)+' 次請求）已填入 '+good.length+' 個品項'+(nc?'，自動截取 '+nc+' 張商品圖':'，沒偵測到商品圖，可點縮圖手動加圖')+'；原截圖已保留，請檢查一下再儲存');
   return{ok:good.length>0}
   }catch(e){M('辨識失敗：'+nice(e));return{ok:false,err:nice(e),quota:isQuota(e&&e.message)}}
 }
@@ -920,7 +925,8 @@ $('ar').addEventListener('click',e=>{const r=e.target.closest('[data-ar]');if(r)
 /* gemini usage */
 const gDay=()=>Math.floor((Date.now()-8*36e5)/864e5);
 function gUse(){try{const u=JSON.parse(localStorage.getItem('gu')||'{}');return u.d===gDay()?u.n:0}catch(e){return 0}}
-function gCount(){try{localStorage.setItem('gu',JSON.stringify({d:gDay(),n:gUse()+1}))}catch(e){}updGu()}
+let gReq=0;
+function gCount(){gReq++;try{localStorage.setItem('gu',JSON.stringify({d:gDay(),n:gUse()+1}))}catch(e){}updGu()}
 function updGu(){const el=$('gu');if(!el)return;const n=gUse();el.textContent='今天這支手機已送出約 '+n+' 次辨識請求（免費額度每個模型約 20 次，台灣時間 16:00 重置）'+(n>=15?'，快用完了':'');el.style.color=n>=15?'var(--rd)':''}
 /* batch bg removal */
 let bgAllRun=false;
