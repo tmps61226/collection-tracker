@@ -42,7 +42,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .row .im{position:relative;width:64px;height:64px}.row .bds{top:-4px;left:-6px}
 .sc .bds{z-index:4}
 .sc .nm{text-align:center;padding:6px 2px 0}.sc .pr{text-align:center;padding-bottom:8px;line-height:1.15}
-.bd.pre{background:#d9efe3;color:#3f7a5c}.bd.wish{background:#f3edc2;color:#8a7a2a}.bd.sold{background:#e8e4dc;color:#8a8478}.bd.due{background:#f6d9d3;color:#b05545}
+.bd.pre{background:#26406b;color:#fff}.bd.wish{background:#f3edc2;color:#8a7a2a}.bd.sold{background:#e8e4dc;color:#8a8478}.bd.due{background:#f6d9d3;color:#b05545}
 .list{background:var(--card);border-radius:24px;overflow:hidden;box-shadow:0 2px 14px #3a2e1a12}
 .row{display:flex;gap:12px;padding:12px;border-bottom:1px solid var(--ln);cursor:pointer;align-items:center}
 .row:last-child{border:0}
@@ -85,6 +85,11 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .sheet b{display:block;font-size:16px}.sheet small{color:var(--mu)}
 .mo{position:fixed;inset:0;background-color:var(--bg);overflow:auto;display:none;z-index:5;padding-bottom:env(safe-area-inset-bottom,0px)}
 .mo.show{display:block}
+#dv{z-index:5}#mo{z-index:6}
+.dvi{display:flex;justify-content:center;align-items:flex-end;height:250px;padding:4px 20px 0}.dvi img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 3px 5px #0003)}
+.dvb{padding:0 20px 40px}.dvn{font-weight:800;font-size:24px;line-height:1.25;margin:10px 0 4px}.dvs{color:var(--mu);font-size:14px;margin-bottom:6px}.dvh{color:var(--heart);font-size:20px;letter-spacing:2px;margin:8px 0 6px}
+.dr{display:flex;justify-content:space-between;gap:16px;padding:13px 0;border-bottom:1px solid var(--ln);align-items:flex-start}.dr span{color:var(--mu);flex:none}.dr b{font-weight:600;text-align:right;min-width:0;word-break:break-word}.dr b .tw{display:block;font-size:14px;color:#c4705c;font-weight:400}.dr b a{color:var(--tx)}
+.dbt{display:block;width:100%;margin-top:14px;padding:15px;border-radius:30px;border:1.5px solid var(--tx);background:transparent;color:var(--tx);font-size:16px;font-weight:700}.dbt.red{border:0;color:var(--rd);font-weight:600;margin-top:4px}
 .mh{position:sticky;top:0;background:var(--bg);display:flex;justify-content:space-between;padding:12px;padding-top:calc(12px + env(safe-area-inset-top,0px));z-index:2}
 .mh button{border:0;background:var(--card);border-radius:22px;padding:9px 18px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px #3a2e1a0d}
 .mh .sv{background:var(--tx);color:var(--bg)}.mh .dl{color:var(--rd)}
@@ -143,7 +148,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 <div class="nav"><div class="pill"><button id="vs" aria-label="櫃子"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M4 9.2h16M4 14.8h16"/></svg></button><button id="vg" aria-label="格狀"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg></button><button id="vl" aria-label="列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button></div><button class="plus" id="add" aria-label="新增"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
 <div id="toast"></div>
 <div class="sheet" id="sheet"><div class="box"><button data-n="have"><b>已買到了</b><small>門市、日本現場、自己去買的</small></button><button data-n="pre"><b>預購／喊單</b><small>還沒到貨，等收貨</small></button><button data-n="wish"><b>想買</b><small>先記起來，之後再決定</small></button></div></div>
-<div class="mo" id="mo"></div><div class="mo" id="so2"></div>
+<div class="mo" id="dv"></div><div class="mo" id="mo"></div><div class="mo" id="so2"></div>
 
 <script>
 const SRC=['LINE社群','蝦皮','露天拍賣','FB','團購','噗浪','書店','電商','賣貨便','日本代購','門市／實體店','日本現場','朋友幫買','其他'];
@@ -268,11 +273,11 @@ function render(){
   if(view==='shelf'){
     const rows=[];for(let i=0;i<cells.length;i+=4)rows.push(cells.slice(i,i+4));
     const last=rows[rows.length-1];const fill=4-last.length;
-    $('main').innerHTML=`<div class="cab">${rows.map((r,ri)=>`<div class="shf"><div class="shr">${r.map(c=>`<div class="sc${c.hid?' hid':''}" data-id="${c.o.id}">${HB(c)}<div class="bds">${cb(c)}</div><div class="si">${c.img?`<img src="${c.img}" alt="">`:'<span style="font-size:11px;color:var(--mu)">無圖</span>'}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price)}</div></div>`).join('')}${ri===rows.length-1?Array.from({length:fill},(_,k)=>`<div class="sc em" ${k===0?'data-add="1"':''}>${k===0?'＋':''}</div>`).join(''):''}</div></div>`).join('')}${last.length===4?'<div class="shf"><div class="shr"><div class="sc em" data-add="1">＋</div></div></div>':''}</div>`;
+    $('main').innerHTML=`<div class="cab">${rows.map((r,ri)=>`<div class="shf"><div class="shr">${r.map(c=>`<div class="sc${c.hid?' hid':''}" data-id="${c.o.id}" data-ix="${c.ix}">${HB(c)}<div class="bds">${cb(c)}</div><div class="si">${c.img?`<img src="${c.img}" alt="">`:'<span style="font-size:11px;color:var(--mu)">無圖</span>'}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price)}</div></div>`).join('')}${ri===rows.length-1?Array.from({length:fill},(_,k)=>`<div class="sc em" ${k===0?'data-add="1"':''}>${k===0?'＋':''}</div>`).join(''):''}</div></div>`).join('')}${last.length===4?'<div class="shf"><div class="shr"><div class="sc em" data-add="1">＋</div></div></div>':''}</div>`;
     return}
   $('main').innerHTML=view==='grid'
-   ?`<div class="grid">${cells.map(c=>`<div class="cell${c.hid?' hid':''}" data-id="${c.o.id}">${HB(c)}<div class="bds">${cb(c)}</div><div class="im">${im(c)}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price)}</div></div>`).join('')}</div>`
-   :`<div class="list">${cells.map(c=>{const o=c.o;return `<div class="row${c.hid?' hid':''}" data-id="${o.id}"><div class="im"><div class="bds">${cb(c)}</div>${im(c)}</div><div class="mt"><div class="nm">${esc(c.name)}</div><small>${esc(o.src)} ${esc(o.seller)} · ${fmt(o.buyDate)}</small><small>${c.cat?esc(c.cat)+' · ':''}${PAY[o.pay]}${o.status==='pre'&&o.eta?' · 預計 '+fmt(o.eta):''}</small></div><div class="pr">${pp(o,c.price)}</div>${HB(c)}</div>`}).join('')}</div>`;
+   ?`<div class="grid">${cells.map(c=>`<div class="cell${c.hid?' hid':''}" data-id="${c.o.id}" data-ix="${c.ix}">${HB(c)}<div class="bds">${cb(c)}</div><div class="im">${im(c)}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price)}</div></div>`).join('')}</div>`
+   :`<div class="list">${cells.map(c=>{const o=c.o;return `<div class="row${c.hid?' hid':''}" data-id="${o.id}" data-ix="${c.ix}"><div class="im"><div class="bds">${cb(c)}</div>${im(c)}</div><div class="mt"><div class="nm">${esc(c.name)}</div><small>${esc(o.src)} ${esc(o.seller)} · ${fmt(o.buyDate)}</small><small>${c.cat?esc(c.cat)+' · ':''}${PAY[o.pay]}${o.status==='pre'&&o.eta?' · 預計 '+fmt(o.eta):''}</small></div><div class="pr">${pp(o,c.price)}</div>${HB(c)}</div>`}).join('')}</div>`;
 }
 
 /* editor */
@@ -287,7 +292,41 @@ function storeRow(){
 }
 const fr=(label,key,type='text',ph='')=>`<div class="fr"><span>${label}</span><input data-f="${key}" type="${type}" value="${esc(cur[key])}" placeholder="${ph}" ${type==='number'?'inputmode="decimal"':''}></div>`;
 const sel=(label,key,opts)=>`<div class="fr"><span>${label}</span><select data-f="${key}">${opts.map(o=>`<option value="${esc(o[0])}" ${cur[key]===o[0]?'selected':''}>${esc(o[1])}</option>`).join('')}</select></div>`;
-function openEd(id){cur=id?JSON.parse(JSON.stringify(items.find(o=>o.id===id))):newOrder();cur._new=!id;drawEd();$('mo').classList.add('show');$('mo').scrollTop=0}
+let dvState=null;
+function openDetail(id,ix){
+  const o=items.find(x=>x.id===id);if(!o)return;if(!(ix>=0&&ix<o.items.length))ix=-1;dvState={id,ix};
+  const single=ix>=0||o.items.length===1,it=ix>=0?o.items[ix]:o.items[0];
+  const img=single&&it.img?it.img.s:cover(o),name=single?(it.name||'未命名'):title(o);
+  const R=(l,v)=>(v||v===0)&&v!==''?`<div class="dr"><span>${l}</span><b>${v}</b></div>`:'';
+  const q=+it.qty||1,n=sq(it),late=o.status==='pre'&&o.eta&&o.eta<today();
+  let rows='';
+  if(single){rows+=R('單價',pp(o,+it.price||0))+R('數量',q+' 件'+(n>0?`（已售 ${n}）`:''))+(q>1?R('小計',pp(o,(+it.price||0)*q)):'')}
+  else rows+=o.items.map(i=>R(esc(i.name||'未命名')+' ×'+(+i.qty||1),pp(o,(+i.price||0)*(+i.qty||1)))).join('');
+  rows+=R('運費',+o.ship?money(o,+o.ship):'')+(single&&o.items.length>1||!single?'':'');
+  if(!(o.items.length===1&&!+o.ship))rows+=R('訂單總額',pp(o,total(o)));
+  if(+o.twPaid>0)rows+=R('實際扣款','NT$'+Math.round(o.twPaid).toLocaleString());
+  rows+=R('付款',PAY[o.pay]+(bal(o)>0?`（待付 ${money(o,bal(o))}）`:''));
+  rows+=R('購買日期',fmt(o.buyDate))+R('發售日',fmt(o.rel));
+  if(o.status==='pre')rows+=R('預計到貨',o.eta?fmt(o.eta)+(late?'（已逾期）':''):'');
+  rows+=R('收貨日期',fmt(o.recvDate));
+  if(n>0){rows+=R('出售日期',fmt(o.soldDate))+R('賣出金額',+it.sp?'NT$'+Math.round(+it.sp).toLocaleString():'');if(single&&+it.sp){const p=(+it.sp||0)-unitCost(o,it)*n;rows+=R('淨賺／虧損',(p>=0?'+':'')+'NT$'+Math.round(p).toLocaleString())}}
+  rows+=R('來源',esc((o.src||'')+(o.seller?' · '+o.seller:'')))+R('分類',esc(ic(o,single?it:null)||'未分類'));
+  if(ip(o,single?it:null)==='1')rows+=R('歸屬','幫朋友買（不算我的）');
+  if(o.link)rows+=R('連結',`<a href="${esc(o.link)}" target="_blank" rel="noopener">開啟</a>`);
+  rows+=R('備註',esc(o.note||'').replace(/\n/g,'<br>'));
+  DV.innerHTML=`<div class="mh"><button id="dcx">關閉</button><span></span></div>
+  <div class="dvi">${img?`<img src="${img}" alt="">`:''}</div>
+  <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs">${ST[o.status]}${late?' · 逾期':''}${n>=q&&q>0?' · 已售出':''}</div>
+  <div class="dvh">${'♥'.repeat(o.love||0)}${'♡'.repeat(5-(o.love||0))}</div>${rows}
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button></div>`;
+  DV.classList.add('show');DV.scrollTop=0}
+const DV=$('dv');
+function backDetail(){if(dvState&&items.find(x=>x.id===dvState.id))openDetail(dvState.id,dvState.ix);else dvState=null}
+DV.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.id==='dcx'){DV.classList.remove('show');dvState=null}
+  if(b.id==='ded'){DV.classList.remove('show');openEd(dvState.id)}
+  if(b.id==='ddl'&&confirm('確定要刪除這筆訂單？')){items=items.filter(x=>x.id!==dvState.id);dvState=null;save();render();DV.classList.remove('show')}});
+function openEd(id){if(!id)dvState=null;cur=id?JSON.parse(JSON.stringify(items.find(o=>o.id===id))):newOrder();cur._new=!id;drawEd();$('mo').classList.add('show');$('mo').scrollTop=0}
 function drawEd(){
   const k=localStorage.getItem('gk')||'';
   const hearts=[1,2,3,4,5].map(n=>`<span data-h="${n}">${n<=cur.love?'♥':'♡'}</span>`).join('');
@@ -305,7 +344,7 @@ function drawEd(){
   <div class="cd">${seg('status',[['wish','想買'],['pre','預購中'],['have','已到貨'],['sold','已售出']])}
     ${seg('proxy',[['0','整筆是我的'],['1','整筆是幫朋友買']])+sel('分類（預設）','cat',[['','未分類'],...cats.map(c=>[c,c])])}
     <div class="fr love"><span>喜愛程度</span><span>${hearts}</span></div></div>
-  <div class="cd"><h3>來源</h3>${sel('類型','src',SRC.map(s=>[s,s]))}${storeRow()}${fr('連結','link','url','https://')}${fr('購買日期','buyDate','date')}</div>
+  <div class="cd"><h3>來源</h3>${sel('類型','src',SRC.map(s=>[s,s]))}${storeRow()}${fr('連結','link','url','https://')}${fr('購買日期','buyDate','date')}${fr('發售日','rel','date')}</div>
   <div class="cd"><h3>品項</h3>
     ${cur.items.map((it,i)=>`<div class="it"><button class="x" data-del="${i}">刪除</button>
       <div class="ir"><div class="ith" data-ip="${i}">${it.img?`<img src="${it.img.s}">`:'📷'}</div><input data-i="${i}" data-k="name" placeholder="品名" value="${esc(it.name)}"></div>
@@ -381,15 +420,15 @@ MO.addEventListener('click',ev=>{
     const n={name:it.name,qty:1,price:it.price};if(it.cat)n.cat=it.cat;cur.items.splice(i+1,0,n);drawEd();toast('已拆出一款，可以改名字、加照片');return}
   if(b.dataset.del!==undefined){cur.items.splice(+b.dataset.del,1);if(!cur.items.length)cur.items.push({name:'',qty:1,price:''});drawEd();return}
   if(id==='addit'){cur.items.push({name:'',qty:1,price:''});drawEd();return}
-  if(id==='cx')MO.classList.remove('show');
+  if(id==='cx'){MO.classList.remove('show');backDetail()}
   if(id==='tk'){testKey();return}
   if(id==='shot'){const k=($('gk').value||'').trim();if(!k){setMsg('請先貼上 Gemini API Key');return}localStorage.setItem('gk',k);$('shotf').click()}
   if(id==='addimg')$('imgf').click();
   if(id==='zm'){const m=cur.imgs[cur.cover];busyBtn(b,'⏳ 處理中…');trimImg(m.s).then(t=>{const same=t===m.s;m.s=t;drawEd();toast(same?'這張圖已經沒有多餘空白了':'✓ 已放大主體')});return}
   if(id==='bg'){busyBtn(b,'⏳ 去背中…');doBg(cur.imgs[cur.cover])}
   if(id==='undo'){const m=cur.imgs[cur.cover];m.s=m.o;delete m.o;drawEd();toast('已還原原圖')}
-  if(id==='sv'){delete cur._new;derive(cur);cur.items=cur.items.filter((i,n)=>i.name||+i.price||n===0);const i=items.findIndex(x=>x.id===cur.id);i<0?items.unshift(cur):items[i]=cur;save();render();MO.classList.remove('show')}
-  if(id==='dl'&&confirm('確定要刪除這筆訂單？')){items=items.filter(x=>x.id!==cur.id);save();render();MO.classList.remove('show')}
+  if(id==='sv'){delete cur._new;derive(cur);cur.items=cur.items.filter((i,n)=>i.name||+i.price||n===0);const i=items.findIndex(x=>x.id===cur.id);i<0?items.unshift(cur):items[i]=cur;save();render();MO.classList.remove('show');backDetail()}
+  if(id==='dl'&&confirm('確定要刪除這筆訂單？')){items=items.filter(x=>x.id!==cur.id);dvState=null;save();render();MO.classList.remove('show')}
 });
 const setMsg=t=>{const m=$('msg');if(m)m.textContent=t};
 const setMsg2=t=>{const m=$('msg2');if(m)m.textContent=t};
@@ -611,7 +650,7 @@ SO.addEventListener('click',e=>{
 /* home events */
 $('chips').addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(b){$('fs').value=b.dataset.s;render()}});
 $('main').addEventListener('click',e=>{const hb=e.target.closest('[data-hide]');if(hb){e.stopPropagation();const [id,ix]=hb.dataset.hide.split('|'),o=items.find(x=>x.id===id);if(o){const its=+ix>=0?[o.items[+ix]]:o.items,v=!its.every(i=>i.hide);its.forEach(i=>{if(v)i.hide=true;else delete i.hide});save();render();toast(v?'已隱藏，勾選「顯示已隱藏」可找回':'已取消隱藏')}return}
-  if(e.target.closest('[data-add]')){$('sheet').classList.add('show');return}const n=e.target.closest('[data-id]');if(n)openEd(n.dataset.id)});
+  if(e.target.closest('[data-add]')){$('sheet').classList.add('show');return}const n=e.target.closest('[data-id]');if(n)openDetail(n.dataset.id,+n.dataset.ix)});
 ['q','fs','fc','so','hs','hw','hp','hh'].forEach(i=>$(i).addEventListener('input',render));
 $('hp').addEventListener('input',()=>{try{localStorage.setItem('hp2',$('hp').value)}catch(e){}});
 $('fc').addEventListener('input',()=>setFc($('fc').value));
