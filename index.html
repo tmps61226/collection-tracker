@@ -630,6 +630,11 @@ function drawSet(){
   <div class="cd"><h3>刷卡</h3><div class="fr"><span>國外手續費 %（刷卡自動加上）</span><input id="cardfee" type="number" inputmode="decimal" step="any" value="${+S.cardFee||0}"></div></div>
   <div class="cd"><h3>匯率（換算成台幣，用於統計）</h3>${['JPY','CNY','KRW','USD'].map(c=>`<div class="fr"><span>1 ${CURN[c]} =</span><input data-rate="${c}" type="number" inputmode="decimal" step="any" value="${S.rates[c]}"></div>`).join('')}</div>
   <div class="cd"><h3>商品圖</h3><button class="btn" id="bgall">✂️ 全部商品去背</button><div class="msg">替還沒去背的商品圖一次去背，櫃子會更好看。需要網路，張數多時請保持畫面開著。</div></div>
+  <div class="cd"><h3>☁️ 雲端同步（你自己的私人 GitHub）</h3><div class="msg" style="margin:0 0 8px">${syncMsg()}</div>
+    <div class="fr"><span>金鑰</span><input id="ghtok" type="password" autocomplete="off" placeholder="github_pat_…" value="${esc(GH().t)}"></div>
+    <div class="fr"><span>倉庫</span><input id="ghrepo" value="${esc(GH().r)}" placeholder="帳號/倉庫名"></div>
+    <button class="btn" id="syup">⬆ 上傳到雲端</button><button class="btn" id="sydn">⬇ 從雲端下載</button>
+    <div class="msg">換手機或資料不見時，貼上同一把金鑰再按「下載」就能還原。要手動按：改完資料後按「上傳」，另一支手機按「下載」。請以一支手機為主，兩邊都改的話後上傳的會蓋掉先上傳的。金鑰只存在這支手機。</div></div>
   <div class="cd"><h3>備份</h3><div class="msg" style="margin:0 0 8px">${lastBk()?'上次備份：'+Math.floor((Date.now()-lastBk())/864e5)+' 天前':'還沒備份過'}（超過 7 天首頁會提醒）</div><button class="btn" id="ex">匯出備份</button><button class="btn" id="im">匯入備份</button><input type="file" id="imf" accept=".json" hidden>
     <div class="msg">資料只存在這支手機。匯出時選「儲存到檔案」→ iCloud Drive，換手機或資料不見時用「匯入備份」就能還原。</div></div>`;
 }
@@ -641,6 +646,8 @@ SO.addEventListener('change',e=>{
   if(t.dataset.hid!==undefined){const c=t.dataset.hid;S.hid=(S.hid||[]).filter(x=>x!==c);if(t.checked)S.hid.push(c);save();render()}
   if(t.id==='hideamt'){S.hide=t.checked;save();render()}
   if(t.id==='cardfee'){S.cardFee=+t.value||0;save();render()}
+  if(t.id==='ghtok')lsSet('ghTok',t.value.trim());
+  if(t.id==='ghrepo'){lsSet('ghRepo',t.value.trim());localStorage.removeItem('syncSha')}
   if(t.id==='nick'){S.nick=t.value.trim()||'瓜呱';save()}
   if(t.dataset.rate){S.rates[t.dataset.rate]=+t.value||S.rates[t.dataset.rate];save();render()}
   if(t.id==='imf'&&t.files[0]){const r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result),its=Array.isArray(d)?d:d.items;if(!Array.isArray(its))throw 0;if(confirm('匯入 '+its.length+' 筆資料，會取代目前的資料，確定嗎？')){items=its.map(mig);if(d.settings&&d.settings.cats)S=Object.assign(S,d.settings);save();renderCats();render();drawSet()}}catch(x){alert('檔案格式不正確')}};r.readAsText(t.files[0])}
@@ -653,11 +660,68 @@ SO.addEventListener('click',e=>{
   if(b.id==='im')$('imf').click();
   if(b.id==='ex')doBackup();
   if(b.id==='bgall')bgAll();
+  if(b.id==='syup')syncUp();
+  if(b.id==='sydn')syncDown();
 });
+
+/* cloud sync: private GitHub repo (data.json + img/*) */
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+const GH=()=>({t:(lsGet('ghTok')||'').trim(),r:(lsGet('ghRepo')||'tmps61226/collection-data').trim()});
+const lastSync=()=>+lsGet('lastSync')||0;
+function h53(s){let a=0xdeadbeef,b=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}a=Math.imul(a^(a>>>16),2246822507)^Math.imul(b^(b>>>13),3266489909);b=Math.imul(b^(b>>>16),2246822507)^Math.imul(a^(a>>>13),3266489909);return(4294967296*(2097151&b)+(a>>>0)).toString(16)}
+function packData(){const imgs={};const json=JSON.stringify({v:1,savedAt:Date.now(),items,settings:S},(k,v)=>{if(typeof v==='string'&&v.startsWith('data:')){if(k==='o')return undefined;const m=/^data:([^;,]+);base64,/.exec(v);if(!m)return v;const ext=m[1].includes('png')?'png':m[1].includes('webp')?'webp':'jpg',n=h53(v)+v.length.toString(36)+'.'+ext;imgs[n]=v.slice(m[0].length);return'@img:'+n}return v});return{json,imgs}}
+const MIME={png:'image/png',webp:'image/webp',jpg:'image/jpeg'};
+const b64=s=>btoa(unescape(encodeURIComponent(s)));
+async function gh(path,method,body,raw){
+  const g=GH();let r;
+  try{r=await fetch('https://api.github.com/repos/'+g.r+path,{method:method||'GET',cache:'no-store',headers:Object.assign({Authorization:'Bearer '+g.t,Accept:raw?'application/vnd.github.raw+json':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},body?{'Content-Type':'application/json'}:{}),body:body?JSON.stringify(body):undefined})}catch(e){throw new Error('連不上網路')}
+  if(!r.ok&&!(raw===2)){const c=r.status;const e=new Error(c===401?'金鑰無效或已過期':c===403?'金鑰沒有權限（Contents 要選 Read and write）':c===404?'找不到倉庫，或金鑰沒選到這個倉庫':'GitHub 回應錯誤 '+c);e.status=c;throw e}
+  return r}
+const ghj=async(p,m,b)=>(await gh(p,m,b)).json();
+async function pool(list,n,fn){let i=0;await Promise.all(Array.from({length:Math.min(n,list.length)},async()=>{while(i<list.length){const k=i++;await fn(list[k],k)}}))}
+async function repoHead(){
+  const info=await ghj(''),br=info.default_branch||'main';let head=null;
+  try{head=(await ghj('/git/ref/heads/'+br)).object.sha}catch(e){if(e.status!==404&&e.status!==409)throw e}
+  return{br,head}}
+let syncBusy=false;
+function grabCfg(){const a=$('ghtok'),b=$('ghrepo');if(a)lsSet('ghTok',a.value.trim());if(b&&b.value.trim()!==GH().r){lsSet('ghRepo',b.value.trim());try{localStorage.removeItem('syncSha')}catch(e){}}}
+function syncMsg(){return lastSync()?'上次同步：'+new Date(lastSync()).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'還沒同步過'}
+async function syncUp(){
+  if(syncBusy)return;grabCfg();const g=GH();if(!g.t){toast('請先貼上金鑰');return}
+  syncBusy=true;try{
+    toast('連線中…',0);let {br,head}=await repoHead(),base=null,have=new Set();
+    if(!head){const r=await ghj('/contents/README.md','PUT',{message:'init',content:b64('收藏櫃雲端資料')});head=r.commit.sha;base=r.commit.tree.sha;have.add('README.md')}
+    else{const c=await ghj('/git/commits/'+head);base=c.tree.sha;const t=await ghj('/git/trees/'+base+'?recursive=1');(t.tree||[]).forEach(x=>have.add(x.path))}
+    if(have.has('data.json')&&head!==lsGet('syncSha')&&!confirm('雲端的資料比這支手機上次同步的更新（可能在別的裝置改過）。\n繼續上傳會蓋掉雲端那份，確定嗎？\n（想拿雲端的，請按取消，改用「從雲端下載」）')){toast('已取消');return}
+    const {json,imgs}=packData(),need=Object.keys(imgs).filter(n=>!have.has('img/'+n)),tree=[];let done=0;
+    await pool(need,4,async n=>{const r=await ghj('/git/blobs','POST',{content:imgs[n],encoding:'base64'});tree.push({path:'img/'+n,mode:'100644',type:'blob',sha:r.sha});toast('上傳圖片 '+(++done)+'/'+need.length+'…',0)});
+    const bl=await ghj('/git/blobs','POST',{content:b64(json),encoding:'base64'});tree.push({path:'data.json',mode:'100644',type:'blob',sha:bl.sha});
+    const nt=await ghj('/git/trees','POST',{base_tree:base,tree}),cm=await ghj('/git/commits','POST',{message:'sync '+new Date().toISOString(),tree:nt.sha,parents:[head]});
+    await ghj('/git/refs/heads/'+br,'PATCH',{sha:cm.sha});
+    lsSet('syncSha',cm.sha);lsSet('lastSync',String(Date.now()));lsSet('lastBackup',String(Date.now()));lsSet('ghBr',br);
+    toast('✓ 已上傳到雲端（'+items.length+' 筆，新增 '+need.length+' 張圖）',3500);renderBk();drawSet()
+  }catch(e){toast('同步失敗：'+e.message,5000)}finally{syncBusy=false}}
+async function syncDown(){
+  if(syncBusy)return;grabCfg();const g=GH();if(!g.t){toast('請先貼上金鑰');return}
+  syncBusy=true;try{
+    toast('連線中…',0);const {head}=await repoHead();if(!head){toast('雲端還沒有資料，請先在主要的手機按「上傳」',4500);return}
+    let text;try{text=await(await gh('/contents/data.json?ref='+head,'GET',null,true)).text()}catch(e){if(e.status===404){toast('雲端還沒有資料，請先在主要的手機按「上傳」',4500);return}throw e}
+    const d=JSON.parse(text);if(!Array.isArray(d.items))throw new Error('雲端資料格式不對');
+    if(!confirm('雲端有 '+d.items.length+' 筆資料，下載會取代這支手機現有的 '+items.length+' 筆，確定嗎？')){toast('已取消');return}
+    const names=[...new Set([...text.matchAll(/@img:([\w.]+)/g)].map(m=>m[1]))],local=packData().imgs,got={};let done=0;
+    await pool(names,4,async n=>{const ext=n.split('.').pop();
+      if(local[n]){got[n]='data:'+MIME[ext]+';base64,'+local[n]}
+      else{const buf=new Uint8Array(await(await gh('/contents/img/'+n+'?ref='+head,'GET',null,true)).arrayBuffer());let s='';for(let i=0;i<buf.length;i+=8192)s+=String.fromCharCode.apply(null,buf.subarray(i,i+8192));got[n]='data:'+MIME[ext]+';base64,'+btoa(s)}
+      toast('下載圖片 '+(++done)+'/'+names.length+'…',0)});
+    const full=JSON.parse(text,(k,v)=>typeof v==='string'&&v.startsWith('@img:')?got[v.slice(5)]:v);
+    items=full.items.map(mig);if(full.settings&&full.settings.cats)S=Object.assign(S,full.settings);
+    lsSet('syncSha',head);lsSet('lastSync',String(Date.now()));lsSet('lastBackup',String(Date.now()));
+    save();renderCats();render();renderBk();drawSet();toast('✓ 已從雲端下載 '+items.length+' 筆',3500)
+  }catch(e){toast('下載失敗：'+e.message,5000)}finally{syncBusy=false}}
 
 /* backup */
 const BK_DAYS=7;
-function lastBk(){try{return +localStorage.getItem('lastBackup')||0}catch(e){return 0}}
+function lastBk(){return Math.max(+lsGet('lastBackup')||0,lastSync())}
 async function doBackup(){
   const name='collection-backup-'+today()+'.json',blob=new Blob([JSON.stringify({items,settings:S},(k,v)=>k==='o'&&typeof v==='string'&&v.startsWith('data:')?undefined:v)],{type:'application/json'});
   try{const f=new File([blob],name,{type:'application/json'});
