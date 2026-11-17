@@ -361,7 +361,7 @@ function drawEd(){
       ${it.img?`<div style="margin-top:6px">${it.img.o?`<button class="btn" data-iun="${i}">還原原圖</button>`:`<button class="btn" data-ibg="${i}">✂️ 去背</button>`}<button class="btn" data-izm="${i}">🔍 放大主體</button><button class="btn" data-irm="${i}">移除圖片</button></div>`:''}</div>`).join('')}
     <input type="file" id="itf" accept="image/*" hidden>
     <div class="msg">到貨後，每個品項會在收藏櫃各自顯示。點左邊的縮圖，可以替這個品項單獨加照片、去背。盲盒有不同款式時，按「拆出一款」，每一款各自放照片；抽到重複的款式，就把數量留在那一款。</div>
-    <button class="btn" id="addit">＋ 新增品項</button>${dupGroups(cur).length?`<button class="btn" id="mrg">合併相同品項（${dupGroups(cur).length} 組）</button>`:''}</div>
+    <button class="btn" id="addit">＋ 新增品項</button>${cur.items.filter(i=>i.img&&!i.img.o).length?`<button class="btn" id="bgord">✂️ 全部品項去背（${cur.items.filter(i=>i.img&&!i.img.o).length} 張）</button>`:''}${dupGroups(cur).length?`<button class="btn" id="mrg">合併相同品項（${dupGroups(cur).length} 組）</button>`:''}</div>
   <div class="cd">${sel('幣別','cur',Object.keys(CUR).map(c=>[c,CURN[c]+' '+CUR[c]]))}${fr('運費','ship','number','0')}
     <div class="fr"><span>總金額</span><b id="tot"></b></div></div>
   ${true?`<div class="cd"><h3>${cur.cur==='TWD'?'付款方式／刷卡手續費':'換匯／刷卡（算成台幣用）'}</h3>${seg('pm',cur.cur==='TWD'?[['cash','現金／一般'],['card','刷卡（國外手續費）']]:[['cash','現金換匯'],['card','刷卡'],['other','其他']])}${cur.cur==='TWD'?'':fr('實際匯率（1 '+CURN[cur.cur]+' = 台幣）','rate','number',String(S.rates[cur.cur]||''))}${cur.pm==='card'?fr('國外手續費 %','fee','number','預設 '+(+S.cardFee||0)+'（可改）'):''}${fr('實際扣款（台幣，選填）','twPaid','number','刷卡帳單的金額')}<div class="hint" id="fxh"></div></div>`:''}
@@ -434,6 +434,7 @@ MO.addEventListener('click',ev=>{
   if(id==='addimg')$('imgf').click();
   if(id==='zm'){const m=cur.imgs[cur.cover];busyBtn(b,'⏳ 處理中…');trimImg(m.s).then(t=>{const same=t===m.s;m.s=t;drawEd();toast(same?'這張圖已經沒有多餘空白了':'✓ 已放大主體')});return}
   if(id==='mrg'){const n=mergeDups(cur);drawEd();toast('已合併，數量已加總（共少了 '+n+' 列）');return}
+  if(id==='bgord'){bgOrder();return}
   if(id==='bg'){busyBtn(b,'⏳ 去背中…');doBg(cur.imgs[cur.cover])}
   if(id==='undo'){const m=cur.imgs[cur.cover];m.s=m.o;delete m.o;drawEd();toast('已還原原圖')}
   if(id==='sv'){delete cur._new;derive(cur);cur.items=cur.items.filter((i,n)=>i.name||+i.price||n===0);const i=items.findIndex(x=>x.id===cur.id);i<0?items.unshift(cur):items[i]=cur;save();render();MO.classList.remove('show');backDetail()}
@@ -783,6 +784,14 @@ async function bgOne(m){
   const u=URL.createObjectURL(out);
   const c=await new Promise((res,rej)=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);res(c)};im.onerror=()=>rej(new Error('圖片讀取錯誤'));im.src=u});
   m.o=m.s;m.s=await trimImg(c.toDataURL('image/webp',.9))}
+async function bgOrder(){
+  if(bgAllRun||bgBusy){toast('還在處理中，請稍等');return}
+  const T=cur.items.filter(i=>i.img&&!i.img.o).map(i=>i.img);if(!T.length)return;
+  bgAllRun=true;let ok=0;
+  try{for(let i=0;i<T.length;i++){toast('✂️ 去背中 '+(i+1)+' / '+T.length+'…第一次要下載模型，請不要離開',0);try{await bgOne(T[i]);ok++}catch(e){if(i===0&&ok===0)throw e}}
+    drawEd();toast('✓ 完成，成功 '+ok+' / '+T.length+' 張（記得按儲存）',4500)}
+  catch(e){toast('去背失敗：'+(/fetch|network|Load failed|import/i.test(e.message)?'下載去背模型失敗，請確認網路':e.message),5000)}
+  bgAllRun=false}
 async function bgAll(){
   if(bgAllRun||bgBusy){toast('還在處理中，請稍等');return}
   const T=[];items.forEach(o=>{o.items.forEach(i=>{if(i.img&&!i.img.o)T.push(i.img)});if(o.imgs&&o.imgs[o.cover]&&!o.imgs[o.cover].o&&!o.items.some(i=>i.img))T.push(o.imgs[o.cover])});
