@@ -422,7 +422,7 @@ MO.addEventListener('change',ev=>{
   if(e.id==='gk')localStorage.setItem('gk',e.value.trim());
   if(e.id==='itf'&&e.files[0]){shrink(e.files[0]).then(u=>{if(u&&cur.items[itT]){cur.items[itT].img={s:u};drawEd()}})}
   if(e.id==='imgf'&&e.files.length)addImgs([...e.files]);
-  if(e.id==='shotf'&&e.files.length){if(cur&&cur._new)enqueueShots([...e.files]);else if(guardOK())doShot([...e.files])}
+  if(e.id==='shotf'&&e.files.length){if(guardOK())doShot([...e.files])}
 });
 MO.addEventListener('click',ev=>{
   const t=ev.target,b=t.closest('button'),h=t.closest('[data-h]'),rm=t.closest('[data-rm]'),th=t.closest('[data-c]');
@@ -664,7 +664,7 @@ async function runJobs(){
       j.err=(r&&r.err)||'辨識失敗';j.tries=(j.tries||0)+(/離開畫面/.test(j.err)?0:1);j.st=(net&&!(r&&r.quota)&&j.tries<2)?'q':'err';await saveJobs();renderJobs();if(j.st==='q')break}
   }}finally{if(my===jgen)jr=false}}
 function kickJobs(force){const run=jobs.find(j=>j.st==='run');if(jr&&(force||(run&&Date.now()-(run.at||0)>300000))){jgen++;jr=false;jobs.forEach(j=>{if(j.st==='run')j.st='q'})}runJobs()}
-setInterval(()=>{if(jobs.some(j=>j.st==='run'))renderJobs()},5000);
+
 function renderJobs(){
   const el=$('jb');if(!el)return;const run=jobs.filter(j=>j.st==='q'||j.st==='run'),bad=jobs.filter(j=>j.st==='err'),chk=items.filter(o=>o.chk);
   if(!run.length&&!bad.length&&!chk.length){el.innerHTML='';return}
@@ -987,7 +987,7 @@ async function autoTrimAll(){
   }
   if(ch){save();render()}
 }
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){autoPull();kickJobs(false)}else if(autoOn()&&lsGet('dirty')==='1'&&lsGet('syncSha'))syncUp(true)});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){autoPull();}else if(autoOn()&&lsGet('dirty')==='1'&&lsGet('syncSha'))syncUp(true)});
 (async()=>{const a=await kvGet('items'),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);renderCats();try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{const h=localStorage.getItem('hp2')||(localStorage.getItem('hp')==='0'?'all':'hide');$('hp').value=h}catch(e){}
-try{const v=localStorage.getItem('view');if(VB[v])view=v;Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===view))}catch(e){}render();setTimeout(()=>autoTrimAll().catch(()=>{}),400);loadJobs().then(()=>{renderJobs();runJobs()});setTimeout(autoPull,1500)})();
+try{const v=localStorage.getItem('view');if(VB[v])view=v;Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===view))}catch(e){}render();setTimeout(()=>autoTrimAll().catch(()=>{}),400);jobs=[];saveJobs();setTimeout(autoPull,1500)})();
 </script></body></html>
