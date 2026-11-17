@@ -107,6 +107,14 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .seg button{flex:1;border:0;background:transparent;padding:8px 2px;border-radius:13px;cursor:pointer;font-size:13px}
 .seg button.on{background:var(--tx);color:var(--bg);font-weight:600}
 .hint{color:var(--mu);text-align:right;font:14px var(--num);padding:2px 0 8px}
+#cr{position:fixed;inset:0;z-index:20;background:#f3f0e8;display:none;flex-direction:column}
+#cr .crb{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top) + 12px) 14px 10px;background:#f3f0e8;font-size:13px;color:#8a8070}
+#cr .crb .pri{background:#26221d;color:#fff;border-color:#26221d}#cr .crf{position:relative;z-index:2;padding:10px 14px calc(env(safe-area-inset-bottom) + 14px);background:#f3f0e8;text-align:center}#cr .crf .on{background:#26221d;color:#fff}
+#cr .crw{flex:1;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+#cr .crs{position:relative;touch-action:none;line-height:0}#cr .crs img{display:block;max-width:92vw;max-height:68vh;-webkit-user-drag:none;user-select:none;pointer-events:none}
+#crr{position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(30,25,15,.55);cursor:move}
+#crr i{position:absolute;width:30px;height:30px;background:#fff;border:2px solid #26406b;border-radius:50%;box-sizing:border-box}
+#crr i[data-h=nw]{left:-15px;top:-15px}#crr i[data-h=ne]{right:-15px;top:-15px}#crr i[data-h=sw]{left:-15px;bottom:-15px}#crr i[data-h=se]{right:-15px;bottom:-15px}
 .btn{border:1px solid var(--ln);background:var(--card);padding:9px 16px;border-radius:18px;cursor:pointer;margin:4px 4px 4px 0;box-shadow:0 1px 3px #3a2e1a1a;transition:transform .08s}
 .btn:active{transform:scale(.94);background:var(--tx);color:var(--bg)}
 .btn:disabled{opacity:.55}
@@ -345,7 +353,7 @@ function drawEd(){
   <div class="cd"><h3>商品圖片（點一下設為封面）</h3>
     <div class="thumbs">${cur.imgs.map((m,i)=>`<div class="th ${i===cur.cover?'cv':''}" data-c="${i}"><img src="${m.s}">${i===cur.cover?'<b>封面</b>':''}<i data-rm="${i}">×</i></div>`).join('')}</div>
     <button class="btn" id="addimg">＋ 新增圖片</button><input type="file" id="imgf" accept="image/*" multiple hidden>
-    ${cover(cur)?(cur.imgs[cur.cover]&&cur.imgs[cur.cover].o?'<button class="btn" id="undo">還原封面原圖</button>':'<button class="btn" id="bg">✂️ 封面去背</button>')+'<button class="btn" id="zm">🔍 封面放大主體</button>':''}
+    ${cover(cur)?(cur.imgs[cur.cover]&&cur.imgs[cur.cover].o?'<button class="btn" id="undo">還原封面原圖</button>':'<button class="btn" id="bg">✂️ 封面去背</button>')+'<button class="btn" id="crc">✂ 封面裁切</button><button class="btn" id="zm">🔍 封面放大主體</button>':''}
     <div class="msg" id="msg2"></div></div>
   <div class="cd">${seg('status',[['wish','想買'],['pre','預購中'],['have','已到貨'],['sold','已售出']])}
     ${seg('proxy',[['0','整筆是我的'],['1','整筆是幫朋友買']])+sel('分類（預設）','cat',[['','未分類'],...cats.map(c=>[c,c])])}
@@ -358,7 +366,7 @@ function drawEd(){
       <div class="fr" style="padding:6px 0"><span>分類</span><select data-i="${i}" data-k="cat"><option value="">同訂單（${esc(cur.cat||'未分類')}）</option>${(S.cats.includes(it.cat)||!it.cat?S.cats:[...S.cats,it.cat]).map(c=>`<option value="${esc(c)}" ${it.cat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
       ${(+it.qty||1)>1?`<div style="margin:4px 0 6px"><button class="btn" data-split="${i}">＋ 拆出一款（盲盒不同款式）</button></div>`:''}<div class="two"><input data-i="${i}" data-k="qty" type="number" inputmode="numeric" placeholder="數量" value="${esc(it.qty)}"><input data-i="${i}" data-k="price" type="number" inputmode="decimal" placeholder="單價" value="${esc(it.price)}"></div>
       ${cur.status==='have'||cur.status==='sold'?`<div class="sell"><span>已售出</span><button data-sq="${i}" data-d="-1">−</button><b>${sq(it)} / ${+it.qty||1}</b><button data-sq="${i}" data-d="1">＋</button>${sq(it)?`<input data-i="${i}" data-k="sp" type="number" inputmode="decimal" placeholder="賣了多少（台幣總額）" value="${esc(it.sp||'')}">`:''}</div>`:''}
-      ${it.img?`<div style="margin-top:6px">${it.img.o?`<button class="btn" data-iun="${i}">還原原圖</button>`:`<button class="btn" data-ibg="${i}">✂️ 去背</button>`}<button class="btn" data-izm="${i}">🔍 放大主體</button><button class="btn" data-irm="${i}">移除圖片</button></div>`:''}</div>`).join('')}
+      ${it.img?`<div style="margin-top:6px">${it.img.o?`<button class="btn" data-iun="${i}">還原原圖</button>`:`<button class="btn" data-ibg="${i}">✂️ 去背</button>`}<button class="btn" data-icr="${i}">✂ 裁切</button><button class="btn" data-izm="${i}">🔍 放大主體</button><button class="btn" data-irm="${i}">移除圖片</button></div>`:''}</div>`).join('')}
     <input type="file" id="itf" accept="image/*" hidden>
     <div class="msg">到貨後，每個品項會在收藏櫃各自顯示。點左邊的縮圖，可以替這個品項單獨加照片、去背。盲盒有不同款式時，按「拆出一款」，每一款各自放照片；抽到重複的款式，就把數量留在那一款。</div>
     <button class="btn" id="addit">＋ 新增品項</button>${cur.items.filter(i=>i.img&&!i.img.o).length?`<button class="btn" id="bgord">✂️ 全部品項去背（${cur.items.filter(i=>i.img&&!i.img.o).length} 張）</button>`:''}${dupGroups(cur).length?`<button class="btn" id="mrg">合併相同品項（${dupGroups(cur).length} 組）</button>`:''}</div>
@@ -420,6 +428,7 @@ MO.addEventListener('click',ev=>{
     if(b.dataset.k==='unit'){const x=calcEta(cur.start,cur.dur,cur.unit);if(x)cur.eta=x}
     drawEd();return}
   if(b.dataset.ibg!==undefined){busyBtn(b,'⏳ 去背中…');doBg(cur.items[+b.dataset.ibg].img);return}
+  if(b.dataset.icr!==undefined){openCrop(cur.items[+b.dataset.icr].img);return}
   if(b.dataset.izm!==undefined){const m=cur.items[+b.dataset.izm].img;busyBtn(b,'⏳ 處理中…');trimImg(m.s).then(t=>{const same=t===m.s;m.s=t;drawEd();toast(same?'這張圖已經沒有多餘空白了':'✓ 已放大主體')});return}
   if(b.dataset.iun!==undefined){const m=cur.items[+b.dataset.iun].img;m.s=m.o;delete m.o;drawEd();toast('已還原原圖');return}
   if(b.dataset.irm!==undefined){delete cur.items[+b.dataset.irm].img;drawEd();return}
@@ -434,6 +443,7 @@ MO.addEventListener('click',ev=>{
   if(id==='addimg')$('imgf').click();
   if(id==='zm'){const m=cur.imgs[cur.cover];busyBtn(b,'⏳ 處理中…');trimImg(m.s).then(t=>{const same=t===m.s;m.s=t;drawEd();toast(same?'這張圖已經沒有多餘空白了':'✓ 已放大主體')});return}
   if(id==='mrg'){const n=mergeDups(cur);drawEd();toast('已合併，數量已加總（共少了 '+n+' 列）');return}
+  if(id==='crc'){openCrop(cur.imgs[cur.cover]);return}
   if(id==='bgord'){bgOrder();return}
   if(id==='bg'){busyBtn(b,'⏳ 去背中…');doBg(cur.imgs[cur.cover])}
   if(id==='undo'){const m=cur.imgs[cur.cover];m.s=m.o;delete m.o;drawEd();toast('已還原原圖')}
@@ -626,6 +636,29 @@ async function doBg(m){
   }catch(e){bgBusy=false;drawEd();toast('去背失敗：'+String(e&&e.message||e).slice(0,140),9000)}
 }
 
+/* manual crop */
+function openCrop(m){
+  if(!m)return;const src=m.o||m.s;let el=$('cr');if(!el){el=document.createElement('div');el.id='cr';document.body.appendChild(el)}
+  el.innerHTML='<div class="crb"><button class="btn" id="crx">取消</button><span>拖動方框，框住商品</span><button class="btn pri" id="cro">完成</button></div><div class="crw"><div class="crs" id="crs"><img id="cri" alt=""><div id="crr"><i data-h="nw"></i><i data-h="ne"></i><i data-h="sw"></i><i data-h="se"></i></div></div></div><div class="crf"><button class="btn on" data-ra="0">自由</button><button class="btn" data-ra="1">正方形</button></div>';
+  el.style.display='flex';const im=$('cri'),rc=$('crr');let W=0,H=0,R={x:0,y:0,w:0,h:0},sq=false,dr=null;
+  const draw=()=>{rc.style.cssText+=`;left:${R.x}px;top:${R.y}px;width:${R.w}px;height:${R.h}px`};
+  im.onload=()=>{W=im.clientWidth;H=im.clientHeight;R={x:W*.1,y:H*.1,w:W*.8,h:H*.8};draw()};im.src=src;
+  const close=()=>{el.style.display='none';el.innerHTML=''};
+  el.onclick=e=>{const b=e.target.closest('button');if(!b)return;
+    if(b.id==='crx')close();
+    if(b.dataset.ra!==undefined){sq=b.dataset.ra==='1';el.querySelectorAll('[data-ra]').forEach(x=>x.classList.toggle('on',x===b));if(sq){const s2=Math.min(R.w,R.h);R.w=R.h=s2;R.x=Math.min(R.x,W-s2);R.y=Math.min(R.y,H-s2);draw()}}
+    if(b.id==='cro'){const k=im.naturalWidth/W,sx=R.x*k,sy=R.y*k,sw=R.w*k,sh=R.h*k,z=Math.min(1,640/Math.max(sw,sh)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(sw*z));c.height=Math.max(1,Math.round(sh*z));c.getContext('2d').drawImage(im,sx,sy,sw,sh,0,0,c.width,c.height);
+      m.s=c.toDataURL('image/webp',.85);delete m.o;close();drawEd();toast('✓ 已裁切，可以再按「去背」')}};
+  const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+  $('crs').onpointerdown=e=>{const h=e.target.dataset&&e.target.dataset.h,r0=$('crs').getBoundingClientRect(),px=e.clientX-r0.left,py=e.clientY-r0.top;
+    if(h){const ax=h.includes('w')?R.x+R.w:R.x,ay=h.includes('n')?R.y+R.h:R.y;dr={t:'rs',ax,ay}}
+    else if(px>=R.x&&px<=R.x+R.w&&py>=R.y&&py<=R.y+R.h)dr={t:'mv',dx:px-R.x,dy:py-R.y};else return;
+    $('crs').setPointerCapture(e.pointerId);e.preventDefault()};
+  $('crs').onpointermove=e=>{if(!dr)return;const r0=$('crs').getBoundingClientRect(),px=cl(e.clientX-r0.left,0,W),py=cl(e.clientY-r0.top,0,H);
+    if(dr.t==='mv'){R.x=cl(px-dr.dx,0,W-R.w);R.y=cl(py-dr.dy,0,H-R.h)}
+    else{let w=Math.abs(px-dr.ax),h=Math.abs(py-dr.ay);if(sq){w=h=Math.min(w,h)}w=Math.max(30,w);h=Math.max(30,h);R.x=px<dr.ax?dr.ax-w:dr.ax;R.y=py<dr.ay?dr.ay-h:dr.ay;R.w=w;R.h=h;R.x=cl(R.x,0,W-w);R.y=cl(R.y,0,H-h)}
+    draw()};
+  $('crs').onpointerup=$('crs').onpointercancel=()=>{dr=null}}
 /* settings */
 const SO=$('so2');
 function drawSet(){
