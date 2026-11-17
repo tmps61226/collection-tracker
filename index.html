@@ -36,7 +36,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .cell img,.row img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 2px 3px #0003)}
 .nm{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pr{color:var(--mu);font:15px var(--num)}
-.pr .tw{display:block;font-size:14px;color:var(--tx);opacity:.7;margin-top:-1px}
+.pr .tw{display:block;font-size:14px;color:#c4705c;margin-top:-1px}
 .bd{display:inline-block;font-size:11px;padding:1px 8px;border-radius:10px;background:var(--chip);color:var(--mu);margin-left:4px}
 .cell .bds{position:absolute;top:5px;left:5px;z-index:1;display:flex;flex-direction:column;align-items:flex-start;gap:3px}.cell .bd{margin:0}
 .bd.pre{background:#e6dff2;color:#7a62a8}.bd.wish{background:#f3edc2;color:#8a7a2a}.bd.sold{background:#e8e4dc;color:#8a8478}.bd.due{background:#f6d9d3;color:#b05545}
@@ -47,7 +47,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .row .mt{flex:1;min-width:0}.row small{color:var(--mu);display:block}
 .cell:active,.row:active{transform:scale(.97)}
 .hb{position:absolute;top:4px;right:4px;z-index:2;width:26px;height:26px;border-radius:50%;border:0;background:#ffffffcc;color:var(--mu);display:flex;align-items:center;justify-content:center;padding:0;box-shadow:0 1px 4px #0002}.hb svg{width:15px;height:15px}.hid{opacity:.45}
-.row{position:relative}.row .hb{top:50%;right:8px;transform:translateY(-50%)}
+.row .hb{position:static;flex:none;width:28px;height:28px;box-shadow:none;background:var(--chip)}
 .cab{position:relative;border-radius:30px;padding:10px 10px 14px;overflow:hidden;
  background:linear-gradient(135deg,#ffffffc2 0%,#ffffff59 38%,#ffffff33 52%,#ffffff8c 100%);
  -webkit-backdrop-filter:blur(10px) saturate(1.1);backdrop-filter:blur(10px) saturate(1.1);
@@ -61,16 +61,17 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .sc{text-align:center;position:relative;cursor:pointer;min-width:0}
 .sc .si{aspect-ratio:1;display:flex;align-items:flex-end;justify-content:center;padding:0 2px}
 .sc img{width:100%;height:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 1px 0 #fff) drop-shadow(0 -1px 0 #fff) drop-shadow(0 2px 2px #0002)}
-.sc .sn{font-size:12px;font-weight:700;padding:6px 0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc .sp{font:14px var(--num);color:var(--mu);padding:0 0 8px;margin-top:-4px;line-height:1.15}.sc .sp .tw{display:block;font-size:13px;color:#c4705c}
+.sc .sn{font-size:12px;font-weight:700;padding:6px 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sc .sb{position:absolute;top:0;left:2px;font-size:9px;padding:0 6px;border-radius:8px;background:#fffc;color:var(--mu);z-index:1}
 .sc:active{transform:scale(.96)}
 .sc.em{border:1.5px dashed #c9ced6;border-radius:14px;aspect-ratio:.8;margin:2px 4px 8px;display:flex;align-items:center;justify-content:center;color:#b3b9c2;font-size:22px}
 .nav{position:fixed;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;gap:10px;z-index:4;pointer-events:none}
-.pill{pointer-events:auto;display:flex;gap:4px;background:#ffffff8c;-webkit-backdrop-filter:blur(16px) saturate(1.2);backdrop-filter:blur(16px) saturate(1.2);border:1.5px solid #fffffff0;border-radius:32px;padding:6px;box-shadow:0 8px 24px #3a2e1a24,inset 0 1px 0 #fff,0 0 0 1px #3a2e1a14}
+.pill{pointer-events:auto;display:flex;gap:4px;background:#fffffff0;border:1.5px solid #fffffff0;border-radius:32px;padding:6px;box-shadow:0 8px 24px #3a2e1a24,inset 0 1px 0 #fff,0 0 0 1px #3a2e1a14}
 .pill button{width:62px;height:48px;border:0;border-radius:26px;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:.55;color:#3a3630}
 .pill button.on{background:#ffffffe6;opacity:1;box-shadow:0 1px 4px #3a2e1a26}
 .pill svg{width:22px;height:22px}
-.plus{pointer-events:auto;width:60px;height:60px;border-radius:50%;border:0;background:#ffffff8c;-webkit-backdrop-filter:blur(16px) saturate(1.2);backdrop-filter:blur(16px) saturate(1.2);border:1.5px solid #fffffff0;color:#3a3630;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 24px #3a2e1a24,inset 0 1px 0 #fff,0 0 0 1px #3a2e1a14}
+.plus{pointer-events:auto;width:60px;height:60px;border-radius:50%;border:0;background:#fffffff0;border:1.5px solid #fffffff0;color:#3a3630;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 24px #3a2e1a24,inset 0 1px 0 #fff,0 0 0 1px #3a2e1a14}
 .plus svg{width:26px;height:26px}
 .sheet{position:fixed;inset:0;background:#0006;display:none;z-index:6;align-items:flex-end}
 .sheet.show{display:flex}
@@ -262,11 +263,11 @@ function render(){
   if(view==='shelf'){
     const rows=[];for(let i=0;i<cells.length;i+=4)rows.push(cells.slice(i,i+4));
     const last=rows[rows.length-1];const fill=4-last.length;
-    $('main').innerHTML=`<div class="cab">${rows.map((r,ri)=>`<div class="shf"><div class="shr">${r.map(c=>`<div class="sc${c.hid?' hid':''}" data-id="${c.o.id}">${HB(c)}${c.tag?`<span class="sb">${c.tag}</span>`:(c.o.status==='pre'?'<span class="sb">預購中</span>':'')}<div class="si">${c.img?`<img src="${c.img}" alt="">`:'<span style="font-size:11px;color:var(--mu)">無圖</span>'}</div><div class="sn">${esc(c.name)}</div></div>`).join('')}${ri===rows.length-1?Array.from({length:fill},(_,k)=>`<div class="sc em" ${k===0?'data-add="1"':''}>${k===0?'＋':''}</div>`).join(''):''}</div></div>`).join('')}${last.length===4?'<div class="shf"><div class="shr"><div class="sc em" data-add="1">＋</div></div></div>':''}</div>`;
+    $('main').innerHTML=`<div class="cab">${rows.map((r,ri)=>`<div class="shf"><div class="shr">${r.map(c=>`<div class="sc${c.hid?' hid':''}" data-id="${c.o.id}">${HB(c)}${c.tag?`<span class="sb">${c.tag}</span>`:(c.o.status==='pre'?'<span class="sb">預購中</span>':'')}<div class="si">${c.img?`<img src="${c.img}" alt="">`:'<span style="font-size:11px;color:var(--mu)">無圖</span>'}</div><div class="sn">${esc(c.name)}</div><div class="sp">${pp(c.o,c.price)}</div></div>`).join('')}${ri===rows.length-1?Array.from({length:fill},(_,k)=>`<div class="sc em" ${k===0?'data-add="1"':''}>${k===0?'＋':''}</div>`).join(''):''}</div></div>`).join('')}${last.length===4?'<div class="shf"><div class="shr"><div class="sc em" data-add="1">＋</div></div></div>':''}</div>`;
     return}
   $('main').innerHTML=view==='grid'
    ?`<div class="grid">${cells.map(c=>`<div class="cell${c.hid?' hid':''}" data-id="${c.o.id}">${HB(c)}<div class="bds">${cb(c)}</div><div class="im">${im(c)}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price)}</div></div>`).join('')}</div>`
-   :`<div class="list">${cells.map(c=>{const o=c.o;return `<div class="row${c.hid?' hid':''}" data-id="${o.id}">${HB(c)}<div class="im">${im(c)}</div><div class="mt"><div class="nm">${esc(c.name)}${cb(c)}</div><small>${esc(o.src)} ${esc(o.seller)} · ${fmt(o.buyDate)}</small><small>${c.cat?esc(c.cat)+' · ':''}${PAY[o.pay]}${o.status==='pre'&&o.eta?' · 預計 '+fmt(o.eta):''}</small></div><div class="pr">${pp(o,c.price)}</div></div>`}).join('')}</div>`;
+   :`<div class="list">${cells.map(c=>{const o=c.o;return `<div class="row${c.hid?' hid':''}" data-id="${o.id}"><div class="im">${im(c)}</div><div class="mt"><div class="nm">${esc(c.name)}${cb(c)}</div><small>${esc(o.src)} ${esc(o.seller)} · ${fmt(o.buyDate)}</small><small>${c.cat?esc(c.cat)+' · ':''}${PAY[o.pay]}${o.status==='pre'&&o.eta?' · 預計 '+fmt(o.eta):''}</small></div><div class="pr">${pp(o,c.price)}</div>${HB(c)}</div>`}).join('')}</div>`;
 }
 
 /* editor */
