@@ -353,7 +353,7 @@ function drawEd(){
   <div class="cd"><h3>商品圖片（點一下設為封面）</h3>
     <div class="thumbs">${cur.imgs.map((m,i)=>`<div class="th ${i===cur.cover?'cv':''}" data-c="${i}"><img src="${m.s}">${i===cur.cover?'<b>封面</b>':''}<i data-rm="${i}">×</i></div>`).join('')}</div>
     <button class="btn" id="addimg">＋ 新增圖片</button><input type="file" id="imgf" accept="image/*" multiple hidden>
-    ${cover(cur)?(cur.imgs[cur.cover]&&cur.imgs[cur.cover].o?'<button class="btn" id="undo">還原封面原圖</button>':'<button class="btn" id="bg">✂️ 封面去背</button>')+'<button class="btn" id="crc">✂ 封面裁切</button><button class="btn" id="zm">🔍 封面放大主體</button>':''}
+    ${cover(cur)?(cur.imgs[cur.cover]&&cur.imgs[cur.cover].o?'<button class="btn" id="undo">還原封面原圖</button><button class="btn" id="cclc">🧹 清殘影</button>':'<button class="btn" id="bg">✂️ 封面去背</button>')+'<button class="btn" id="crc">✂ 封面裁切</button><button class="btn" id="zm">🔍 封面放大主體</button>':''}
     <div class="msg" id="msg2"></div></div>
   <div class="cd">${seg('status',[['wish','想買'],['pre','預購中'],['have','已到貨'],['sold','已售出']])}
     ${seg('proxy',[['0','整筆是我的'],['1','整筆是幫朋友買']])+sel('分類（預設）','cat',[['','未分類'],...cats.map(c=>[c,c])])}
@@ -366,7 +366,7 @@ function drawEd(){
       <div class="fr" style="padding:6px 0"><span>分類</span><select data-i="${i}" data-k="cat"><option value="">同訂單（${esc(cur.cat||'未分類')}）</option>${(S.cats.includes(it.cat)||!it.cat?S.cats:[...S.cats,it.cat]).map(c=>`<option value="${esc(c)}" ${it.cat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
       ${(+it.qty||1)>1?`<div style="margin:4px 0 6px"><button class="btn" data-split="${i}">＋ 拆出一款（盲盒不同款式）</button></div>`:''}<div class="two"><input data-i="${i}" data-k="qty" type="number" inputmode="numeric" placeholder="數量" value="${esc(it.qty)}"><input data-i="${i}" data-k="price" type="number" inputmode="decimal" placeholder="單價" value="${esc(it.price)}"></div>
       ${cur.status==='have'||cur.status==='sold'?`<div class="sell"><span>已售出</span><button data-sq="${i}" data-d="-1">−</button><b>${sq(it)} / ${+it.qty||1}</b><button data-sq="${i}" data-d="1">＋</button>${sq(it)?`<input data-i="${i}" data-k="sp" type="number" inputmode="decimal" placeholder="賣了多少（台幣總額）" value="${esc(it.sp||'')}">`:''}</div>`:''}
-      ${it.img?`<div style="margin-top:6px">${it.img.o?`<button class="btn" data-iun="${i}">還原原圖</button>`:`<button class="btn" data-ibg="${i}">✂️ 去背</button>`}<button class="btn" data-icr="${i}">✂ 裁切</button><button class="btn" data-izm="${i}">🔍 放大主體</button><button class="btn" data-irm="${i}">移除圖片</button></div>`:''}</div>`).join('')}
+      ${it.img?`<div style="margin-top:6px">${it.img.o?`<button class="btn" data-iun="${i}">還原原圖</button><button class="btn" data-icl="${i}">🧹 清殘影</button>`:`<button class="btn" data-ibg="${i}">✂️ 去背</button>`}<button class="btn" data-icr="${i}">✂ 裁切</button><button class="btn" data-izm="${i}">🔍 放大主體</button><button class="btn" data-irm="${i}">移除圖片</button></div>`:''}</div>`).join('')}
     <input type="file" id="itf" accept="image/*" hidden>
     <div class="msg">到貨後，每個品項會在收藏櫃各自顯示。點左邊的縮圖，可以替這個品項單獨加照片、去背。盲盒有不同款式時，按「拆出一款」，每一款各自放照片；抽到重複的款式，就把數量留在那一款。</div>
     <button class="btn" id="addit">＋ 新增品項</button>${cur.items.filter(i=>i.img&&!i.img.o).length?`<button class="btn" id="bgord">✂️ 全部品項去背（${cur.items.filter(i=>i.img&&!i.img.o).length} 張）</button>`:''}${dupGroups(cur).length?`<button class="btn" id="mrg">合併相同品項（${dupGroups(cur).length} 組）</button>`:''}</div>
@@ -428,6 +428,7 @@ MO.addEventListener('click',ev=>{
     if(b.dataset.k==='unit'){const x=calcEta(cur.start,cur.dur,cur.unit);if(x)cur.eta=x}
     drawEd();return}
   if(b.dataset.ibg!==undefined){busyBtn(b,'⏳ 去背中…');doBg(cur.items[+b.dataset.ibg].img);return}
+  if(b.dataset.icl!==undefined){const m=cur.items[+b.dataset.icl].img;busyBtn(b,'⏳ 清理中…');cleanCut(m.s).then(t=>{m.s=t;drawEd();toast('✓ 已清掉殘影，不滿意可按「還原原圖」')});return}
   if(b.dataset.icr!==undefined){openCrop(cur.items[+b.dataset.icr].img);return}
   if(b.dataset.izm!==undefined){const m=cur.items[+b.dataset.izm].img;busyBtn(b,'⏳ 處理中…');trimImg(m.s).then(t=>{const same=t===m.s;m.s=t;drawEd();toast(same?'這張圖已經沒有多餘空白了':'✓ 已放大主體')});return}
   if(b.dataset.iun!==undefined){const m=cur.items[+b.dataset.iun].img;m.s=m.o;delete m.o;drawEd();toast('已還原原圖');return}
@@ -446,6 +447,7 @@ MO.addEventListener('click',ev=>{
   if(id==='crc'){openCrop(cur.imgs[cur.cover]);return}
   if(id==='bgord'){bgOrder();return}
   if(id==='bg'){busyBtn(b,'⏳ 去背中…');doBg(cur.imgs[cur.cover])}
+  if(id==='cclc'){const m=cur.imgs[cur.cover];busyBtn(b,'⏳ 清理中…');cleanCut(m.s).then(t=>{m.s=t;drawEd();toast('✓ 已清掉殘影')});return}
   if(id==='undo'){const m=cur.imgs[cur.cover];m.s=m.o;delete m.o;drawEd();toast('已還原原圖')}
   if(id==='sv'){delete cur._new;derive(cur);cur.items=cur.items.filter((i,n)=>i.name||+i.price||n===0);const i=items.findIndex(x=>x.id===cur.id);i<0?items.unshift(cur):items[i]=cur;save();render();MO.classList.remove('show');backDetail()}
   if(id==='dl'&&confirm('確定要刪除這筆訂單？')){items=items.filter(x=>x.id!==cur.id);dvState=null;save();render();MO.classList.remove('show')}
@@ -630,12 +632,21 @@ async function doBg(m){
     
     const blob=await (await fetch(m.s)).blob();const out=await rmBg(blob);
     const u=URL.createObjectURL(out),im=new Image();
-    im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);m.o=m.s;trimImg(c.toDataURL('image/webp',.9)).then(t=>{m.s=t;bgBusy=false;drawEd();toast('✓ 去背完成（想復原可按「還原原圖」）',3200)})};
+    im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);m.o=m.s;trimImg(c.toDataURL('image/webp',.9)).then(cleanCut).then(t=>{m.s=t;bgBusy=false;drawEd();toast('✓ 去背完成（想復原可按「還原原圖」）',3200)})};
     im.onerror=()=>{bgBusy=false;drawEd();toast('去背失敗：圖片讀取錯誤',4000)};
     im.src=u;
   }catch(e){bgBusy=false;drawEd();toast('去背失敗：'+String(e&&e.message||e).slice(0,140),9000)}
 }
 
+/* cutout cleanup: remove faint haze + stray specks */
+function cleanCut(u){return new Promise(res=>{const im=new Image();im.onerror=()=>res(u);im.onload=()=>{try{
+  const w=im.width,h=im.height,c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.drawImage(im,0,0);const d=g.getImageData(0,0,w,h),a=d.data,N=w*h;
+  for(let i=0;i<N;i++){const al=a[i*4+3];a[i*4+3]=al<80?0:al>200?255:Math.round((al-80)/120*255)}
+  const lab=new Int32Array(N),sz=[0],st=new Int32Array(N);let n=0;
+  for(let i=0;i<N;i++){if(lab[i]||!a[i*4+3])continue;n++;let sp=0,cnt=0;st[sp++]=i;lab[i]=n;
+    while(sp){const p=st[--sp];cnt++;const x=p%w,y=(p-x)/w;for(let dy=-1;dy<=1;dy++){const yy=y+dy;if(yy<0||yy>=h)continue;for(let dx=-1;dx<=1;dx++){const xx=x+dx;if(xx<0||xx>=w)continue;const q=yy*w+xx;if(!lab[q]&&a[q*4+3]){lab[q]=n;st[sp++]=q}}}}sz.push(cnt)}
+  const mx=Math.max(0,...sz);for(let i=0;i<N;i++){const l=lab[i];if(l&&sz[l]<mx*.04)a[i*4+3]=0}
+  g.putImageData(d,0,0);trimImg(c.toDataURL('image/webp',.9)).then(res)}catch(e){res(u)}};im.src=u})}
 /* manual crop */
 function openCrop(m){
   if(!m)return;const src=m.o||m.s;let el=$('cr');if(!el){el=document.createElement('div');el.id='cr';document.body.appendChild(el)}
@@ -671,7 +682,7 @@ function drawSet(){
   <div class="cd"><h3>隱藏總投入</h3><div class="fr"><span>首頁不顯示「總投入」金額</span><input id="hideamt" type="checkbox" ${S.hide?'checked':''} style="flex:none;width:auto"></div><div class="msg">開啟後，總投入、價格、總額、淨賺都顯示 ＊＊＊。輸入價格時還是看得到自己打的數字。首頁右上角的眼睛也可以隨時切換。</div></div>
   <div class="cd"><h3>刷卡</h3><div class="fr"><span>國外手續費 %（刷卡自動加上）</span><input id="cardfee" type="number" inputmode="decimal" step="any" value="${+S.cardFee||0}"></div></div>
   <div class="cd"><h3>匯率（換算成台幣，用於統計）</h3>${['JPY','CNY','KRW','USD'].map(c=>`<div class="fr"><span>1 ${CURN[c]} =</span><input data-rate="${c}" type="number" inputmode="decimal" step="any" value="${S.rates[c]}"></div>`).join('')}</div>
-  <div class="cd"><h3>商品圖</h3><button class="btn" id="bgall">✂️ 全部商品去背</button><button class="btn" id="cmpimg">🗜 縮小全部圖片</button><div class="msg">替還沒去背的商品圖一次去背，櫃子會更好看。需要網路，張數多時請保持畫面開著。</div></div>
+  <div class="cd"><h3>商品圖</h3><button class="btn" id="bgall">✂️ 全部商品去背</button><button class="btn" id="cleanall">🧹 全部去背圖清殘影</button><button class="btn" id="cmpimg">🗜 縮小全部圖片</button><div class="msg">替還沒去背的商品圖一次去背，櫃子會更好看。需要網路，張數多時請保持畫面開著。</div></div>
   <div class="cd"><h3>☁️ 雲端同步（你自己的私人 GitHub）</h3><div class="msg" style="margin:0 0 8px">${syncMsg()}</div>
     <div class="fr"><span>金鑰</span><input id="ghtok" type="password" autocomplete="off" placeholder="github_pat_…" value="${esc(GH().t)}"></div>
     <div class="fr"><span>倉庫</span><input id="ghrepo" value="${esc(GH().r)}" placeholder="帳號/倉庫名"></div>
@@ -709,8 +720,15 @@ SO.addEventListener('click',e=>{
   if(b.id==='sydn')syncDown();
   if(b.id==='syrs')restorePrev();
   if(b.id==='cmpimg')cmpImgs();
+  if(b.id==='cleanall')cleanAll();
 });
 
+async function cleanAll(){
+  const T=[];items.forEach(o=>{o.items.forEach(i=>{if(i.img&&i.img.o)T.push(i.img)});(o.imgs||[]).forEach(m=>{if(m&&m.o)T.push(m)})});
+  if(!T.length){toast('沒有去背過的圖');return}
+  if(!confirm('替 '+T.length+' 張去背圖清掉殘影？（不滿意可逐張「還原原圖」）'))return;
+  for(let i=0;i<T.length;i++){toast('🧹 清理中 '+(i+1)+' / '+T.length+'…',0);T[i].s=await cleanCut(T[i].s);if(i%5===4){await save();render()}}
+  await save();render();toast('✓ 完成',3000)}
 async function cmpImgs(){
   const re=async u=>new Promise(res=>{const im=new Image();im.onerror=()=>res(u);im.onload=()=>{const k=Math.min(1,640/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));c.getContext('2d').drawImage(im,0,0,c.width,c.height);const o=c.toDataURL('image/webp',.78);res(o.length<u.length?o:u)};im.src=u});
   const holders=[];const walk=x=>{if(Array.isArray(x))x.forEach(walk);else if(x&&typeof x==='object'){for(const k of ['s','o'])if(typeof x[k]==='string'&&x[k].startsWith('data:image')&&x[k].length>40000)holders.push([x,k]);Object.values(x).forEach(v=>{if(v&&typeof v==='object')walk(v)})}};walk(items);
@@ -820,7 +838,7 @@ async function bgOne(m){
   const out=await rmBg(await (await fetch(m.s)).blob());
   const u=URL.createObjectURL(out);
   const c=await new Promise((res,rej)=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);res(c)};im.onerror=()=>rej(new Error('圖片讀取錯誤'));im.src=u});
-  m.o=m.s;m.s=await trimImg(c.toDataURL('image/webp',.9))}
+  m.o=m.s;m.s=await cleanCut(await trimImg(c.toDataURL('image/webp',.9)))}
 async function bgOrder(){
   if(bgAllRun||bgBusy){toast('還在處理中，請稍等');return}
   const T=cur.items.filter(i=>i.img&&!i.img.o).map(i=>i.img);if(!T.length)return;
