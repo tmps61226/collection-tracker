@@ -583,7 +583,7 @@ async function testKey(){
 }
 const SHOT_SCHEMA=()=>({type:'OBJECT',properties:{
   sourceType:{type:'STRING',enum:SRC},seller:{type:'STRING'},link:{type:'STRING'},buyDate:{type:'STRING'},recvDate:{type:'STRING'},
-  status:{type:'STRING',enum:['wish','pre','have','']},currency:{type:'STRING',enum:['TWD','JPY','CNY','KRW','USD']},ship:{type:'NUMBER'},
+  status:{type:'STRING',enum:['wish','pre','have','']},currency:{type:'STRING',enum:['TWD','JPY','CNY','KRW','USD']},ship:{type:'NUMBER'},total:{type:'NUMBER'},
   pay:{type:'STRING',enum:['unpaid','deposit','paid','cod']},deposit:{type:'NUMBER'},twTotal:{type:'NUMBER'},eta:{type:'STRING'},category:{type:'STRING'},orig:{type:'STRING'},
   items:{type:'ARRAY',items:{type:'OBJECT',properties:{name:{type:'STRING'},category:{type:'STRING'},qty:{type:'NUMBER'},price:{type:'NUMBER'},img:{type:'INTEGER'},box:{type:'ARRAY',items:{type:'NUMBER'}}},required:['name','qty','price']}}
 },required:['items']});
@@ -598,6 +598,9 @@ function shotPrompt(n){return `你是繁體中文訂單辨識器。以下 ${n} �
 
 【商品照片】
 box 是該品項商品照片在那張圖裡的位置 [ymin,xmin,ymax,xmax]，0～1000 的相對座標（左上角為原點），img 是它出現在第幾張圖（從 0 開始）。商品頁截圖上最大的商品主圖就是該品項的照片，請依品名或款式把每一頁對應到正確的品項。只框商品照片本身，不要框店家頭像、Logo、按鈕或文字；清單表格或沒有商品照片的圖，不要給 box。
+
+【運費與總額】
+ship 填這筆訂單的「運費」（也可能叫運送費、物流費、店到店運費、配送費、國際運費；例如賣貨便畫面「運費 $38」就填 38），單位和 currency 相同，不要把運費算進任何品項的 price。若寫「免運」或運費被「運費折抵／運費券」全額抵掉，ship 填 0；只抵一部分就填實際還要付的運費。total 填圖上最後的「應付總金額／訂單金額／總計／實付金額」（運費含在內、已扣掉折扣的實付數字），看不到就填 0。
 
 【日期】
 只讀圖上真的出現的日期，年份用西元四位數 YYYY-MM-DD；手機最上面的狀態列時間（例如 02:22）不是日期，要忽略；不要編造、不要用今天的日期。「訂單成立／下單／付款」的日期填 buyDate；「買家取件成功／已送達／訂單已完成／已收貨」的日期填 recvDate，並且 status 填 have。只看得到取件日期時，buyDate 也填同一天。預計到貨日填 eta。
@@ -689,11 +692,12 @@ async function doShot(files,re,O,quiet){
     }
     if(d.sourceType&&SRC.includes(d.sourceType))O.src=d.sourceType;
     if(d.seller)O.seller=d.seller;if(d.link)O.link=d.link;if(/^\d{4}-\d{2}-\d{2}$/.test(d.buyDate||''))O.buyDate=d.buyDate;
-    if(CUR[d.currency])O.cur=d.currency;if(+d.ship)O.ship=+d.ship;
+    if(CUR[d.currency])O.cur=d.currency;
     if(PAY[d.pay]){O.pay=d.pay;if(d.pay==='deposit'&&+d.deposit)O.deposit=+d.deposit}
     if(d.category&&S.cats.includes(d.category))O.cat=d.category;
     const good=d.items.filter(i=>i&&(i.name||+i.price));
     if(good.length)O.items=good.map(i=>{const o={name:String(i.name||''),qty:+i.qty||1,price:+i.price||''};if(i.category&&S.cats.includes(i.category)&&i.category!==O.cat)o.cat=i.category;return o});
+    {const sum=(good.length?good:O.items).reduce((x,i)=>x+(+i.qty||0)*(+i.price||0),0);let sh=+d.ship||0;if(!sh&&+d.total>0&&good.length){const df=+d.total-sum;if(df>0&&df<=500)sh=df}if(sh)O.ship=sh}
     if(O.cur!=='TWD'&&+d.twTotal>0&&good.length)O.twPaid=+d.twTotal;
     if(d.eta){O.eta=d.eta;O.status='pre'}else if(['pre','wish','have'].includes(d.status))O.status=d.status;
     if(/^\d{4}-\d{2}-\d{2}$/.test(d.recvDate||'')){O.recvDate=d.recvDate;if(!d.eta)O.status='have'}
