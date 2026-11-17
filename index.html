@@ -316,9 +316,10 @@ function render(){
     const split=mixed||((o.status==='have'||o.status==='sold')&&(o.items.length>1||soldUnits(o)>0))||(o.status==='pre'&&(o.items.length>1||o.items.some(i=>i.got)));
     if(split)o.items.forEach(it=>{
       const q=+it.qty||1,n=sq(it),r=q-n;
+      const shu=(+o.ship||0)/(o.items.reduce((a,i)=>a+(+i.qty||1),0)||1);
       const gt=o.status==='pre'&&!!it.got;if(o.status==='pre'&&((fs==='have'&&!gt)||(fs==='pre'&&gt)))return;
       if(!vis(o,it,fc))return;if(fs==='have'&&r<=0)return;if(fs==='sold'&&n<=0)return;if($('hs').checked&&r<=0)return;
-      cells.push({o,ix:o.items.indexOf(it),hid:!!it.hide,cat:ic(o,it),name:(it.name||'未命名')+(n>0&&r>0?' ×'+r:q>1&&n===0?' ×'+q:''),img:it.img?it.img.s:cover(o),price:(+it.price||0)*(n>0&&r>0?r:q),tag:n>=q?'已售出':n>0?'已售 '+n+'/'+q:'',st:gt?'have':undefined});
+      cells.push({o,ix:o.items.indexOf(it),hid:!!it.hide,cat:ic(o,it),name:(it.name||'未命名')+(n>0&&r>0?' ×'+r:q>1&&n===0?' ×'+q:''),img:it.img?it.img.s:cover(o),price:((+it.price||0)+shu)*(n>0&&r>0?r:q),tag:n>=q?'已售出':n>0?'已售 '+n+'/'+q:'',st:gt?'have':undefined});
     });
     else cells.push({o,ix:-1,hid:o.items.every(i=>i.hide),cat:ic(o,o.items[0]),name:title(o),img:(o.items.length===1&&o.items[0].img)?o.items[0].img.s:cover(o),price:total(o)});
   });
