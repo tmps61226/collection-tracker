@@ -535,6 +535,7 @@ function nice(e){
 function gmh(){try{const h=JSON.parse(localStorage.getItem('gmh')||'{}');return h.d===gDay()?h:{d:gDay(),dead:[],slow:{},good:h.good||'',nt:h.nt||{}}}catch(e){return{d:gDay(),dead:[],slow:{},good:''}}}
 function gmhSet(h){try{localStorage.setItem('gmh',JSON.stringify(h))}catch(e){}}
 const thinkOff=m=>/2\.5.*flash|flash.*2\.5/.test(m)&&!/pro/.test(m)?{thinkingBudget:0}:/pro/.test(m)?null:{thinkingLevel:'low'};
+let hidTs=0;document.addEventListener('visibilitychange',()=>{if(document.hidden)hidTs=Date.now()});
 async function gem(k,body,on,ms){
   ms=ms||15000;
   const GM0b=await models(k),h=gmh(),now=Date.now();
@@ -550,13 +551,13 @@ async function gem(k,body,on,ms){
     let think=(h.nt&&h.nt[m])?null:thinkOff(m),x,j;
     for(let t2=0;t2<2;t2++){
       const bd=JSON.parse(JSON.stringify(body));bd.generationConfig=bd.generationConfig||{};if(think&&!bd.generationConfig.thinkingConfig)bd.generationConfig.thinkingConfig=think;
-      const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),ms);gCount();
+      const t0=Date.now(),ac=new AbortController(),tm=setTimeout(()=>ac.abort(),ms);gCount();
       try{
         x=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent',{method:'POST',signal:ac.signal,headers:{'Content-Type':'application/json','x-goog-api-key':k},body:JSON.stringify(bd)});
         j=await x.json();
       }catch(e){
         clearTimeout(tm);
-        if(e.name==='AbortError'){if(document.hidden)throw new Error('Load failed（離開畫面，連線中斷）');h.slow[m]=Date.now();gmhSet(h);last=new Error('等太久沒回應（'+m+'）');x=null;break}
+        if(e.name==='AbortError'){if(document.hidden||hidTs>t0)throw new Error('Load failed（離開畫面，連線中斷）');h.slow[m]=Date.now();gmhSet(h);last=new Error('等太久沒回應（'+m+'）');x=null;break}
         throw new Error('Load failed（連線中斷）')
       }finally{clearTimeout(tm)}
       if(x.ok){const hh=gmh();hh.good=m;gmhSet(hh);return j}
@@ -643,6 +644,7 @@ async function runJobs(){
   if(jr)return;jr=true;const my=++jgen;
   try{for(;;){
     if(my!==jgen)return;
+    if(document.hidden)break;
     const j=jobs.find(x=>x.st==='q');if(!j)break;
     j.st='run';j.at=Date.now();await saveJobs();renderJobs();
     const files=[];for(const u of j.imgs)files.push(new File([await (await fetch(u)).blob()],'s.webp',{type:'image/webp'}));
@@ -650,10 +652,10 @@ async function runJobs(){
     let r;try{r=await Promise.race([doShot(files,false,O,true),new Promise(res=>setTimeout(()=>res({ok:false,err:'逾時（網路太慢或 Gemini 忙碌）'}),240000))])}catch(e){r={ok:false,err:String(e&&e.message||e)}}
     if(my!==jgen)return;
     if(r&&r.ok){derive(O);O.chk=1;items.unshift(O);j.st='done';jobs=jobs.filter(x=>x!==j);await save();await saveJobs();render();renderJobs();toast('✓ 有一筆訂單辨識完成，請確認',3500)}
-    else{const net=document.hidden||/fetch|network|Load failed|連線|逾時|timeout|abort/i.test((r&&r.err)||'');
-      j.err=(r&&r.err)||'辨識失敗';j.tries=(j.tries||0)+1;j.st=(net&&!(r&&r.quota)&&j.tries<4)?'q':'err';await saveJobs();renderJobs();if(j.st==='q')break}
+    else{const net=document.hidden||/fetch|network|Load failed|連線|連不上|網路中斷|逾時|等太久|timeout|abort/i.test((r&&r.err)||'');
+      j.err=(r&&r.err)||'辨識失敗';j.tries=(j.tries||0)+(/離開畫面/.test(j.err)?0:1);j.st=(net&&!(r&&r.quota)&&j.tries<4)?'q':'err';await saveJobs();renderJobs();if(j.st==='q')break}
   }}finally{if(my===jgen)jr=false}}
-function kickJobs(force){const run=jobs.find(j=>j.st==='run');if(jr&&(force||(run&&Date.now()-(run.at||0)>60000))){jgen++;jr=false;jobs.forEach(j=>{if(j.st==='run')j.st='q'})}runJobs()}
+function kickJobs(force){const run=jobs.find(j=>j.st==='run');if(jr&&(force||(run&&Date.now()-(run.at||0)>300000))){jgen++;jr=false;jobs.forEach(j=>{if(j.st==='run')j.st='q'})}runJobs()}
 setInterval(()=>{if(jobs.some(j=>j.st==='run'))renderJobs()},5000);
 function renderJobs(){
   const el=$('jb');if(!el)return;const run=jobs.filter(j=>j.st==='q'||j.st==='run'),bad=jobs.filter(j=>j.st==='err'),chk=items.filter(o=>o.chk);
