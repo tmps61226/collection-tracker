@@ -35,10 +35,10 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .cell .im{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:var(--tile);border-radius:18px;padding:8px;margin-bottom:6px}
 .cell img,.row img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 2px 3px #0003)}
 .nm{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pr{color:var(--mu);font:15px var(--num)}
+.pr{color:var(--mu);font:600 15px var(--num)}
 .cs{font-style:normal;font-size:.7em;margin-right:1px;letter-spacing:.02em}
-.tw .nt{font-style:normal;font-size:.68em;margin-right:2px;letter-spacing:.02em}
-.pr .tw{display:block;text-align:center;font-size:14px;color:#c4705c;margin-top:-1px}
+.tw .nt{font-style:normal;font-size:.7em;margin-right:2px;letter-spacing:.02em}
+.pr .tw{display:block;text-align:center;font-size:15px;color:#c4705c;margin-top:-1px}
 .bd{display:inline-block;font-size:11px;padding:1px 8px;border-radius:10px;background:var(--chip);color:var(--mu);margin-left:4px}
 .cell .bds,.sc .bds,.row .bds{position:absolute;top:2px;left:2px;z-index:1;display:flex;flex-direction:column;align-items:flex-start;gap:3px}.cell .bd,.sc .bd,.row .bd{margin:0}
 .row .im{position:relative;width:64px;height:64px}.row .bds{top:-4px;left:-6px}
@@ -997,9 +997,9 @@ try{const v=localStorage.getItem('view');if(VB[v])view=v;Object.entries(VB).forE
 (function(){
   const skip={SCRIPT:1,STYLE:1,INPUT:1,TEXTAREA:1,OPTION:1,SELECT:1,TITLE:1};
   function walk(root){
-    const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>{const p=n.parentNode;if(!p||skip[p.nodeName]||(p.classList&&(p.classList.contains('cs')||p.classList.contains('nt'))))return NodeFilter.FILTER_REJECT;return n.nodeValue.indexOf('NT$')>=0?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT}});
+    const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>{const p=n.parentNode;if(!p||skip[p.nodeName]||(p.classList&&(p.classList.contains('cs')||p.classList.contains('nt'))))return NodeFilter.FILTER_REJECT;return /NT\$|US\$|CN¥|¥|₩/.test(n.nodeValue)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT}});
     const L=[];while(w.nextNode())L.push(w.currentNode);
-    L.forEach(n=>{const parts=n.nodeValue.split('NT$'),f=document.createDocumentFragment();parts.forEach((t,i)=>{if(i){const e=document.createElement('i');e.className='cs';e.textContent='NT$';f.appendChild(e)}if(t)f.appendChild(document.createTextNode(t))});n.parentNode.replaceChild(f,n)})}
+    L.forEach(n=>{const parts=n.nodeValue.split(/(NT\$|US\$|CN¥|¥|₩)/),f=document.createDocumentFragment();parts.forEach((t,i)=>{if(i%2){const e=document.createElement('i');e.className='cs';e.textContent=t;f.appendChild(e)}else if(t)f.appendChild(document.createTextNode(t))});n.parentNode.replaceChild(f,n)})}
   let q=0;new MutationObserver(()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;walk(document.body)})}).observe(document.body,{childList:true,subtree:true,characterData:true});
   walk(document.body)})();
 </script></body></html>
