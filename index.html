@@ -531,33 +531,48 @@ function nice(e){
   if(/Load failed|Failed to fetch/.test(m))return '連不上 Gemini（網路中斷或金鑰有誤）';
   return m;
 }
+/* model health memory: avoid re-trying dead/slow models (every try costs quota) */
+function gmh(){try{const h=JSON.parse(localStorage.getItem('gmh')||'{}');return h.d===gDay()?h:{d:gDay(),dead:[],slow:{},good:h.good||'',nt:h.nt||{}}}catch(e){return{d:gDay(),dead:[],slow:{},good:''}}}
+function gmhSet(h){try{localStorage.setItem('gmh',JSON.stringify(h))}catch(e){}}
+const thinkOff=m=>/2\.5.*flash|flash.*2\.5/.test(m)&&!/pro/.test(m)?{thinkingBudget:0}:/pro/.test(m)?null:{thinkingLevel:'low'};
 async function gem(k,body,on,ms){
   ms=ms||15000;
-  const GM=await models(k),dead=new Set();
-  let last;
-  for(let r=0;r<2;r++){
-    for(const m of GM){
-      if(dead.has(m))continue;
-      if(on)on(m);
-      let x,j;const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),ms);gCount();
+  const GM0b=await models(k),h=gmh(),now=Date.now();
+  const okList=GM0b.filter(m=>!h.dead.includes(m));
+  if(!okList.length)throw new Error('RESOURCE_EXHAUSTED: 今天所有模型的免費額度都用完了');
+  let GM=okList.filter(m=>!(h.slow[m]&&now-h.slow[m]<15*60000));const slow=okList.filter(m=>!GM.includes(m));
+  if(h.good&&GM.includes(h.good))GM=[h.good,...GM.filter(m=>m!==h.good)];
+  GM=GM.concat(slow);if(!GM.length)GM=GM0b.slice();
+  let last,tries=0;
+  for(const m of GM){
+    if(tries>=4)break;tries++;
+    if(on)on(m);
+    let think=(h.nt&&h.nt[m])?null:thinkOff(m),x,j;
+    for(let t2=0;t2<2;t2++){
+      const bd=JSON.parse(JSON.stringify(body));bd.generationConfig=bd.generationConfig||{};if(think&&!bd.generationConfig.thinkingConfig)bd.generationConfig.thinkingConfig=think;
+      const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),ms);gCount();
       try{
-        x=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent',{method:'POST',signal:ac.signal,headers:{'Content-Type':'application/json','x-goog-api-key':k},body:JSON.stringify(body)});
+        x=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent',{method:'POST',signal:ac.signal,headers:{'Content-Type':'application/json','x-goog-api-key':k},body:JSON.stringify(bd)});
         j=await x.json();
-      }catch(e){last=e.name==='AbortError'?new Error('等太久沒回應（'+m+'）'):e;continue}finally{clearTimeout(tm)}
-      if(x.ok)return j;
+      }catch(e){
+        clearTimeout(tm);
+        if(e.name==='AbortError'){if(document.hidden)throw new Error('Load failed（離開畫面，連線中斷）');h.slow[m]=Date.now();gmhSet(h);last=new Error('等太久沒回應（'+m+'）');x=null;break}
+        throw new Error('Load failed（連線中斷）')
+      }finally{clearTimeout(tm)}
+      if(x.ok){const hh=gmh();hh.good=m;gmhSet(hh);return j}
       const msg=j.error&&j.error.message||String(x.status);
-      if(isQuota(msg)||x.status===404||/no longer available/i.test(msg))dead.add(m);
+      if(think&&x.status===400&&/thinking/i.test(msg)){think=null;const hh=gmh();hh.nt=hh.nt||{};hh.nt[m]=1;gmhSet(hh);h.nt=hh.nt;continue}
+      if(isQuota(msg)||x.status===404||/no longer available/i.test(msg)){const hh=gmh();if(!hh.dead.includes(m))hh.dead.push(m);gmhSet(hh)}
       if(!(isQuota(msg)&&last&&!isQuota(last.message)))last=new Error(msg);
       if(/api key not valid|permission denied|billing/i.test(msg)&&!isQuota(msg))throw last;
+      break;
     }
-    if(dead.size>=GM.length)break;
-    await new Promise(r=>setTimeout(r,1500));
   }
-  throw last;
+  throw last||new Error('沒有可用的模型');
 }
 async function testKey(){
   const k=($('gk').value||localStorage.getItem('gk')||'').replace(/[^\x21-\x7e]/g,'');if(!k){setMsg('請先貼上 Gemini API Key');return}
-  localStorage.setItem('gk',k);setMsg('測試中…');
+  localStorage.setItem('gk',k);try{localStorage.removeItem('gmh')}catch(e){}setMsg('測試中…');
   try{
     const ac=new AbortController(),t=setTimeout(()=>ac.abort(),12000);
     const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=5',{signal:ac.signal,headers:{'x-goog-api-key':k}});clearTimeout(t);
