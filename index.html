@@ -121,7 +121,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
   <div class="bar">
     <select id="fc"></select>
     <select id="so"><option value="buy">購買時間</option><option value="eta">預計到貨</option><option value="price">價格高低</option></select>
-    <label><input type="checkbox" id="hs">隱藏已售</label><label><input type="checkbox" id="hw">隱藏種草</label>
+    <label><input type="checkbox" id="hs">隱藏已售</label><label><input type="checkbox" id="hw">隱藏種草</label><label><input type="checkbox" id="hp" checked>隱藏代買</label>
   </div>
   <div id="main"></div>
 </div>
@@ -204,8 +204,9 @@ const cover=o=>o.imgs&&o.imgs[o.cover]?o.imgs[o.cover].s:(o.imgs&&o.imgs[0]?o.im
 function renderCats(){const v=$('fc').value;$('fc').innerHTML='<option value="all">全部分類</option>'+S.cats.map(c=>`<option>${esc(c)}</option>`).join('');$('fc').value=[...$('fc').options].some(o=>o.value===v)?v:'all'}
 function setFc(v){try{localStorage.setItem('fcSel',v)}catch(e){}}
 function scoped(fc){
-  if(fc==='all')return items;
-  const out=[];items.forEach(o=>{const f=o.items.filter(i=>ic(o,i)===fc);if(!f.length)return;if(f.length===o.items.length){out.push(o);return}
+  const base=$('hp').checked?items.filter(o=>o.proxy!=='1'):items;
+  if(fc==='all')return base;
+  const out=[];base.forEach(o=>{const f=o.items.filter(i=>ic(o,i)===fc);if(!f.length)return;if(f.length===o.items.length){out.push(o);return}
     const r=sub(o)?f.reduce((a,i)=>a+(+i.qty||0)*(+i.price||0),0)/sub(o):0;
     out.push(Object.assign({},o,{items:f,ship:(+o.ship||0)*r,deposit:(+o.deposit||0)*r,twPaid:o.twPaid?+o.twPaid*r:o.twPaid}))});
   return out}
@@ -226,7 +227,7 @@ function render(){
   const q=$('q').value.trim().toLowerCase(),fs=$('fs').value,fc=$('fc').value,so=$('so').value;
   let l=items.filter(o=>{
     if(fs!=='all'&&!(fs==='sold'?(o.status==='sold'||soldUnits(o)>0):o.status===fs))return false;if(fc!=='all'&&!(o.items.some(i=>ic(o,i)===fc)))return false;
-    if($('hs').checked&&o.status==='sold')return false;if($('hw').checked&&o.status==='wish')return false;
+    if($('hs').checked&&o.status==='sold')return false;if($('hw').checked&&o.status==='wish')return false;if($('hp').checked&&o.proxy==='1')return false;
     if(!q)return true;
     return [o.items.map(i=>i.name+' '+(i.cat||'')).join(' '),o.seller,o.src,o.cat,o.note].join(' ').toLowerCase().includes(q)});
   l.sort((a,b)=>so==='price'?tw(b,total(b))-tw(a,total(a)):so==='eta'?((a.eta||'9999')<(b.eta||'9999')?-1:1):(b.buyDate||'').localeCompare(a.buyDate||''));
@@ -259,7 +260,7 @@ function render(){
 }
 
 /* editor */
-const seg=(key,opts)=>`<div class="seg">${opts.map(o=>`<button data-k="${key}" data-v="${o[0]}" class="${cur[key]===o[0]?'on':''}">${o[1]}</button>`).join('')}</div>`;
+const seg=(key,opts)=>`<div class="seg">${opts.map(o=>`<button data-k="${key}" data-v="${o[0]}" class="${(cur[key]===o[0]||(key==='proxy'&&cur[key]==null&&o[0]==='0'))?'on':''}">${o[1]}</button>`).join('')}</div>`;
 const STORES=['三麗鷗門市','Sanrio Gift Gate','Sanrio Puroland','三麗鷗專賣店','寶可夢中心','迪士尼商店','Animate','Donki 唐吉訶德','扭蛋／轉蛋','Loft','Village Vanguard','機場免稅店'];
 function storeRow(){
   if(cur.src==='朋友幫買')return fr('幫買的朋友','seller','text','朋友名字');
@@ -286,7 +287,7 @@ function drawEd(){
     ${cover(cur)?(cur.imgs[cur.cover]&&cur.imgs[cur.cover].o?'<button class="btn" id="undo">還原封面原圖</button>':'<button class="btn" id="bg">✂️ 封面去背</button>')+'<button class="btn" id="zm">🔍 封面放大主體</button>':''}
     <div class="msg" id="msg2"></div></div>
   <div class="cd">${seg('status',[['wish','想買'],['pre','預購中'],['have','已到貨'],['sold','已售出']])}
-    ${sel('分類（預設）','cat',[['','未分類'],...cats.map(c=>[c,c])])}
+    ${seg('proxy',[['0','我的收藏'],['1','幫朋友買（不算我的）']])+sel('分類（預設）','cat',[['','未分類'],...cats.map(c=>[c,c])])}
     <div class="fr love"><span>喜愛程度</span><span>${hearts}</span></div></div>
   <div class="cd"><h3>來源</h3>${sel('類型','src',SRC.map(s=>[s,s]))}${storeRow()}${fr('連結','link','url','https://')}${fr('購買日期','buyDate','date')}</div>
   <div class="cd"><h3>品項</h3>
@@ -591,7 +592,8 @@ SO.addEventListener('click',e=>{
 /* home events */
 $('chips').addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(b){$('fs').value=b.dataset.s;render()}});
 $('main').addEventListener('click',e=>{if(e.target.closest('[data-add]')){$('sheet').classList.add('show');return}const n=e.target.closest('[data-id]');if(n)openEd(n.dataset.id)});
-['q','fs','fc','so','hs','hw'].forEach(i=>$(i).addEventListener('input',render));
+['q','fs','fc','so','hs','hw','hp'].forEach(i=>$(i).addEventListener('input',render));
+$('hp').addEventListener('input',()=>{try{localStorage.setItem('hp',$('hp').checked?'1':'0')}catch(e){}});
 $('fc').addEventListener('input',()=>setFc($('fc').value));
 const VB={grid:'vg',list:'vl',shelf:'vs'};
 function setView(v){view=v;try{localStorage.setItem('view',v)}catch(e){}Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===v));render()}
@@ -614,5 +616,6 @@ async function autoTrimAll(){
   }
   if(ch){save();render()}
 }
-(async()=>{const a=await kvGet('items'),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);renderCats();try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{const v=localStorage.getItem('view');if(VB[v])view=v;Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===view))}catch(e){}render();setTimeout(()=>autoTrimAll().catch(()=>{}),400)})();
+(async()=>{const a=await kvGet('items'),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);renderCats();try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{$('hp').checked=localStorage.getItem('hp')!=='0'}catch(e){}
+try{const v=localStorage.getItem('view');if(VB[v])view=v;Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===view))}catch(e){}render();setTimeout(()=>autoTrimAll().catch(()=>{}),400)})();
 </script></body></html>
