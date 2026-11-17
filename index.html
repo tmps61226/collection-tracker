@@ -92,6 +92,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 #dv{z-index:5}#mo{z-index:6}
 .dvi{display:flex;justify-content:center;align-items:flex-end;height:250px;padding:4px 20px 0}.dvi img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 3px 5px #0003)}
 .dvb{padding:0 20px 40px}.dvn{font-weight:800;font-size:24px;line-height:1.25;margin:10px 0 4px}.dvs{color:var(--mu);font-size:14px;margin-bottom:6px}.dvh{color:var(--heart);font-size:20px;letter-spacing:2px;margin:8px 0 6px}
+.jbtn{border:1px solid var(--ln);background:#fff;border-radius:999px;padding:4px 12px;margin-left:6px;font-size:13px}
 .dr.di span{flex:1;min-width:0;word-break:break-word}.dr.di b{flex:none;white-space:nowrap}.it .gotl{display:flex;flex-direction:row;align-items:center;gap:10px;padding:4px 0 8px;font-size:15px;width:auto}.it .gotl input{width:22px;height:22px;padding:0;margin:0;flex:none;border-radius:6px}.inote{display:block;font-size:13px;color:var(--mu);margin-top:3px;white-space:pre-wrap}
 .dr{display:flex;justify-content:space-between;gap:16px;padding:13px 0;border-bottom:1px solid var(--ln);align-items:flex-start}.dr span{color:var(--mu);flex:none}.dr b{font-weight:600;text-align:right;min-width:0;word-break:break-word}.dr b .tw{display:block;font-size:14px;color:#c4705c;font-weight:400}.dr b a{color:var(--tx)}
 .dbt{display:block;width:100%;margin-top:14px;padding:15px;border-radius:30px;border:1.5px solid var(--tx);background:transparent;color:var(--tx);font-size:16px;font-weight:700}.dbt.red{border:0;color:var(--rd);font-weight:600;margin-top:4px}
@@ -149,7 +150,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
   <div class="top"><button class="circ" id="gear" aria-label="設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg></button><div><div class="ttl">收藏櫃</div><div class="dt" id="dt"></div></div><button class="circ" id="eye" aria-label="隱藏金額"></button></div>
   <div id="stats"></div>
   <input class="sr" id="q" placeholder="搜尋品名、賣家、備註">
-  <div id="bk"></div><div id="ar"></div>
+  <div id="jb"></div><div id="bk"></div><div id="ar"></div>
   <div class="chips" id="chips"></div>
   <select id="fs" hidden><option value="all">全部</option><option value="pre">預購中</option><option value="have">已到貨</option><option value="wish">想買</option><option value="sold">已售出</option></select>
   <div class="bar">
@@ -421,7 +422,7 @@ MO.addEventListener('change',ev=>{
   if(e.id==='gk')localStorage.setItem('gk',e.value.trim());
   if(e.id==='itf'&&e.files[0]){shrink(e.files[0]).then(u=>{if(u&&cur.items[itT]){cur.items[itT].img={s:u};drawEd()}})}
   if(e.id==='imgf'&&e.files.length)addImgs([...e.files]);
-  if(e.id==='shotf'&&e.files.length)doShot([...e.files]);
+  if(e.id==='shotf'&&e.files.length){if(cur&&cur._new)enqueueShots([...e.files]);else doShot([...e.files])}
 });
 MO.addEventListener('click',ev=>{
   const t=ev.target,b=t.closest('button'),h=t.closest('[data-h]'),rm=t.closest('[data-rm]'),th=t.closest('[data-c]');
@@ -463,7 +464,7 @@ MO.addEventListener('click',ev=>{
   if(id==='bg'){busyBtn(b,'⏳ 去背中…');doBg(cur.imgs[cur.cover])}
   if(id==='cclc'){const m=cur.imgs[cur.cover];busyBtn(b,'⏳ 清理中…');cleanCut(m.s).then(t=>{m.s=t;drawEd();toast('✓ 已清掉殘影')});return}
   if(id==='undo'){const m=cur.imgs[cur.cover];m.s=m.o;delete m.o;drawEd();toast('已還原原圖')}
-  if(id==='sv'){delete cur._new;derive(cur);cur.items=cur.items.filter((i,n)=>i.name||+i.price||n===0);const i=items.findIndex(x=>x.id===cur.id);i<0?items.unshift(cur):items[i]=cur;save();render();MO.classList.remove('show');backDetail()}
+  if(id==='sv'){delete cur._new;delete cur.chk;derive(cur);cur.items=cur.items.filter((i,n)=>i.name||+i.price||n===0);const i=items.findIndex(x=>x.id===cur.id);i<0?items.unshift(cur):items[i]=cur;save();render();MO.classList.remove('show');backDetail()}
   if(id==='dl'&&confirm('確定要刪除這筆訂單？')){items=items.filter(x=>x.id!==cur.id);dvState=null;save();render();MO.classList.remove('show')}
 });
 const setMsg=t=>{const m=$('msg');if(m)m.textContent=t};
@@ -613,42 +614,78 @@ async function reShot(){
   await doShot(files,true);
   cur.items.forEach((it,q)=>{const o=old[q];if(!o)return;['img','proxy','hide','sq','sp'].forEach(f=>{if(o[f]!==undefined)it[f]=o[f]})});
   drawEd()}
-async function doShot(files,re){
+/* background recognition queue: survives leaving the app, resumes when you come back */
+let jobs=[],jr=false;
+const saveJobs=async()=>{try{const d=await db(),t=d.transaction('kv','readwrite');t.objectStore('kv').put(jobs,'jobs')}catch(e){}};
+async function loadJobs(){jobs=(await kvGet('jobs'))||[];jobs.forEach(j=>{if(j.st==='run')j.st='q'})}
+async function enqueueShots(files){
   const k=(localStorage.getItem('gk')||'').replace(/[^\x21-\x7e]/g,'');if(!k){setMsg('請先貼上 Gemini API Key');return}
-  setMsg('辨識中，請稍等…');
+  setMsg('準備中…');const imgs=[];for(const f of files){const u=await shrink(f,1400);if(u)imgs.push(u)}
+  if(!imgs.length){setMsg('圖片讀取失敗');return}
+  jobs.push({id:'j'+Date.now(),imgs,st:'q',t:Date.now(),tries:0});await saveJobs();
+  MO.classList.remove('show');backDetail();renderJobs();toast('已丟到背景辨識，可以去做別的事。完成後首頁會提醒你確認',4500);runJobs()}
+async function runJobs(){
+  if(jr)return;jr=true;
+  try{for(;;){
+    const j=jobs.find(x=>x.st==='q');if(!j)break;
+    j.st='run';j.at=Date.now();await saveJobs();renderJobs();
+    const files=[];for(const u of j.imgs)files.push(new File([await (await fetch(u)).blob()],'s.webp',{type:'image/webp'}));
+    const O=newOrder();O.id='o'+Date.now()+Math.random().toString(36).slice(2,5);delete O._new;
+    let r;try{r=await doShot(files,false,O,true)}catch(e){r={ok:false,err:String(e&&e.message||e)}}
+    if(r&&r.ok){derive(O);O.chk=1;items.unshift(O);j.st='done';jobs=jobs.filter(x=>x!==j);await save();await saveJobs();render();renderJobs();toast('✓ 有一筆訂單辨識完成，請確認',3500)}
+    else{const net=document.hidden||/fetch|network|Load failed|連線|逾時|timeout|abort/i.test((r&&r.err)||'');
+      j.err=(r&&r.err)||'辨識失敗';j.tries=(j.tries||0)+1;j.st=(net&&!(r&&r.quota)&&j.tries<4)?'q':'err';await saveJobs();renderJobs();if(j.st==='q')break}
+  }}finally{jr=false}}
+function renderJobs(){
+  const el=$('jb');if(!el)return;const run=jobs.filter(j=>j.st==='q'||j.st==='run'),bad=jobs.filter(j=>j.st==='err'),chk=items.filter(o=>o.chk);
+  if(!run.length&&!bad.length&&!chk.length){el.innerHTML='';return}
+  el.innerHTML='<div class="note">'+(run.length?`<b>⏳ 背景辨識中（${run.length} 筆）</b><small>可以離開 app，回來會自動繼續。</small>`:'')
+   +bad.map(j=>`<div class="ar"><span class="t">辨識失敗：${esc(String(j.err||'').slice(0,60))}</span><span><button class="jbtn" data-jr="${j.id}">重試</button><button class="jbtn" data-jd="${j.id}">刪除</button></span></div>`).join('')
+   +(chk.length?`<b>✨ 辨識完成，請確認（${chk.length}）</b>`+chk.slice(0,6).map(o=>`<div class="ar" data-jo="${o.id}"><span class="t">${esc(title(o))}</span><span><button class="jbtn" data-jok="${o.id}">沒問題</button></span></div>`).join(''):'')+'</div>'}
+$('jb').addEventListener('click',e=>{
+  const g=a=>e.target.closest('['+a+']');let b;
+  if(b=g('data-jr')){const j=jobs.find(x=>x.id===b.dataset.jr);if(j){j.st='q';j.tries=0;saveJobs();renderJobs();runJobs()}return}
+  if(b=g('data-jd')){jobs=jobs.filter(x=>x.id!==b.dataset.jd);saveJobs();renderJobs();return}
+  if(b=g('data-jok')){const o=items.find(x=>x.id===b.dataset.jok);if(o){delete o.chk;save();renderJobs()}return}
+  if(b=g('data-jo'))openDetail(b.dataset.jo,-1)});
+async function doShot(files,re,O,quiet){
+  O=O||cur;const M=t=>{if(!quiet)setMsg(t)},DE=()=>{if(!quiet)drawEd()};
+  const k=(localStorage.getItem('gk')||'').replace(/[^\x21-\x7e]/g,'');if(!k){M('請先貼上 Gemini API Key');return{ok:false,err:'還沒填 Gemini 金鑰（設定裡貼上）',quota:true}}
+  M('辨識中，請稍等…');
   try{
     const small=[],imgParts=[];
     for(const f of files){const u=await shrink(f,1400);if(u){small.push(u);imgParts.push({inline_data:{mime_type:'image/webp',data:u.split(',')[1]}})}}
-    const on=m=>setMsg('辨識中（'+m+'），最久約 15～40 秒…');
+    const on=m=>M('辨識中（'+m+'），最久約 15～40 秒…');
     const parts=[{text:shotPrompt(files.length)},...imgParts];
     let d;
     try{d=await callShot(k,parts,true,on)}
     catch(e){if(/schema|INVALID_ARGUMENT|Invalid JSON payload|response_schema/i.test(e.message)&&!isQuota(e.message))d=await callShot(k,parts,false,on);else throw e}
     if(!d.items.some(i=>i&&i.name)){
-      setMsg('第一次沒抓到品項，再試一次…');
+      M('第一次沒抓到品項，再試一次…');
       const p2=[{text:'請只做一件事：把這些圖片中這筆訂單的所有品項列出來（品名用繁體中文、數量、單價）。若有清單或明細表，以它為準，一個品項都不要漏。'+shotPrompt(files.length)},...imgParts];
       try{const d2=await callShot(k,p2,true,on);if(d2.items.some(i=>i&&i.name))d=Object.assign({},d,{items:d2.items,currency:d.currency||d2.currency,twTotal:d.twTotal||d2.twTotal})}catch(e2){if(isQuota(e2.message))throw e2}
     }
-    if(d.sourceType&&SRC.includes(d.sourceType))cur.src=d.sourceType;
-    if(d.seller)cur.seller=d.seller;if(d.link)cur.link=d.link;if(/^\d{4}-\d{2}-\d{2}$/.test(d.buyDate||''))cur.buyDate=d.buyDate;
-    if(CUR[d.currency])cur.cur=d.currency;if(+d.ship)cur.ship=+d.ship;
-    if(PAY[d.pay]){cur.pay=d.pay;if(d.pay==='deposit'&&+d.deposit)cur.deposit=+d.deposit}
-    if(d.category&&S.cats.includes(d.category))cur.cat=d.category;
+    if(d.sourceType&&SRC.includes(d.sourceType))O.src=d.sourceType;
+    if(d.seller)O.seller=d.seller;if(d.link)O.link=d.link;if(/^\d{4}-\d{2}-\d{2}$/.test(d.buyDate||''))O.buyDate=d.buyDate;
+    if(CUR[d.currency])O.cur=d.currency;if(+d.ship)O.ship=+d.ship;
+    if(PAY[d.pay]){O.pay=d.pay;if(d.pay==='deposit'&&+d.deposit)O.deposit=+d.deposit}
+    if(d.category&&S.cats.includes(d.category))O.cat=d.category;
     const good=d.items.filter(i=>i&&(i.name||+i.price));
-    if(good.length)cur.items=good.map(i=>{const o={name:String(i.name||''),qty:+i.qty||1,price:+i.price||''};if(i.category&&S.cats.includes(i.category)&&i.category!==cur.cat)o.cat=i.category;return o});
-    if(cur.cur!=='TWD'&&+d.twTotal>0&&good.length)cur.twPaid=+d.twTotal;
-    if(d.eta){cur.eta=d.eta;cur.status='pre'}else if(['pre','wish','have'].includes(d.status))cur.status=d.status;
-    if(/^\d{4}-\d{2}-\d{2}$/.test(d.recvDate||'')){cur.recvDate=d.recvDate;if(!d.eta)cur.status='have'}
-    if(/^\d{4}-\d{2}-\d{2}$/.test(d.recvDate||'')&&!/^\d{4}-\d{2}-\d{2}$/.test(d.buyDate||''))cur.buyDate=d.recvDate;
-    if(cur.status==='have'&&!cur.recvDate)cur.recvDate=today();
-    if(d.orig&&!(cur.items[0]&&cur.items[0].name===d.orig))cur.note=(cur.note?cur.note+'\n':'')+'原文品名：'+d.orig;
+    if(good.length)O.items=good.map(i=>{const o={name:String(i.name||''),qty:+i.qty||1,price:+i.price||''};if(i.category&&S.cats.includes(i.category)&&i.category!==O.cat)o.cat=i.category;return o});
+    if(O.cur!=='TWD'&&+d.twTotal>0&&good.length)O.twPaid=+d.twTotal;
+    if(d.eta){O.eta=d.eta;O.status='pre'}else if(['pre','wish','have'].includes(d.status))O.status=d.status;
+    if(/^\d{4}-\d{2}-\d{2}$/.test(d.recvDate||'')){O.recvDate=d.recvDate;if(!d.eta)O.status='have'}
+    if(/^\d{4}-\d{2}-\d{2}$/.test(d.recvDate||'')&&!/^\d{4}-\d{2}-\d{2}$/.test(d.buyDate||''))O.buyDate=d.recvDate;
+    if(O.status==='have'&&!O.recvDate)O.recvDate=today();
+    if(d.orig&&!(O.items[0]&&O.items[0].name===d.orig))O.note=(O.note?O.note+'\n':'')+'原文品名：'+d.orig;
     let nc=0;
-    if(good.length&&!re)for(let q=0;q<good.length&&q<cur.items.length;q++){const it=good[q];let bx=it.box;if(bx&&!Array.isArray(bx)&&typeof bx==='object')bx=[bx.ymin,bx.xmin,bx.ymax,bx.xmax];if(typeof bx==='string')bx=bx.match(/-?\d+(?:\.\d+)?/g);if(Array.isArray(bx)&&bx.length===4){bx=bx.map(Number);let u=await cropImg(files[+it.img||0]||files[0],bx);if(u)u=await trimImg(u);if(u){cur.items[q].img={s:u};if(!nc){cur.imgs.unshift({s:u});cur.cover=0}nc++}}}
-    if(!re)for(const u of small){if(cur.imgs.length<10)cur.imgs.push({s:u,sh:1})}
-    drawEd();
-    if(!good.length)setMsg('沒辨識出品項（Gemini 回傳：'+d._raw.slice(0,90).replace(/\s+/g,' ')+'…）。請手動填，或換更清楚的截圖再試。');
-    else setMsg('已填入 '+good.length+' 個品項'+(nc?'，自動截取 '+nc+' 張商品圖':'，沒偵測到商品圖，可點縮圖手動加圖')+'；原截圖已保留，請檢查一下再儲存');
-  }catch(e){setMsg('辨識失敗：'+nice(e))}
+    if(good.length&&!re)for(let q=0;q<good.length&&q<O.items.length;q++){const it=good[q];let bx=it.box;if(bx&&!Array.isArray(bx)&&typeof bx==='object')bx=[bx.ymin,bx.xmin,bx.ymax,bx.xmax];if(typeof bx==='string')bx=bx.match(/-?\d+(?:\.\d+)?/g);if(Array.isArray(bx)&&bx.length===4){bx=bx.map(Number);let u=await cropImg(files[+it.img||0]||files[0],bx);if(u)u=await trimImg(u);if(u){O.items[q].img={s:u};if(!nc){O.imgs.unshift({s:u});O.cover=0}nc++}}}
+    if(!re)for(const u of small){if(O.imgs.length<10)O.imgs.push({s:u,sh:1})}
+    DE();
+    if(!good.length)M('沒辨識出品項（Gemini 回傳：'+d._raw.slice(0,90).replace(/\s+/g,' ')+'…）。請手動填，或換更清楚的截圖再試。');
+    else M('已填入 '+good.length+' 個品項'+(nc?'，自動截取 '+nc+' 張商品圖':'，沒偵測到商品圖，可點縮圖手動加圖')+'；原截圖已保留，請檢查一下再儲存');
+  return{ok:good.length>0}
+  }catch(e){M('辨識失敗：'+nice(e));return{ok:false,err:nice(e),quota:isQuota(e&&e.message)}}
 }
 async function doBg(m){
   if(bgBusy){toast('還在處理上一張，請稍等');drawEd();return}
@@ -840,7 +877,7 @@ async function doBackup(){
     if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'收藏櫃備份'});markBk();return true}}catch(e){if(e&&e.name==='AbortError')return false}
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();markBk();return true}
 function markBk(){try{localStorage.setItem('lastBackup',String(Date.now()));localStorage.removeItem('bkSnooze')}catch(e){}renderBk();if(SO.classList.contains('show'))drawSet();toast('✓ 已備份（若是用分享選單，請確認有選「儲存到檔案」）',4500)}
-function renderBk(){
+function renderBk(){renderJobs();
   const el=$('bk');if(!el)return;let sn=0;try{sn=+localStorage.getItem('bkSnooze')||0}catch(e){}
   const l=lastBk(),d=l?Math.floor((Date.now()-l)/864e5):999;
   if(!items.length||d<BK_DAYS||Date.now()<sn){el.innerHTML='';return}
@@ -918,7 +955,7 @@ async function autoTrimAll(){
   }
   if(ch){save();render()}
 }
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')autoPull();else if(autoOn()&&lsGet('dirty')==='1'&&lsGet('syncSha'))syncUp(true)});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){autoPull();if(!jr){jobs.forEach(j=>{if(j.st==='run')j.st='q'});runJobs()}}else if(autoOn()&&lsGet('dirty')==='1'&&lsGet('syncSha'))syncUp(true)});
 (async()=>{const a=await kvGet('items'),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);renderCats();try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{const h=localStorage.getItem('hp2')||(localStorage.getItem('hp')==='0'?'all':'hide');$('hp').value=h}catch(e){}
-try{const v=localStorage.getItem('view');if(VB[v])view=v;Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===view))}catch(e){}render();setTimeout(()=>autoTrimAll().catch(()=>{}),400);setTimeout(autoPull,1500)})();
+try{const v=localStorage.getItem('view');if(VB[v])view=v;Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===view))}catch(e){}render();setTimeout(()=>autoTrimAll().catch(()=>{}),400);loadJobs().then(()=>{renderJobs();runJobs()});setTimeout(autoPull,1500)})();
 </script></body></html>
