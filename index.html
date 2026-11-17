@@ -46,6 +46,8 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .row .im{width:60px;height:60px;flex:none;display:flex;align-items:center;justify-content:center;background:var(--tile);border-radius:16px;padding:6px}
 .row .mt{flex:1;min-width:0}.row small{color:var(--mu);display:block}
 .cell:active,.row:active{transform:scale(.97)}
+.hb{position:absolute;top:4px;right:4px;z-index:2;width:26px;height:26px;border-radius:50%;border:0;background:#ffffffcc;color:var(--mu);display:flex;align-items:center;justify-content:center;padding:0;box-shadow:0 1px 4px #0002}.hb svg{width:15px;height:15px}.hid{opacity:.45}
+.row{position:relative}.row .hb{top:50%;right:8px;transform:translateY(-50%)}
 .cab{background:linear-gradient(160deg,#eef2f6,#f4eef3);border-radius:30px;padding:8px 8px 14px;box-shadow:0 2px 14px #3a2e1a14,inset 0 0 0 2px #fff}
 .shf{padding:12px 2px 0;position:relative;border-bottom:3px solid #fff;box-shadow:0 8px 8px -6px #7a8aa026;margin-bottom:10px;background:linear-gradient(#ffffff00 70%,#dfe6ee66)}
 .shr{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
@@ -121,7 +123,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
   <div class="bar">
     <select id="fc"></select>
     <select id="so"><option value="buy">購買時間</option><option value="eta">預計到貨</option><option value="price">價格高低</option></select>
-    <label><input type="checkbox" id="hs">隱藏已售</label><label><input type="checkbox" id="hw">隱藏種草</label><select id="hp"><option value="hide">不含代買</option><option value="all">含代買</option><option value="only">只看代買</option></select>
+    <label><input type="checkbox" id="hs">隱藏已售</label><label><input type="checkbox" id="hw">隱藏種草</label><label><input type="checkbox" id="hh">顯示已隱藏</label><select id="hp"><option value="hide">不含代買</option><option value="all">含代買</option><option value="only">只看代買</option></select>
   </div>
   <div id="main"></div>
 </div>
@@ -187,6 +189,7 @@ const tw=(o,n)=>n*effRate(o);
 const EYE=['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.6 5.7A10 10 0 0112 5.5c6.4 0 10 6.5 10 6.5a17 17 0 01-3.2 4M6.5 7.2C3.7 9 2 12 2 12s3.6 6.5 10 6.5c1.6 0 3-.4 4.3-1M9.9 9.9a3 3 0 004.2 4.2"/></svg>'];
 const HID='＊＊＊';
 const ic=(o,it)=>(it&&it.cat)||o.cat||'';
+const HB=c=>`<button class="hb" data-hide="${c.o.id}|${c.ix}" aria-label="${c.hid?'取消隱藏':'隱藏'}">${c.hid?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/><path d="M4 20L20 4"/></svg>'}</button>`;
 const pp=(o,n)=>money(o,n)+(o.cur!=='TWD'||effRate(o)!==1?`<span class="tw">≈ NT$${Math.round(tw(o,n)).toLocaleString()}</span>`:'');
 const money=(o,n)=>(CUR[o.cur]||'')+Math.round(n).toLocaleString();
 const sq=i=>Math.max(0,Math.min(+i.sq||0,+i.qty||1));
@@ -204,7 +207,7 @@ const cover=o=>o.imgs&&o.imgs[o.cover]?o.imgs[o.cover].s:(o.imgs&&o.imgs[0]?o.im
 function renderCats(){const v=$('fc').value;$('fc').innerHTML='<option value="all">全部分類</option>'+S.cats.map(c=>`<option>${esc(c)}</option>`).join('');$('fc').value=[...$('fc').options].some(o=>o.value===v)?v:'all'}
 function setFc(v){try{localStorage.setItem('fcSel',v)}catch(e){}}
 const ip=(o,it)=>(it&&it.proxy)||o.proxy||'0';
-const vis=(o,it,fc)=>{const m=$('hp').value,p=ip(o,it)==='1';if(m==='hide'&&p)return false;if(m==='only')return p&&(fc==='all'||ic(o,it)===fc);if(fc==='all'&&(S.hid||[]).includes(ic(o,it)))return false;return fc==='all'||ic(o,it)===fc};
+const vis=(o,it,fc)=>{if(it.hide&&!$('hh').checked)return false;const m=$('hp').value,p=ip(o,it)==='1';if(m==='hide'&&p)return false;if(m==='only')return p&&(fc==='all'||ic(o,it)===fc);if(fc==='all'&&(S.hid||[]).includes(ic(o,it)))return false;return fc==='all'||ic(o,it)===fc};
 function scoped(fc){
   const out=[];items.forEach(o=>{const f=o.items.filter(i=>vis(o,i,fc));if(!f.length)return;if(f.length===o.items.length){out.push(o);return}
     const r=sub(o)?f.reduce((a,i)=>a+(+i.qty||0)*(+i.price||0),0)/sub(o):0;
@@ -243,20 +246,20 @@ function render(){
     if(split)o.items.forEach(it=>{
       const q=+it.qty||1,n=sq(it),r=q-n;
       if(!vis(o,it,fc))return;if(fs==='have'&&r<=0)return;if(fs==='sold'&&n<=0)return;if($('hs').checked&&r<=0)return;
-      cells.push({o,cat:ic(o,it),name:(it.name||'未命名')+(n>0&&r>0?' ×'+r:q>1&&n===0?' ×'+q:''),img:it.img?it.img.s:cover(o),price:(+it.price||0)*(n>0&&r>0?r:q),tag:n>=q?'已售出':n>0?'已售 '+n+'/'+q:''});
+      cells.push({o,ix:o.items.indexOf(it),hid:!!it.hide,cat:ic(o,it),name:(it.name||'未命名')+(n>0&&r>0?' ×'+r:q>1&&n===0?' ×'+q:''),img:it.img?it.img.s:cover(o),price:(+it.price||0)*(n>0&&r>0?r:q),tag:n>=q?'已售出':n>0?'已售 '+n+'/'+q:''});
     });
-    else cells.push({o,cat:ic(o,o.items[0]),name:title(o),img:(o.items.length===1&&o.items[0].img)?o.items[0].img.s:cover(o),price:total(o)});
+    else cells.push({o,ix:-1,hid:o.items.every(i=>i.hide),cat:ic(o,o.items[0]),name:title(o),img:(o.items.length===1&&o.items[0].img)?o.items[0].img.s:cover(o),price:total(o)});
   });
   $('dt').textContent+=' · 共 '+cells.length+' 件';
   const im=c=>c.img?`<img src="${c.img}" alt="">`:'<span style="font:12px var(--mono);color:var(--mu)">無圖片</span>';
   if(view==='shelf'){
     const rows=[];for(let i=0;i<cells.length;i+=4)rows.push(cells.slice(i,i+4));
     const last=rows[rows.length-1];const fill=4-last.length;
-    $('main').innerHTML=`<div class="cab">${rows.map((r,ri)=>`<div class="shf"><div class="shr">${r.map(c=>`<div class="sc" data-id="${c.o.id}">${c.tag?`<span class="sb">${c.tag}</span>`:(c.o.status==='pre'?'<span class="sb">預購中</span>':'')}<div class="si">${c.img?`<img src="${c.img}" alt="">`:'<span style="font-size:11px;color:var(--mu)">無圖</span>'}</div><div class="sn">${esc(c.name)}</div></div>`).join('')}${ri===rows.length-1?Array.from({length:fill},(_,k)=>`<div class="sc em" ${k===0?'data-add="1"':''}>${k===0?'＋':''}</div>`).join(''):''}</div></div>`).join('')}${last.length===4?'<div class="shf"><div class="shr"><div class="sc em" data-add="1">＋</div></div></div>':''}</div>`;
+    $('main').innerHTML=`<div class="cab">${rows.map((r,ri)=>`<div class="shf"><div class="shr">${r.map(c=>`<div class="sc${c.hid?' hid':''}" data-id="${c.o.id}">${HB(c)}${c.tag?`<span class="sb">${c.tag}</span>`:(c.o.status==='pre'?'<span class="sb">預購中</span>':'')}<div class="si">${c.img?`<img src="${c.img}" alt="">`:'<span style="font-size:11px;color:var(--mu)">無圖</span>'}</div><div class="sn">${esc(c.name)}</div></div>`).join('')}${ri===rows.length-1?Array.from({length:fill},(_,k)=>`<div class="sc em" ${k===0?'data-add="1"':''}>${k===0?'＋':''}</div>`).join(''):''}</div></div>`).join('')}${last.length===4?'<div class="shf"><div class="shr"><div class="sc em" data-add="1">＋</div></div></div>':''}</div>`;
     return}
   $('main').innerHTML=view==='grid'
-   ?`<div class="grid">${cells.map(c=>`<div class="cell" data-id="${c.o.id}"><div class="bds">${cb(c)}</div><div class="im">${im(c)}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price)}</div></div>`).join('')}</div>`
-   :`<div class="list">${cells.map(c=>{const o=c.o;return `<div class="row" data-id="${o.id}"><div class="im">${im(c)}</div><div class="mt"><div class="nm">${esc(c.name)}${cb(c)}</div><small>${esc(o.src)} ${esc(o.seller)} · ${fmt(o.buyDate)}</small><small>${c.cat?esc(c.cat)+' · ':''}${PAY[o.pay]}${o.status==='pre'&&o.eta?' · 預計 '+fmt(o.eta):''}</small></div><div class="pr">${pp(o,c.price)}</div></div>`}).join('')}</div>`;
+   ?`<div class="grid">${cells.map(c=>`<div class="cell${c.hid?' hid':''}" data-id="${c.o.id}">${HB(c)}<div class="bds">${cb(c)}</div><div class="im">${im(c)}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price)}</div></div>`).join('')}</div>`
+   :`<div class="list">${cells.map(c=>{const o=c.o;return `<div class="row${c.hid?' hid':''}" data-id="${o.id}">${HB(c)}<div class="im">${im(c)}</div><div class="mt"><div class="nm">${esc(c.name)}${cb(c)}</div><small>${esc(o.src)} ${esc(o.seller)} · ${fmt(o.buyDate)}</small><small>${c.cat?esc(c.cat)+' · ':''}${PAY[o.pay]}${o.status==='pre'&&o.eta?' · 預計 '+fmt(o.eta):''}</small></div><div class="pr">${pp(o,c.price)}</div></div>`}).join('')}</div>`;
 }
 
 /* editor */
@@ -594,8 +597,9 @@ SO.addEventListener('click',e=>{
 
 /* home events */
 $('chips').addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(b){$('fs').value=b.dataset.s;render()}});
-$('main').addEventListener('click',e=>{if(e.target.closest('[data-add]')){$('sheet').classList.add('show');return}const n=e.target.closest('[data-id]');if(n)openEd(n.dataset.id)});
-['q','fs','fc','so','hs','hw','hp'].forEach(i=>$(i).addEventListener('input',render));
+$('main').addEventListener('click',e=>{const hb=e.target.closest('[data-hide]');if(hb){e.stopPropagation();const [id,ix]=hb.dataset.hide.split('|'),o=items.find(x=>x.id===id);if(o){const its=+ix>=0?[o.items[+ix]]:o.items,v=!its.every(i=>i.hide);its.forEach(i=>{if(v)i.hide=true;else delete i.hide});save();render();toast(v?'已隱藏，勾選「顯示已隱藏」可找回':'已取消隱藏')}return}
+  if(e.target.closest('[data-add]')){$('sheet').classList.add('show');return}const n=e.target.closest('[data-id]');if(n)openEd(n.dataset.id)});
+['q','fs','fc','so','hs','hw','hp','hh'].forEach(i=>$(i).addEventListener('input',render));
 $('hp').addEventListener('input',()=>{try{localStorage.setItem('hp2',$('hp').value)}catch(e){}});
 $('fc').addEventListener('input',()=>setFc($('fc').value));
 const VB={grid:'vg',list:'vl',shelf:'vs'};
