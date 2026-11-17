@@ -66,11 +66,21 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .cab::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:3;background:linear-gradient(112deg,#ffffff00 18%,#ffffff8c 24%,#ffffff00 30%,#ffffff00 56%,#ffffff59 60%,#ffffff00 64%)}
 .cab::after{content:"";position:absolute;left:12px;right:12px;top:0;height:42px;border-radius:0 0 50% 50%/0 0 100% 100%;background:linear-gradient(#ffffffb3,#ffffff00);pointer-events:none;z-index:3;opacity:.7}
 .cab.g1{background:linear-gradient(135deg,#ffffff8c,#ffffff40);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 12px 30px #3a2e1a1a,inset 0 1.5px 0 #fff,inset 0 -1.5px 0 #8a806e26}
-.cab.g1::before,.cab.g1::after,.cab.g2::before,.cab.g3::before,.cab.g3::after,.cab.g4::before,.cab.g4::after{display:none}
-.cab.g2{background:linear-gradient(180deg,#ffffff8c,#ffffff33)}.cab.g2::after{opacity:.28}
-.cab.g3{background:#ffffff80;-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:0 12px 30px #3a2e1a14,inset 0 0 30px #ffffffb3}
-.cab.g4{background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none;border:1.5px solid #ffffffd9;box-shadow:0 8px 22px #3a2e1a12,inset 0 0 0 1px #8a806e14}
-.gsw{display:inline-block;width:calc(33% - 6px);margin:0 3px 10px;text-align:center;font-size:13px;color:var(--mu);cursor:pointer;vertical-align:top}.gsw .cab{height:58px;padding:6px 6px 0;border-radius:16px;margin-bottom:5px;background-clip:padding-box}.gsw .shf{height:100%;margin:0}.gsw.on{color:var(--tx);font-weight:700}.gsw.on .cab{outline:2px solid #26221d;outline-offset:1px}
+.cab.g1::before,.cab.g1::after,.cab.g2::before,.cab.g2::after,.cab.g3::before,.cab.g3::after,.cab.g4::before,.cab.g4::after,.cab.g5::before,.cab.g5::after{display:none}
+/* 2 奶油木層架 */
+.cab.g2{background:linear-gradient(180deg,#f6ecda,#ecdfc6);-webkit-backdrop-filter:none;backdrop-filter:none;border:1.5px solid #fff9;box-shadow:0 12px 28px #6b4e2a26,inset 0 0 40px #ffffff73}
+.cab.g2 .shf::after{background:linear-gradient(#e9d3ac,#d2b183);border-top:1.5px solid #f8ead0;border-bottom:1px solid #8a6a3a59;box-shadow:0 8px 10px -3px #5a3e1a4d,inset 0 1px 0 #fff9}
+/* 3 深色展示櫃 */
+.cab.g3{background:radial-gradient(130% 55% at 50% 0%,#55515c,#2a282e 62%,#222026);-webkit-backdrop-filter:none;backdrop-filter:none;border:1.5px solid #ffffff2e;box-shadow:0 14px 34px #00000047,inset 0 1px 0 #ffffff33}
+.cab.g3 .shf::after{background:linear-gradient(#6a666f,#3a3841);border-top:1.5px solid #ffffff4d;border-bottom:1px solid #000a;box-shadow:0 9px 12px -3px #000b}
+.cab.g3 .sc .nm{color:#f6f2ea}.cab.g3 .sc .pr{color:#d4ccbd}.cab.g3 .sc .pr .tw{color:#f2a690}.cab.g3 .sc img{filter:drop-shadow(0 4px 5px #000a)}.cab.g3 .sc.em{border-color:#ffffff38;color:#ffffff59}
+/* 4 粉彩背板 */
+.cab.g4{background:linear-gradient(180deg,#e2f1ee,#f3e8f2);-webkit-backdrop-filter:none;backdrop-filter:none;border:1.5px solid #fffc;box-shadow:0 12px 28px #4a6a6a22,inset 0 0 40px #ffffff80}
+.cab.g4 .shf::after{background:linear-gradient(#ffffff,#eef0f0);border-top:1.5px solid #fff;border-bottom:1px solid #6a8a8a40;box-shadow:0 8px 10px -3px #3a5a5a33}
+/* 5 白色層架（無玻璃） */
+.cab.g5{background:none;-webkit-backdrop-filter:none;backdrop-filter:none;border:0;box-shadow:none;padding:0;overflow:visible}
+.cab.g5 .shf{background:#fff;border-radius:22px;padding:16px 8px 6px;margin-bottom:12px;box-shadow:0 5px 16px #3a2e1a14}.cab.g5 .shf::after{display:none}
+.gsw{display:inline-block;width:calc(33% - 6px);margin:0 3px 10px;text-align:center;font-size:13px;color:var(--mu);cursor:pointer;vertical-align:top}.gsw .cab{height:64px;padding:6px 6px 0;border-radius:16px;margin-bottom:5px;background-clip:padding-box}.gsw .shf{height:100%;margin:0;display:flex;align-items:flex-end;justify-content:space-around;padding:6px 8px 0}.gsw .cab.g5{overflow:hidden;background:#f3f0e8;padding:5px}.gsw .cab.g5 .shf{border-radius:12px;padding:6px 8px 0}.gsw .dot{width:15px;height:24px;border-radius:8px 8px 5px 5px;margin-bottom:3px}.gsw .shf::after{bottom:-3px!important}.gsw.on{color:var(--tx);font-weight:700}.gsw.on .cab{outline:2px solid #26221d;outline-offset:1px}
 .shf{padding:14px 0 0;position:relative;margin-bottom:14px}
 .shf::after{content:"";position:absolute;left:-10px;right:-10px;bottom:-10px;height:11px;background:linear-gradient(#ffffffed 0%,#f3f1ec99 45%,#d9d4c859 100%);border-top:1.5px solid #fff;border-bottom:1px solid #8a806e40;box-shadow:0 9px 12px -3px #3a2e1a2e,inset 0 1px 0 #fff}
 .shr{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
@@ -303,7 +313,7 @@ function render(){
     if(S.preTop!==false){const isP=c=>c.o.status==='pre'&&c.st!=='have'&&!c.tag;cells.splice(0,cells.length,...cells.filter(isP),...cells.filter(c=>!isP(c)))}
     const rows=[];for(let i=0;i<cells.length;i+=4)rows.push(cells.slice(i,i+4));
     const last=rows[rows.length-1];const fill=4-last.length;
-    $('main').innerHTML=`<div class="cab g${lsGet('glass')||'1'}">${rows.map((r,ri)=>`<div class="shf"><div class="shr">${r.map(c=>`<div class="sc${c.hid?' hid':''}" data-id="${c.o.id}" data-ix="${c.ix}">${HB(c)}<div class="bds">${cb(c)}</div><div class="si">${c.img?`<img src="${c.img}" alt="">`:'<span style="font-size:11px;color:var(--mu)">無圖</span>'}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price)}</div></div>`).join('')}${ri===rows.length-1?Array.from({length:fill},(_,k)=>`<div class="sc em" ${k===0?'data-add="1"':''}>${k===0?'＋':''}</div>`).join(''):''}</div></div>`).join('')}${last.length===4?'<div class="shf"><div class="shr"><div class="sc em" data-add="1">＋</div></div></div>':''}</div>`;
+    $('main').innerHTML=`<div class="cab g${gsel()}">${rows.map((r,ri)=>`<div class="shf"><div class="shr">${r.map(c=>`<div class="sc${c.hid?' hid':''}" data-id="${c.o.id}" data-ix="${c.ix}">${HB(c)}<div class="bds">${cb(c)}</div><div class="si">${c.img?`<img src="${c.img}" alt="">`:'<span style="font-size:11px;color:var(--mu)">無圖</span>'}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price)}</div></div>`).join('')}${ri===rows.length-1?Array.from({length:fill},(_,k)=>`<div class="sc em" ${k===0?'data-add="1"':''}>${k===0?'＋':''}</div>`).join(''):''}</div></div>`).join('')}${last.length===4?'<div class="shf"><div class="shr"><div class="sc em" data-add="1">＋</div></div></div>':''}</div>`;
     return}
   $('main').innerHTML=view==='grid'
    ?`<div class="grid">${cells.map(c=>`<div class="cell${c.hid?' hid':''}" data-id="${c.o.id}" data-ix="${c.ix}">${HB(c)}<div class="bds">${cb(c)}</div><div class="im">${im(c)}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price)}</div></div>`).join('')}</div>`
@@ -645,6 +655,7 @@ async function reShot(){
   drawEd()}
 const GUARD=30;
 const guardOK=()=>gUse()<GUARD||confirm('今天這支手機已經送出約 '+gUse()+' 次辨識請求了（免費額度有限，每個模型約 20 次）。\n還要再辨識嗎？');
+const gsel=()=>{const g=lsGet('glass');return /^[1-5]$/.test(g)?g:'1'};
 /* background recognition queue: survives leaving the app, resumes when you come back */
 let jobs=[],jr=false,jgen=0,jobMsg='';
 const saveJobs=async()=>{try{const d=await db(),t=d.transaction('kv','readwrite');t.objectStore('kv').put(jobs,'jobs')}catch(e){}};
@@ -780,7 +791,7 @@ function drawSet(){
     <div class="cr"><input id="newcat" placeholder="新增分類名稱"><button id="addcat" style="color:var(--ac)">新增</button></div></div>
   <div class="cd"><h3>收藏櫃不顯示的分類</h3>${S.cats.map((c,i)=>`<div class="fr"><span>${esc(c)}</span><input data-hid="${esc(c)}" type="checkbox" ${(S.hid||[]).includes(c)?'checked':''} style="flex:none;width:auto"></div>`).join('')}<div class="msg">勾選的分類平常不會出現在收藏櫃和統計裡；在上面「全部分類」直接選那個分類，還是看得到。</div></div>
   ${(S.srcX||[]).length?`<div class="cd"><h3>自訂購買來源</h3>${S.srcX.map((c,i)=>`<div class="cr"><input value="${esc(c)}" readonly><button data-xd="${i}">刪除</button></div>`).join('')}<div class="msg">刪除後，已經用這個來源的訂單不受影響。</div></div>`:''}
-  <div class="cd"><h3>玻璃櫃樣式</h3><div id="gsws">${[['0','斜光反射（舊）'],['1','清透（無反光）'],['2','柔光（只有頂部一點）'],['3','霧面'],['4','極簡透明框']].map(([k,n])=>`<div class="gsw${(lsGet('glass')||'1')===k?' on':''}" data-gl="${k}"><div class="cab g${k}"><div class="shf"></div></div>${n}</div>`).join('')}</div><div class="fr"><span>預購商品置頂（玻璃櫃）</span><input id="pretop" type="checkbox" ${S.preTop!==false?'checked':''} style="flex:none;width:auto"></div></div>
+  <div class="cd"><h3>玻璃櫃樣式</h3><div id="gsws">${[['1','清透玻璃'],['2','奶油木層架'],['3','深色展示櫃'],['4','粉彩背板'],['5','白色層架']].map(([k,n])=>`<div class="gsw${gsel()===k?' on':''}" data-gl="${k}"><div class="cab g${k}"><div class="shf"><i class="dot" style="background:#8fd3e0"></i><i class="dot" style="background:#f4a9b8"></i><i class="dot" style="background:#f6d77a"></i></div></div>${n}</div>`).join('')}</div><div class="fr"><span>預購商品置頂（玻璃櫃）</span><input id="pretop" type="checkbox" ${S.preTop!==false?'checked':''} style="flex:none;width:auto"></div></div>
   <div class="cd"><h3>朋友代買</h3><div class="fr"><span>朋友的東西到貨後自動隱藏</span><input id="ahp" type="checkbox" ${S.ahp!==false?'checked':''} style="flex:none;width:auto"></div><div class="msg">開啟後，幫朋友買的品項一旦標為「已到貨」，就不再出現在收藏櫃（含「含代買」「只看代買」），所以「只看代買」會剩下還沒到的。想看時，勾上方的「顯示已隱藏」。</div></div>
   <div class="cd"><h3>我的暱稱（喊單截圖用來找我的留言）</h3><div class="fr"><span>暱稱</span><input id="nick" value="${esc(S.nick||'瓜呱')}" placeholder="例如：瓜呱"></div></div>
   <div class="cd"><h3>隱藏總投入</h3><div class="fr"><span>首頁不顯示「總投入」金額</span><input id="hideamt" type="checkbox" ${S.hide?'checked':''} style="flex:none;width:auto"></div><div class="msg">開啟後，總投入、價格、總額、淨賺都顯示 ＊＊＊。輸入價格時還是看得到自己打的數字。首頁右上角的眼睛也可以隨時切換。</div></div>
