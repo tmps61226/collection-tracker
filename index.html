@@ -242,7 +242,7 @@ const ip=(o,it)=>(it&&it.proxy)||o.proxy||'0';
 const friendNet=o=>{ // 朋友付的 − 朋友品項應分攤的成本 (正=多收)
   const fp=+o.fpaid||0;if(!fp)return null;const fr=o.items.filter(i=>ip(o,i)==='1'),mine=o.items.filter(i=>ip(o,i)!=='1');if(!fr.length||!mine.length)return null;
   const sb=a=>a.reduce((x,i)=>x+(+i.qty||0)*(+i.price||0),0),fs=sb(fr),all=sb(o.items),fair=fs+(all?(+o.ship||0)*fs/all:0);return{fp,fair,net:fp-fair,mineSub:sb(mine)}};
-const vis=(o,it,fc)=>{if(it.hide&&!$('hh').checked)return false;const m=$('hp').value,p=ip(o,it)==='1';if(m==='hide'&&p)return false;if(m==='only')return p&&(fc==='all'||ic(o,it)===fc);if(fc==='all'&&(S.hid||[]).includes(ic(o,it)))return false;return fc==='all'||ic(o,it)===fc};
+const vis=(o,it,fc)=>{if(it.hide&&!$('hh').checked)return false;const m=$('hp').value,p=ip(o,it)==='1';if(p&&S.ahp!==false&&(o.status==='have'||o.status==='sold')&&!$('hh').checked)return false;if(m==='hide'&&p)return false;if(m==='only')return p&&(fc==='all'||ic(o,it)===fc);if(fc==='all'&&(S.hid||[]).includes(ic(o,it)))return false;return fc==='all'||ic(o,it)===fc};
 function scoped(fc){
   const out=[];items.forEach(o=>{const f=o.items.filter(i=>vis(o,i,fc));if(!f.length)return;if(f.length===o.items.length){out.push(o);return}
     const r=sub(o)?f.reduce((a,i)=>a+(+i.qty||0)*(+i.price||0),0)/sub(o):0;
@@ -698,6 +698,7 @@ function drawSet(){
     <div class="cr"><input id="newcat" placeholder="新增分類名稱"><button id="addcat" style="color:var(--ac)">新增</button></div></div>
   <div class="cd"><h3>收藏櫃不顯示的分類</h3>${S.cats.map((c,i)=>`<div class="fr"><span>${esc(c)}</span><input data-hid="${esc(c)}" type="checkbox" ${(S.hid||[]).includes(c)?'checked':''} style="flex:none;width:auto"></div>`).join('')}<div class="msg">勾選的分類平常不會出現在收藏櫃和統計裡；在上面「全部分類」直接選那個分類，還是看得到。</div></div>
   ${(S.srcX||[]).length?`<div class="cd"><h3>自訂購買來源</h3>${S.srcX.map((c,i)=>`<div class="cr"><input value="${esc(c)}" readonly><button data-xd="${i}">刪除</button></div>`).join('')}<div class="msg">刪除後，已經用這個來源的訂單不受影響。</div></div>`:''}
+  <div class="cd"><h3>朋友代買</h3><div class="fr"><span>朋友的東西到貨後自動隱藏</span><input id="ahp" type="checkbox" ${S.ahp!==false?'checked':''} style="flex:none;width:auto"></div><div class="msg">開啟後，幫朋友買的品項一旦標為「已到貨」，就不再出現在收藏櫃（含「含代買」「只看代買」），所以「只看代買」會剩下還沒到的。想看時，勾上方的「顯示已隱藏」。</div></div>
   <div class="cd"><h3>我的暱稱（喊單截圖用來找我的留言）</h3><div class="fr"><span>暱稱</span><input id="nick" value="${esc(S.nick||'瓜呱')}" placeholder="例如：瓜呱"></div></div>
   <div class="cd"><h3>隱藏總投入</h3><div class="fr"><span>首頁不顯示「總投入」金額</span><input id="hideamt" type="checkbox" ${S.hide?'checked':''} style="flex:none;width:auto"></div><div class="msg">開啟後，總投入、價格、總額、淨賺都顯示 ＊＊＊。輸入價格時還是看得到自己打的數字。首頁右上角的眼睛也可以隨時切換。</div></div>
   <div class="cd"><h3>刷卡</h3><div class="fr"><span>國外手續費 %（刷卡自動加上）</span><input id="cardfee" type="number" inputmode="decimal" step="any" value="${+S.cardFee||0}"></div></div>
@@ -718,6 +719,7 @@ SO.addEventListener('change',e=>{
   const t=e.target;
   if(t.dataset.ci!==undefined){const i=+t.dataset.ci,old=S.cats[i],v=t.value.trim();if(v&&v!==old){S.cats[i]=v;S.hid=(S.hid||[]).map(x=>x===old?v:x);items.forEach(o=>{if(o.cat===old)o.cat=v;o.items.forEach(i=>{if(i.cat===old)i.cat=v})});save();renderCats();render()}else t.value=old}
   if(t.dataset.hid!==undefined){const c=t.dataset.hid;S.hid=(S.hid||[]).filter(x=>x!==c);if(t.checked)S.hid.push(c);save();render()}
+  if(t.id==='ahp'){S.ahp=t.checked;save();render()}
   if(t.id==='hideamt'){S.hide=t.checked;save();render()}
   if(t.id==='cardfee'){S.cardFee=+t.value||0;save();render()}
   if(t.id==='autosync')lsSet('autoSync',t.checked?'1':'0');
