@@ -121,8 +121,8 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .note .nb{display:flex;gap:8px;margin-top:10px}.note .nb button{border:0;border-radius:18px;padding:9px 16px;font-size:14px;font-weight:600;background:var(--chip);color:var(--tx)}.note .nb button.pri{background:#26221e;color:#fff}
 .ar{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--ln);cursor:pointer}.ar:first-of-type{border-top:0}.ar span.t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;font-weight:600}.ar em{font-style:normal;font-size:12px;padding:2px 9px;border-radius:10px;background:var(--chip);color:var(--mu);flex:none}.ar em.late{background:#f6d9d3;color:#b05545}.ar em.soon{background:#26406b;color:#fff}
 #dv{z-index:5;overflow-x:hidden;overscroll-behavior-x:none;touch-action:pan-y}.dvb{min-width:0;max-width:100%}.go .gl .tw{margin-left:8px}.go .gl span:last-child{text-align:right}#mo{z-index:6}
-.dvp{position:relative;background:#fff;border-radius:14px;margin:8px 74px 6px;padding:26px 10px 10px;transform:rotate(-1.5deg);box-shadow:0 4px 14px #3a2e1a14;text-align:center}.dvp .dvi{height:176px;padding:0}.dvp .tp{display:none}
-.dvp .dch{position:absolute;top:-14px;left:50%;transform:translateX(-50%) rotate(-2deg);padding:8px 28px;font-weight:700;font-size:15px;letter-spacing:5px;white-space:nowrap;background-color:#a9ddcf;color:#2c6a58;border-radius:0;font-family:var(--hw);background-image:linear-gradient(#ffffff40 1px,transparent 1px),linear-gradient(90deg,#ffffff40 1px,transparent 1px);background-size:12px 12px;clip-path:polygon(0 0,100% 0,calc(100% - 6px) 25%,100% 50%,calc(100% - 6px) 75%,100% 100%,0 100%,6px 75%,0 50%,6px 25%)}.dvp .dch span{display:block;transform:rotate(2deg)}
+.dvp{position:relative;background:#fff;border-radius:14px;margin:36px 74px 6px;padding:26px 10px 10px;transform:rotate(-1.5deg);box-shadow:0 4px 14px #3a2e1a14;text-align:center}.dvp .dvi{height:176px;padding:0}.dvp .tp{display:none}
+.dvp .dch{position:absolute;top:-24px;left:50%;transform:translateX(-50%) rotate(-2deg);padding:11px 38px;font-weight:700;font-size:16px;letter-spacing:6px;white-space:nowrap;background-color:#a9ddcf;color:#2c6a58;border-radius:0;font-family:var(--hw);background-image:linear-gradient(#ffffff40 1px,transparent 1px),linear-gradient(90deg,#ffffff40 1px,transparent 1px);background-size:12px 12px;clip-path:polygon(0 8%,3% 0,6% 10%,9% 0,100% 0,97% 12%,100% 25%,97% 38%,100% 52%,97% 65%,100% 80%,97% 100%,6% 100%,3% 88%,0 100%,2% 70%,0 55%,2% 35%,0 20%)}.dvp .dch span{display:block;transform:rotate(2deg)}
 :root{--hw:"Hannotate TC","HanziPen TC","Yuanti TC",sans-serif}
 .dvi{display:flex;justify-content:center;align-items:flex-end;height:170px;padding:2px 20px 0}.dvi img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 3px 5px #0003)}
 .dvb{padding:0 20px 40px}.dvn{font-weight:800;font-size:23px;line-height:1.25;margin:14px 0 2px;text-align:center;font-family:var(--hw)}.dvs{color:var(--mu);font-size:14px;margin-bottom:2px}.dvh{display:flex;justify-content:center;gap:4px;margin:0 0 4px}.dvh span{display:block;line-height:0;cursor:pointer}.dvh svg{width:48px;height:45px;display:block}
@@ -381,13 +381,18 @@ function openGD(ids){
   const img=(L.find(x=>x.it.img)||{it:{}}).it.img;const im=img?img.s:cover(f.o);
   const base=(f.it.name||'未命名').replace(/\s*×\d+$/,'');
   const hv=lv(f.o,f.it);
+  let gprog='';const pr=L.filter(x=>x.o.status==='pre'&&x.o.eta).sort((a,b)=>a.o.eta<b.o.eta?-1:1)[0];
+  if(pr){const o=pr.o,d0=new Date(today()+'T00:00'),e=new Date(o.eta+'T00:00'),st=new Date((o.buyDate||o.start||today())+'T00:00');const dl=Math.round((e-d0)/864e5),span=Math.max(1,Math.round((e-st)/864e5)),pct=Math.max(4,Math.min(100,Math.round((1-dl/span)*100)));
+    gprog=`<div class="dcd"><div class="dpr${dl<0?' od':''}"><b>${dl<0?'已逾期 '+(-dl)+' 天':dl===0?'今天到貨':'還有 '+dl+' 天'}</b><span>預計到貨</span></div><div class="dbar${dl<0?' od':''}"><i style="width:${dl<0?100:pct}%"></i></div><div class="dpr s"><span>${o.buyDate?fmt(o.buyDate)+' 下單':''}</span><span>${fmt(o.eta)}</span></div></div>`}
+  const unpaid=L.filter(x=>bal(x.o)>0).length;
+  const gtot=`<div class="dcd dtot"><small>總成本</small><div class="dn">NT$${nt.toLocaleString()}</div><div class="r">${unpaid?unpaid+' 筆待付':'已付款'}</div></div>`;
   const cards=L.map(x=>{const o=x.o,qq=+x.it.qty||1,late=o.status==='pre'&&o.eta&&o.eta<today(),p=(+x.it.price||0)*qq,ntp=Math.round(tw(o,p));
     const pay=bal(o)>0?'<span class="np">'+(PAY[o.pay]||'未付款')+'</span>':'<span class="okp">'+(PAY[o.pay]||'已付款')+'</span>';
     return `<div class="dcd go" data-oid="${o.id}" data-oix="${x.ix}"><div class="g1"><b>${esc(o.seller||o.src||'未填來源')}</b><span class="gp">NT$${ntp.toLocaleString()}</span></div><div class="g2"><span>${esc(fmt(o.buyDate)||'')} 下單</span><span>${qq} 件</span>${o.status!=='pre'?'<span>'+(ST[o.status]||'')+'</span>':(o.eta?'<span>預計 '+fmt(o.eta)+'</span>':'')}${late?'<span class="lp">已逾期</span>':''}${pay}${o.cur!=='TWD'?'<span>'+money(o,p)+'</span>':''}</div></div>`}).join('');
   DV.innerHTML=`<div class="mh"><button id="dcx">關閉</button><span></span></div>
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${ST[f.o.status]||''}</span></span><div class="dvi">${im?`<img src="${im}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(base)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
-  <div class="dst"><div class="m"><b>${q} 件</b>數量</div><div class="p"><b>${L.length} 筆</b>訂單</div><div class="y"><b>${nt.toLocaleString()}</b>實付 NT$</div></div>${cards}</div>`;
+  <div class="dst"><div class="m"><b>${q} 件</b>數量</div><div class="p"><b>${L.length} 筆</b>訂單</div><div class="y"><b>${nt.toLocaleString()}</b>實付 NT$</div></div>${gprog}${gtot}${cards}</div>`;
   DV.classList.add('show');DV.scrollTop=0}
 function openDetail(id,ix){
   const o=items.find(x=>x.id===id);if(!o)return;if(!(ix>=0&&ix<o.items.length))ix=-1;dvState={id,ix};
