@@ -438,7 +438,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div style="text-align:center;margin:0 0 10px">${gotBtn}</div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v147</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v148</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -830,7 +830,7 @@ async function doBg(m){
   bgBusy=true;toast('✂️ 去背中…第一次要下載模型，約 10～30 秒，請不要離開',0);
   try{
     
-    {const fc=await flatCut(m.s);if(fc){m.o=m.s;const t=await cleanCut(await trimImg(fc));m.s=t;bgBusy=false;drawEd();toast('✓ 去背完成（想復原可按「還原原圖」）',3200);return}}
+    {const fc=await flatCut(m.s);if(fc==='skip'){bgBusy=false;drawEd();toast('這張是白色主體＋淺色背景，自動去背會切壞，已保留原圖。可用「裁切」或「放大主體」',6000);return}if(fc){m.o=m.s;const t=await cleanCut(await trimImg(fc));m.s=t;bgBusy=false;drawEd();toast('✓ 去背完成（想復原可按「還原原圖」）',3200);return}}
     const blob=await (await fetch(m.s)).blob();const out=await rmBg(blob);
     const u=URL.createObjectURL(out),im=new Image();
     im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);m.o=m.s;restoreCut(m.s,c.toDataURL('image/webp',.9)).then(trimImg).then(cleanCut).then(t=>{m.s=t;bgBusy=false;drawEd();toast('✓ 去背完成（想復原可按「還原原圖」）',3200)})};
@@ -897,7 +897,7 @@ function flatCut(srcUrl){return new Promise(res=>{const im=new Image();im.onerro
    for(const p of bp){bn++;if(Math.abs(a[p*4]-mb[0])+Math.abs(a[p*4+1]-mb[1])+Math.abs(a[p*4+2]-mb[2])<=45)bo++}
    if(bo<bn*.6){res(null);return}
    /* 白/淺灰底不均勻時，白色主體會和背景糊在一起，不要硬切 */
-   if(Math.min(...mb)>=195&&Math.max(...mb)-Math.min(...mb)<=8){let b2=0;for(const p of bp)if(Math.abs(a[p*4]-mb[0])+Math.abs(a[p*4+1]-mb[1])+Math.abs(a[p*4+2]-mb[2])<=18)b2++;if(b2<bn*.85){res(null);return}}}
+   if(Math.min(...mb)>=195&&Math.max(...mb)-Math.min(...mb)<=8){let b2=0;for(const p of bp)if(Math.abs(a[p*4]-mb[0])+Math.abs(a[p*4+1]-mb[1])+Math.abs(a[p*4+2]-mb[2])<=18)b2++;if(b2<bn*.85){res('skip');return}}}
   /* 被圍住的大塊純背景色（鍊子圈圈裡面） */
   const bd=[[],[],[]];for(let i=0;i<N;i++)if(rm[i]){bd[0].push(a[i*4]);bd[1].push(a[i*4+1]);bd[2].push(a[i*4+2])}
   const step=Math.max(1,Math.floor(bd[0].length/4000)),med=k=>{const v=bd[k].filter((_,i)=>i%step===0).sort((x,y)=>x-y);return v[v.length>>1]};const bg=[med(0),med(1),med(2)];
@@ -1126,7 +1126,7 @@ function updGu(){const el=$('gu');if(!el)return;const n=gUse();el.textContent='�
 let bgAllRun=false;
 async function bgOne(m){
   
-  {const fc=await flatCut(m.s);if(fc){m.o=m.s;m.s=await cleanCut(await trimImg(fc));return}}
+  {const fc=await flatCut(m.s);if(fc==='skip')return;if(fc){m.o=m.s;m.s=await cleanCut(await trimImg(fc));return}}
   const out=await rmBg(await (await fetch(m.s)).blob());
   const u=URL.createObjectURL(out);
   const c=await new Promise((res,rej)=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);res(c)};im.onerror=()=>rej(new Error('圖片讀取錯誤'));im.src=u});
