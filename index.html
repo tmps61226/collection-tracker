@@ -138,8 +138,9 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .dr.di span{flex:1;min-width:0;word-break:break-word}.dr.di b{flex:none;white-space:nowrap}.it .gotl{display:flex;flex-direction:row;align-items:center;gap:10px;padding:4px 0 8px;font-size:15px;width:auto}.it .gotl input{width:22px;height:22px;padding:0;margin:0;flex:none;border-radius:6px}.inote{display:block;font-size:13px;color:var(--mu);margin-top:3px;white-space:pre-wrap}
 .dr{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--ln);align-items:baseline;font-size:16px}.dr span{color:var(--mu);flex:none}.dr b{font-size:16px;font-weight:600;text-align:right;min-width:0;word-break:break-word}.dr.amt b,.dr.amt b .tw{font-size:21px}.dr b .tw{display:inline;margin-left:8px;font-size:16px;color:#c4705c;font-weight:400}.dr b a{color:var(--tx)}
 .dbt{display:block;width:100%;margin-top:10px;padding:12px;border-radius:30px;border:1.5px solid var(--tx);background:transparent;color:var(--tx);font-size:16px;font-weight:700}.dbt.red{border:0;color:var(--rd);font-weight:600;margin-top:4px}
-.dnv{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 14px 0 18px}.dnb{width:100%;height:4px;border-radius:3px;background:#e2dccb;overflow:hidden}.dnb i{display:block;height:100%;background:var(--tx);border-radius:3px}.dnv small{font-size:13px;color:var(--mu);letter-spacing:1px}
+.dnv{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 18px 0 6px}.dnb{width:100%;height:4px;border-radius:3px;background:#e2dccb;overflow:hidden}.dnb i{display:block;height:100%;background:var(--tx);border-radius:3px}.dnv small{font-size:13px;color:var(--mu);letter-spacing:1px}
 .mh{align-items:center;position:sticky;top:0;background:var(--bg);display:flex;justify-content:space-between;padding:12px;padding-top:calc(12px + env(safe-area-inset-top,0px));z-index:2}
+#dcx{width:44px;height:44px;padding:0!important;border-radius:50%!important;display:flex;align-items:center;justify-content:center;flex:none}
 .mh button{border:0;background:var(--card);border-radius:22px;padding:9px 18px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px #3a2e1a0d}
 .mh .sv{background:var(--tx);color:var(--bg)}.mh .dl{color:var(--rd)}
 .cd{background:var(--card);border-radius:22px;margin:0 12px 12px;padding:4px 16px;box-shadow:0 2px 12px #3a2e1a0f}
@@ -395,7 +396,7 @@ function openGD(ids){
   const cards=L.map(x=>{const o=x.o,qq=+x.it.qty||1,late=o.status==='pre'&&o.eta&&o.eta<today(),p=(+x.it.price||0)*qq,ntp=Math.round(tw(o,p));
     const pay=bal(o)>0?'<span class="np">'+(PAY[o.pay]||'未付款')+'</span>':'<span class="okp">'+(PAY[o.pay]||'已付款')+'</span>';
     return `<div class="dcd go" data-oid="${o.id}" data-oix="${x.ix}"><div class="g1"><b>${esc(o.seller||o.src||'未填來源')}</b><span class="gp">NT$${ntp.toLocaleString()}</span></div><div class="g2"><span>${esc(fmt(o.buyDate)||'')} 下單</span><span>${qq} 件</span>${o.status!=='pre'?'<span>'+(ST[o.status]||'')+'</span>':(o.eta?'<span>預計 '+fmt(o.eta)+'</span>':'')}${late?'<span class="lp">已逾期</span>':''}${pay}${o.cur!=='TWD'?'<span>'+money(o,p)+'</span>':''}</div></div>`}).join('');
-  DV.innerHTML=`<div class="mh"><button id="dcx">關閉</button>${dvNb()}</div>
+  DV.innerHTML=`<div class="mh">${dvNb()}<button id="dcx" aria-label="關閉"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 3l12 12M15 3L3 15"/></svg></button></div>
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${ST[f.o.status]||''}</span></span><div class="dvi">${im?`<img src="${im}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(base)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   <div class="dst"><div class="m"><b>${q} 件</b>數量</div><div class="p"><b>${L.length} 筆</b>訂單</div><div class="y"><b>${nt.toLocaleString()}</b>實付 NT$</div></div>${gprog}${gtot}${cards}</div>`;
@@ -430,7 +431,7 @@ function openDetail(id,ix){
   const gi=(l,v)=>v?`<div class="gi"><small>${l}</small><b>${v}</b></div>`:'';
   const grid=`<div class="dcd dgr">${gi('來源',esc(o.seller&&o.seller!==o.src?(o.src||'')+(o.src?' · ':'')+o.seller:(o.src||o.seller||'')))}${gi('分類',esc(ic(o,single?it:null)||'未分類'))}${gi('購買日',fmt(o.buyDate))}${gi('付款',PAY[o.pay])}</div>`;
   const hv=single?lv(o,it):(o.love||0);
-  DV.innerHTML=`<div class="mh"><button id="dcx">關閉</button>${dvNb()}</div>
+  DV.innerHTML=`<div class="mh">${dvNb()}<button id="dcx" aria-label="關閉"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 3l12 12M15 3L3 15"/></svg></button></div>
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog}${list}${chkWarn(o)}${tot}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
