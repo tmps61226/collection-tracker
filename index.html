@@ -412,6 +412,7 @@ function openDetail(id,ix){
   let list='',rows='';
   if(single){if(it.note)rows+=R('備註',esc(it.note))}
   else list=`<div class="dcd">`+o.items.map(i=>`<div class="dr di"><span>${esc(i.name||'未命名')} ×${+i.qty||1}${o.status==='pre'&&i.got?'<small class="inote" style="color:var(--gr)">✓ 已到貨</small>':''}${i.note?`<small class="inote">${esc(i.note)}</small>`:''}</span><b>${pp(o,(+i.price||0)*(+i.qty||1))}</b></div>`).join('')+`</div>`;
+  rows+=R('分類',esc(ic(o,single?it:null)||''));
   rows+=R('運費',+o.ship?money(o,+o.ship):'');
   if(!(o.items.length===1&&!+o.ship))rows+=R('訂單總額',pp(o,total(o)));
   if(+o.twPaid>0){rows+=R('實際扣款','NT$'+Math.round(o.twPaid).toLocaleString());if(o.feeLater==='1'){const fa=+o.feeAmt>0?+o.feeAmt:o.twPaid*feeOf(o)/100;rows+=R('手續費（後入帳）','NT$'+Math.round(fa).toLocaleString())}}
@@ -433,9 +434,9 @@ function openDetail(id,ix){
   const hv=single?lv(o,it):(o.love||0);
   DV.innerHTML=`<div class="mh">${dvNb()}<button id="dcx" aria-label="關閉"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 3l12 12M15 3L3 15"/></svg></button></div>
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
-  <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvc">${esc(ic(o,single?it:null)||'未分類')}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
+  <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog}${list}${chkWarn(o)}${tot}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v125</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v126</div></div>`;
   DV.classList.add('show');DV.scrollTop=0}
 const DV=$('dv');
 function backDetail(){if(dvState&&items.find(x=>x.id===dvState.id)){const id=dvState.id,ix=dvState.ix,had=dvNav>=0;if(had&&window.NAV){const j=NAV.findIndex(c=>c.o&&c.o.id===id&&c.ix===ix);if(j>=0)dvNav=j}dvKeep=had?1:0;try{openDetail(id,ix)}finally{dvKeep=0}}else dvState=null}
