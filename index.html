@@ -4,9 +4,9 @@
 <link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="收藏櫃"><meta name="theme-color" content="#f3f0e8">
 <style>
-@font-face{font-family:HwNum;font-weight:100 500;src:local('HannotateTC-W5'),local('Hannotate TC Regular'),local('Hannotate TC');unicode-range:U+0020-007E,U+00A0-00FF,U+2018-201F,U+2026}
-@font-face{font-family:HwNum;font-weight:501 900;src:local('HannotateTC-W7'),local('Hannotate TC Bold'),local('Hannotate TC');unicode-range:U+0020-007E,U+00A0-00FF,U+2018-201F,U+2026}
-:root{--bg:#f3f0e8;--card:#fbfaf7;--tx:#2a2622;--mu:#9a938a;--ln:#e7e2d8;--chip:#ebe6da;--tile:#ece8de;--rd:#b05545;--gr:#5f7a4a;--heart:#d98a7a;--ff:"Huninn";--num:var(--ff),"Hoefler Text","Baskerville",Georgia,serif;--mono:ui-monospace,"SF Mono",Menlo,"Courier New",monospace;color-scheme:light}
+@font-face{font-family:GenSen;font-weight:100 500;src:url(fonts/gsr-R.woff) format('woff');font-display:swap}
+@font-face{font-family:GenSen;font-weight:501 900;src:url(fonts/gsr-B.woff) format('woff');font-display:swap}
+:root{--bg:#f3f0e8;--card:#fbfaf7;--tx:#2a2622;--mu:#9a938a;--ln:#e7e2d8;--chip:#ebe6da;--tile:#ece8de;--rd:#b05545;--gr:#5f7a4a;--heart:#d98a7a;--ff:"Hoefler Text","Baskerville",GenSen;--num:"Hoefler Text","Baskerville",Georgia,serif;--mono:ui-monospace,"SF Mono",Menlo,"Courier New",monospace;color-scheme:light}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1b1916;--card:#262320;--tx:#f1ede4;--mu:#8f887d;--ln:#35312c;--chip:#302c27;--tile:#2d2924;color-scheme:dark}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;background-color:var(--bg);background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45 0 0 0 0 .4 0 0 0 0 .33 0 0 0 .09 0'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>");color:var(--tx);font:15px/1.45 var(--ff),-apple-system,"PingFang TC","Noto Sans TC",sans-serif;padding-bottom:110px;padding-top:env(safe-area-inset-top,0px)}
@@ -133,7 +133,6 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .dtot{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.dtot small{display:inline!important;flex:none}.dtot .dn{flex:1;min-width:0}.dtot small,.dgr small{display:block;font-size:12px;color:var(--mu)}.dtot .dn{font-family:var(--num);font-weight:700;font-size:30px;line-height:1.1}.dtot .r{text-align:right;font-size:13px;color:var(--mu)}
 .dgr{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px}.dgr b{font-size:15px;font-weight:600;word-break:break-word}
 .go{cursor:pointer;padding:14px 16px}.go .g1{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.go .g1 b{font-size:16px;min-width:0;word-break:break-word}.go .gp{font-family:var(--num);font-weight:700;font-size:22px;flex:none}.go .g2{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}.go .g2 span{background:var(--bg);border-radius:10px;padding:3px 10px;font-size:13px;color:var(--mu)}.go .g2 .okp{background:#dff1ec;color:#2f7a66}.go .g2 .np{background:#fdf0c9;color:#9a7416}.go .g2 .lp{background:#f7d6d0;color:#a3402b}
-.ffs button{display:block;width:100%;text-align:left;border:1.5px solid var(--ln);background:var(--bg);border-radius:18px;padding:12px 16px;margin:8px 0;font-size:16px;font-weight:600}.ffs button.on{border-color:#8fd3c0;background:#dff1ec}.ffs small{display:block;font-size:14px;color:var(--mu);font-weight:400;margin-top:2px}
 .dth{font-weight:700;font-size:15px;margin-bottom:2px}.ddt summary{list-style:none;cursor:pointer;color:var(--mu);font-size:14px;display:flex;justify-content:space-between}.ddt summary::-webkit-details-marker{display:none}.ddt summary:after{content:"▾"}.ddt[open] summary:after{content:"▴"}.ddt[open] summary{margin-bottom:4px}
 .jbtn{border:1px solid var(--ln);background:#fff;border-radius:999px;padding:4px 12px;margin-left:6px;font-size:13px}
 .dr.di span{flex:1;min-width:0;word-break:break-word}.dr.di b{flex:none;white-space:nowrap}.it .gotl{display:flex;flex-direction:row;align-items:center;gap:10px;padding:4px 0 8px;font-size:15px;width:auto}.it .gotl input{width:22px;height:22px;padding:0;margin:0;flex:none;border-radius:6px}.inote{display:block;font-size:13px;color:var(--mu);margin-top:3px;white-space:pre-wrap}
@@ -861,7 +860,6 @@ function openCrop(m){
 const SO=$('so2');
 function drawSet(){
   SO.innerHTML=`<div class="mh"><button id="sx">完成</button><span></span></div>
-  <div class="cd"><h3>字體</h3><div class="ffs">${Object.entries(FF).map(([k,v])=>`<button data-ff="${k}" class="${curFF()===k?'on':''}" style="font-family:${v.f||'inherit'}">${v.n}<small>Aa 123 漢頓</small></button>`).join('')}</div><div class="msg">換字體需要網路載入一次，載好之後就會記住。沒網路時會先用系統字體。</div></div>
   <div class="cd"><h3>自訂分類</h3>${S.cats.map((c,i)=>`<div class="cr"><input data-ci="${i}" value="${esc(c)}"><button data-cd="${i}">刪除</button></div>`).join('')}
     <div class="cr"><input id="newcat" placeholder="新增分類名稱"><button id="addcat" style="color:var(--ac)">新增</button></div></div>
   <div class="cd"><h3>標籤（娃娃、扭蛋、公仔、小物…）</h3>${KD().map((k,i)=>`<div class="cr"><input data-ki="${i}" value="${esc(k)}"><button data-kd="${i}">刪除</button></div>`).join('')}<div class="cr"><input id="newkind" placeholder="新增標籤"><button id="addkind">新增</button></div><div class="msg">每個品項可以在編輯頁選標籤，首頁會顯示目前分類（例如漢頓）裡各標籤的總數，點數字卡可以只看那個標籤。<button id="autokind" class="chip">依品名自動貼標籤</button></div></div>
@@ -885,7 +883,7 @@ function drawSet(){
 $('eye').onclick=()=>{S.hide=!S.hide;save();render()};
 document.addEventListener('click',e=>{const k=e.target.closest('[data-kf]');if(k&&$('stats').contains(k)){const v=k.dataset.kf;kindF=(kindF===v?'':v);render()}});
 {const SOP=()=>{try{return JSON.parse(lsGet('setOpen')||'{}')}catch(e){return{}}};
-const foldSet=()=>{const o=SOP();SO.querySelectorAll('.cd').forEach(c=>{const h=c.querySelector('h3');if(!h)return;const t=h.textContent.trim();const open=t in o?o[t]:/同步|備份|雲端|^字體$/.test(t);c.classList.toggle('fold',!open)})};
+const foldSet=()=>{const o=SOP();SO.querySelectorAll('.cd').forEach(c=>{const h=c.querySelector('h3');if(!h)return;const t=h.textContent.trim();const open=t in o?o[t]:/同步|備份|雲端/.test(t);c.classList.toggle('fold',!open)})};
 const ds0=drawSet;drawSet=function(){ds0();foldSet()};
 SO.addEventListener('click',e=>{const h=e.target.closest('.cd>h3');if(!h)return;const c=h.parentElement,o=SOP();c.classList.toggle('fold');o[h.textContent.trim()]=!c.classList.contains('fold');lsSet('setOpen',JSON.stringify(o))})}
 $('gear').onclick=()=>{drawSet();SO.classList.add('show')};
@@ -906,7 +904,6 @@ SO.addEventListener('change',e=>{
   if(t.id==='imf'&&t.files[0]){const r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result),its=Array.isArray(d)?d:d.items;if(!Array.isArray(its))throw 0;if(confirm('匯入 '+its.length+' 筆資料，會取代目前的資料，確定嗎？')){items=its.map(mig);if(d.settings&&d.settings.cats)S=Object.assign(S,d.settings);save();renderCats();render();drawSet()}}catch(x){alert('檔案格式不正確')}};r.readAsText(t.files[0])}
 });
 SO.addEventListener('click',e=>{
-  const ff=e.target.closest('[data-ff]');if(ff){lsSet('ff',ff.dataset.ff);applyFont();drawSet();return}
   const gl=e.target.closest('[data-gl]');if(gl){lsSet('glass',gl.dataset.gl);render();drawSet();return}
   const b=e.target.closest('button');if(!b)return;
   if(b.id==='sx'){SO.classList.remove('show');renderCats();render()}
@@ -944,11 +941,7 @@ async function cmpImgs(){
   for(const [x,k] of holders){x[k]=await re(x[k]);toast('縮小圖片 '+(++i)+'/'+holders.length+'…',0)}
   const after=holders.reduce((a,[x,k])=>a+x[k].length,0);save();render();toast('✓ 完成，省下約 '+Math.round((before-after)/1048576*10)/10+' MB',4000)}
 /* cloud sync: private GitHub repo (data.json + img/*) */
-const FF={huninn:{n:'粉圓體（可愛圓圓的）',f:'"Huninn"',u:'Huninn'},iansui:{n:'芫荽（手寫感）',f:'"Iansui"',u:'Iansui'},kai:{n:'霞鶩文楷（楷書手寫）',f:'"LXGW WenKai TC"',u:'LXGW+WenKai+TC:wght@400;700'},sys:{n:'系統預設',f:'-apple-system'}};
-const curFF=()=>{const k=lsGet('ff');return FF[k]?k:'huninn'};
-function applyFont(){const k=curFF(),v=FF[k];if(v.u&&!document.getElementById('ffl'+k)){const l=document.createElement('link');l.id='ffl'+k;l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family='+v.u+'&display=swap';document.head.appendChild(l)}document.documentElement.style.setProperty('--ff',v.f)}
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
-try{applyFont()}catch(e){}
 const GH=()=>({t:(lsGet('ghTok')||'').trim(),r:(lsGet('ghRepo')||'tmps61226/collection-data').trim()});
 const lastSync=()=>+lsGet('lastSync')||0;
 function h53(s){let a=0xdeadbeef,b=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}a=Math.imul(a^(a>>>16),2246822507)^Math.imul(b^(b>>>13),3266489909);b=Math.imul(b^(b>>>16),2246822507)^Math.imul(a^(a>>>13),3266489909);return(4294967296*(2097151&b)+(a>>>0)).toString(16)}
