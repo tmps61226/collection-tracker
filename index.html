@@ -435,10 +435,10 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvc">${esc(ic(o,single?it:null)||'未分類')}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog}${list}${chkWarn(o)}${tot}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v124</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v125</div></div>`;
   DV.classList.add('show');DV.scrollTop=0}
 const DV=$('dv');
-function backDetail(){if(dvState&&items.find(x=>x.id===dvState.id))openDetail(dvState.id,dvState.ix);else dvState=null}
+function backDetail(){if(dvState&&items.find(x=>x.id===dvState.id)){const id=dvState.id,ix=dvState.ix,had=dvNav>=0;if(had&&window.NAV){const j=NAV.findIndex(c=>c.o&&c.o.id===id&&c.ix===ix);if(j>=0)dvNav=j}dvKeep=had?1:0;try{openDetail(id,ix)}finally{dvKeep=0}}else dvState=null}
 {let sx=0,sy=0,st=0;DV.addEventListener('touchstart',e=>{const t=e.touches[0];sx=t.clientX;sy=t.clientY;st=Date.now()},{passive:true});
 DV.addEventListener('touchend',e=>{if(dvNav<0||!window.NAV)return;const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;if(Date.now()-st>700||Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.5)return;const j=dvNav+(dx<0?1:-1);if(j<0||j>=NAV.length)return;openNav(j);DV.scrollTop=0;try{DV.animate([{transform:`translateX(${dx<0?40:-40}px)`,opacity:.2},{transform:'none',opacity:1}],{duration:220,easing:'ease-out'})}catch(_){}},{passive:true})}
 DV.addEventListener('click',e=>{const h=e.target.closest('[data-dh]');if(h&&dvState){const o=items.find(x=>x.id===dvState.id);if(o){const k=+h.dataset.dh,ix=dvState.ix,it=ix>=0?o.items[ix]:(o.items.length===1?o.items[0]:null),cu=it?lv(o,it):(+o.love||0),nv=cu===k?k-1:k;const sc=DV.scrollTop;dvKeep=1;if(dvState.g){dvState.g.forEach(([i2,x2])=>{const oo=items.find(z=>z.id===i2);if(oo&&oo.items[x2])oo.items[x2].love=nv});const gg=dvState.g;save();render();openGD(gg)}else{if(it)it.love=nv;else o.love=nv;save();render();openDetail(o.id,ix)}dvKeep=0;DV.scrollTop=sc}return}
