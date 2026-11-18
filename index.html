@@ -1,5 +1,5 @@
 <!doctype html><html lang="zh-Hant"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>收藏預購管理</title>
 <link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="收藏櫃"><meta name="theme-color" content="#f3f0e8">
@@ -120,7 +120,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .note b{display:block;font-size:14px;margin-bottom:4px}.note small{display:block;color:var(--mu);font-size:12.5px;line-height:1.5}
 .note .nb{display:flex;gap:8px;margin-top:10px}.note .nb button{border:0;border-radius:18px;padding:9px 16px;font-size:14px;font-weight:600;background:var(--chip);color:var(--tx)}.note .nb button.pri{background:#26221e;color:#fff}
 .ar{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--ln);cursor:pointer}.ar:first-of-type{border-top:0}.ar span.t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;font-weight:600}.ar em{font-style:normal;font-size:12px;padding:2px 9px;border-radius:10px;background:var(--chip);color:var(--mu);flex:none}.ar em.late{background:#f6d9d3;color:#b05545}.ar em.soon{background:#26406b;color:#fff}
-#dv{z-index:5;overflow-x:hidden;overscroll-behavior-x:none;touch-action:pan-y}.dvb{min-width:0;max-width:100%}.go .gl .tw{margin-left:8px}.go .gl span:last-child{text-align:right}#mo{z-index:6}
+html,body{touch-action:manipulation}#dv{z-index:5;max-width:100vw;overflow-x:hidden;overscroll-behavior-x:none;touch-action:pan-y}.dvb{min-width:0;max-width:100%}.go .gl .tw{margin-left:8px}.go .gl span:last-child{text-align:right}#mo{z-index:6}
 .dgot{border:0;background:#d9f0e8;color:#2f7a66;border-radius:14px;padding:5px 13px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer}.dvp{position:relative;background:#fff;border-radius:14px;margin:36px 74px 6px;padding:26px 10px 10px;transform:rotate(-1.5deg);box-shadow:0 4px 14px #3a2e1a14;text-align:center}.dvp .dvi{height:176px;padding:0;align-items:center}.dvp .dvi img{width:100%;height:100%}.dvp .tp{display:none}
 .dvp .dch{position:absolute;top:-24px;left:50%;transform:translateX(-50%) rotate(-2deg);padding:11px 38px;font-weight:700;font-size:16px;letter-spacing:6px;white-space:nowrap;background-color:#a9ddcf;color:#2c6a58;border-radius:0;font-family:var(--hw);background-image:linear-gradient(#ffffff40 1px,transparent 1px),linear-gradient(90deg,#ffffff40 1px,transparent 1px);background-size:12px 12px;clip-path:polygon(0 8%,3% 0,6% 10%,9% 0,100% 0,97% 12%,100% 25%,97% 38%,100% 52%,97% 65%,100% 80%,97% 100%,6% 100%,3% 88%,0 100%,2% 70%,0 55%,2% 35%,0 20%)}.dvp .dch span{display:block;transform:rotate(2deg)}
 :root{--hw:var(--ff),sans-serif}
@@ -401,7 +401,7 @@ function openGD(ids){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${ST[f.o.status]||''}</span></span><div class="dvi">${im?`<img src="${im}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(base)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   <div class="dst"><div class="m"><b>${q} 件</b>數量</div><div class="p"><b>${esc(ic(f.o,f.it)||'未分類')}</b>分類</div><div class="y">${gpt}<b>NT$${nt.toLocaleString()}</b><span>單件成本</span></div></div>${gprog}${cards}</div>`;
-  DV.classList.add('show');DV.scrollTop=0}
+  DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 function openDetail(id,ix){
   if(!dvKeep)dvNav=-1;
   const o=items.find(x=>x.id===id);if(!o)return;if(!(ix>=0&&ix<o.items.length))ix=-1;dvState={id,ix};
@@ -412,7 +412,7 @@ function openDetail(id,ix){
   let list='',rows='';
   if(single){if(it.note)rows+=R('備註',esc(it.note))}
   else list=`<div class="dcd">`+o.items.map(i=>`<div class="dr di"><span>${esc(i.name||'未命名')} ×${+i.qty||1}${o.status==='pre'&&i.got?'<small class="inote" style="color:var(--gr)">✓ 已到貨</small>':''}${i.note?`<small class="inote">${esc(i.note)}</small>`:''}</span><b>${pp(o,(+i.price||0)*(+i.qty||1))}</b></div>`).join('')+`</div>`;
-  rows+=R('運費',+o.ship?money(o,+o.ship):'');
+  rows+=R('運費',+o.ship?'NT$'+Math.round(tw(o,+o.ship)).toLocaleString():'');
   if(!(o.items.length===1&&!+o.ship))rows+=R('訂單總額','NT$'+Math.round(tw(o,total(o))).toLocaleString());
   if(+o.twPaid>0){let ta=+o.twPaid;if(o.feeLater==='1')ta+=(+o.feeAmt>0?+o.feeAmt:o.twPaid*feeOf(o)/100);rows=rows.replace(/<div class="dr amt"><span>訂單總額<\/span>.*?<\/div>/,'');rows+=R('訂單總額','NT$'+Math.round(ta).toLocaleString())}
   rows+=R('發售日',fmt(o.rel));
@@ -425,21 +425,22 @@ function openDetail(id,ix){
   const ntTot=Math.round(single?unitCost(o,it)*q:tw(o,total(o))),ntUnit=Math.round(single?unitCost(o,it):tw(o,total(o))/(units(o)||1));
   const pst=(()=>{const pd=paidAmt(o),k=bal(o)<=0?['已付清','g']:(pd>0?['已付訂金','y']:['未付清','r']);return `<i class="pt ${k[1]}">${k[0]}</i>`})();
   const stats=`<div class="dst"><div class="m"><b>${cnt} 件</b>數量</div><div class="p"><b>${esc(ic(o,single?it:null)||'未分類')}</b>分類</div><div class="y">${pst}<b>NT$${ntUnit.toLocaleString()}</b><span>單件成本</span></div></div>`;
-  const gotBtn=o.status==='pre'?'<button class="dgot" id="dgot">✓ 已到貨</button>':'';
+  const gotBtn=o.status==='pre'&&!(single&&it.got&&o.items.length>1)?'<button class="dgot" id="dgot">✓ 已到貨</button>':'';
   let prog='';
   if(o.status==='pre'&&o.eta){const d0=new Date(today()+'T00:00'),e=new Date(o.eta+'T00:00'),st=new Date((o.buyDate||o.start||today())+'T00:00');const dl=Math.round((e-d0)/864e5),span=Math.max(1,Math.round((e-st)/864e5)),pct=Math.max(4,Math.min(100,Math.round((1-dl/span)*100)));
     prog=`<div class="dcd"><div class="dpr${dl<0?' od':''}"><b>${dl<0?'已逾期 '+(-dl)+' 天':dl===0?'今天到貨':'還有 '+dl+' 天'}</b>${gotBtn}</div><div class="dbar${dl<0?' od':''}"><i style="width:${dl<0?100:pct}%"></i></div><div class="dpr s"><span>${o.buyDate?fmt(o.buyDate)+' 下單':''}</span><span>預計 ${fmt(o.eta)}</span></div></div>`}
   const tot=`<div class="dcd dtot"><small>總成本</small><div class="dn">NT$${ntTot.toLocaleString()}</div><div class="r">${o.cur!=='TWD'?money(o,single?(+it.price||0)*q:total(o))+' · ':''}${(()=>{const pd=paidAmt(o),k=bal(o)<=0?['已付清','g']:(pd>0?['已付訂金','y']:['未付清','r']);return `<i class="pt ${k[1]}">${k[0]}</i>`})()}</div></div>`;
   const gi=(l,v)=>v?`<div class="gi"><small>${l}</small><b>${v}</b></div>`:'';
-  const srcT=(o.seller&&o.seller!==o.src?(o.src||'')+' · '+o.seller:(o.src||o.seller||'')),grid=`<div class="dcd dgr${srcT.length>14?' lg':''}">${gi('來源',o.seller&&o.seller!==o.src?(o.src?`<span class="nb">${esc(o.src)} ·</span> `:'')+`<span class="nb">${esc(o.seller)}</span>`:`<span class="nb">${esc(o.src||o.seller||'')}</span>`)}${gi('購買日',fmt(o.buyDate))}</div>`;
+  const srcT=(o.seller&&o.seller!==o.src?(o.src||'')+' · '+o.seller:(o.src||o.seller||'')),grid=`<div class="dcd dgr">${gi('來源',o.seller&&o.seller!==o.src?(o.src?`<span class="nb">${esc(o.src)} ·</span> `:'')+`<span class="nb">${esc(o.seller)}</span>`:`<span class="nb">${esc(o.src||o.seller||'')}</span>`)}${gi('購買日',fmt(o.buyDate))}</div>`;
   const hv=single?lv(o,it):(o.love||0);
   DV.innerHTML=`<div class="mh">${dvNb()}<button id="dcx" aria-label="關閉"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 3l12 12M15 3L3 15"/></svg></button></div>
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div style="text-align:center;margin:0 0 10px">${gotBtn}</div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v136</div></div>`;
-  DV.classList.add('show');DV.scrollTop=0}
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v137</div></div>`;
+  DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
+function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
 function backDetail(){if(dvState&&items.find(x=>x.id===dvState.id)){const id=dvState.id,ix=dvState.ix,had=dvNav>=0;if(had&&window.NAV){const j=NAV.findIndex(c=>c.o&&c.o.id===id&&c.ix===ix);if(j>=0)dvNav=j}dvKeep=had?1:0;try{openDetail(id,ix)}finally{dvKeep=0}}else dvState=null}
 {let sx=0,sy=0,st=0;DV.addEventListener('touchstart',e=>{const t=e.touches[0];sx=t.clientX;sy=t.clientY;st=Date.now()},{passive:true});
 DV.addEventListener('touchend',e=>{if(dvNav<0||!window.NAV)return;const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;if(Date.now()-st>700||Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.5)return;const j=dvNav+(dx<0?1:-1);if(j<0||j>=NAV.length)return;openNav(j);DV.scrollTop=0;try{DV.animate([{transform:`translateX(${dx<0?40:-40}px)`,opacity:.2},{transform:'none',opacity:1}],{duration:220,easing:'ease-out'})}catch(_){}},{passive:true})}
