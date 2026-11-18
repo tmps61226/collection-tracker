@@ -119,12 +119,12 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .note .nb{display:flex;gap:8px;margin-top:10px}.note .nb button{border:0;border-radius:18px;padding:9px 16px;font-size:14px;font-weight:600;background:var(--chip);color:var(--tx)}.note .nb button.pri{background:#26221e;color:#fff}
 .ar{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--ln);cursor:pointer}.ar:first-of-type{border-top:0}.ar span.t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;font-weight:600}.ar em{font-style:normal;font-size:12px;padding:2px 9px;border-radius:10px;background:var(--chip);color:var(--mu);flex:none}.ar em.late{background:#f6d9d3;color:#b05545}.ar em.soon{background:#26406b;color:#fff}
 #dv{z-index:5}#mo{z-index:6}
-.dvi{display:flex;justify-content:center;align-items:flex-end;height:250px;padding:4px 20px 0}.dvi img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 3px 5px #0003)}
-.dvb{padding:0 20px 40px}.dvn{font-weight:800;font-size:24px;line-height:1.25;margin:10px 0 4px}.dvs{color:var(--mu);font-size:14px;margin-bottom:6px}.dvh{color:var(--heart);font-size:20px;letter-spacing:2px;margin:8px 0 6px}
+.dvi{display:flex;justify-content:center;align-items:flex-end;height:170px;padding:2px 20px 0}.dvi img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 3px 5px #0003)}
+.dvb{padding:0 20px 40px}.dvn{font-weight:800;font-size:21px;line-height:1.25;margin:8px 0 2px}.dvs{color:var(--mu);font-size:14px;margin-bottom:2px}.dvh{color:var(--heart);font-size:17px;letter-spacing:2px;margin:0 0 4px}
 .jbtn{border:1px solid var(--ln);background:#fff;border-radius:999px;padding:4px 12px;margin-left:6px;font-size:13px}
 .dr.di span{flex:1;min-width:0;word-break:break-word}.dr.di b{flex:none;white-space:nowrap}.it .gotl{display:flex;flex-direction:row;align-items:center;gap:10px;padding:4px 0 8px;font-size:15px;width:auto}.it .gotl input{width:22px;height:22px;padding:0;margin:0;flex:none;border-radius:6px}.inote{display:block;font-size:13px;color:var(--mu);margin-top:3px;white-space:pre-wrap}
-.dr{display:flex;justify-content:space-between;gap:16px;padding:13px 0;border-bottom:1px solid var(--ln);align-items:flex-start}.dr span{color:var(--mu);flex:none}.dr b{font-weight:600;text-align:right;min-width:0;word-break:break-word}.dr b .tw{display:block;font-size:14px;color:#c4705c;font-weight:400}.dr b a{color:var(--tx)}
-.dbt{display:block;width:100%;margin-top:14px;padding:15px;border-radius:30px;border:1.5px solid var(--tx);background:transparent;color:var(--tx);font-size:16px;font-weight:700}.dbt.red{border:0;color:var(--rd);font-weight:600;margin-top:4px}
+.dr{display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:1px solid var(--ln);align-items:baseline;font-size:15px}.dr span{color:var(--mu);flex:none}.dr b{font-weight:600;text-align:right;min-width:0;word-break:break-word}.dr b .tw{display:inline;margin-left:8px;font-size:14px;color:#c4705c;font-weight:400}.dr b a{color:var(--tx)}
+.dbt{display:block;width:100%;margin-top:10px;padding:12px;border-radius:30px;border:1.5px solid var(--tx);background:transparent;color:var(--tx);font-size:16px;font-weight:700}.dbt.red{border:0;color:var(--rd);font-weight:600;margin-top:4px}
 .mh{position:sticky;top:0;background:var(--bg);display:flex;justify-content:space-between;padding:12px;padding-top:calc(12px + env(safe-area-inset-top,0px));z-index:2}
 .mh button{border:0;background:var(--card);border-radius:22px;padding:9px 18px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px #3a2e1a0d}
 .mh .sv{background:var(--tx);color:var(--bg)}.mh .dl{color:var(--rd)}
@@ -377,7 +377,7 @@ function openDetail(id,ix){
   if(o.status==='pre')rows+=R('預計到貨',o.eta?fmt(o.eta)+(late?'（已逾期）':''):'');
   rows+=R('收貨日期',fmt(o.recvDate));
   if(n>0){rows+=R('出售日期',fmt(o.soldDate))+R('賣出金額',+it.sp?'NT$'+Math.round(+it.sp).toLocaleString():'');if(single&&+it.sp){const p=(+it.sp||0)-unitCost(o,it)*n;rows+=R('淨賺／虧損',(p>=0?'+':'')+'NT$'+Math.round(p).toLocaleString())}}
-  rows+=R('來源',esc((o.src||'')+(o.seller?' · '+o.seller:'')))+R('分類',esc(ic(o,single?it:null)||'未分類'));
+  rows+=R('來源',esc(o.seller&&o.seller!==o.src?(o.src||'')+(o.src?' · ':'')+o.seller:(o.src||o.seller||'')))+R('分類',esc(ic(o,single?it:null)||'未分類'));
   if(ip(o,single?it:null)==='1')rows+=R('歸屬','幫朋友買（不算我的）');
   if(o.link)rows+=R('連結',`<a href="${esc(o.link)}" target="_blank" rel="noopener">開啟</a>`);
   rows+=R('備註',esc(o.note||'').replace(/\n/g,'<br>'));
