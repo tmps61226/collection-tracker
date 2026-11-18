@@ -246,7 +246,7 @@ const paidAmt=o=>o.pay==='paid'?total(o):o.pay==='deposit'?Math.min(+o.deposit||
 const bal=o=>total(o)-paidAmt(o);
 const feeOf=o=>(o.fee===''||o.fee==null)?(+S.cardFee||0):(+o.fee||0);
 function effRate(o){
-  const t=total(o);if(+o.twPaid>0&&t>0)return o.twPaid/t;
+  const t=total(o);if(+o.twPaid>0&&t>0){let q=+o.twPaid;if(o.feeLater==='1')q+=(+o.feeAmt>0?+o.feeAmt:q*feeOf(o)/100);return q/t}
   if(o.cur==='TWD')return 1+(o.pm==='card'?feeOf(o)/100:0);
   const r=+o.rate>0?+o.rate:(+S.rates[o.cur]||({HKD:4}[o.cur])||1);
   return r*(1+(o.pm==='card'?feeOf(o)/100:0));
@@ -284,7 +284,7 @@ function scoped(fc){
   const out=[];items.forEach(o=>{const f=o.items.filter(i=>vis(o,i,fc));if(!f.length)return;if(f.length===o.items.length){out.push(o);return}
     const r=sub(o)?f.reduce((a,i)=>a+(+i.qty||0)*(+i.price||0),0)/sub(o):0;
     let adj=0;const fn=friendNet(o);if(fn&&fn.mineSub&&o.items.filter(i=>ip(o,i)==='1').every(i=>!f.includes(i))){const fsub=f.reduce((a,i)=>a+(+i.qty||0)*(+i.price||0),0);adj=fn.net*Math.min(1,fsub/fn.mineSub)}
-    out.push(Object.assign({},o,{items:f,ship:(+o.ship||0)*r-adj,deposit:(+o.deposit||0)*r,twPaid:o.twPaid?+o.twPaid*r:o.twPaid}))});
+    out.push(Object.assign({},o,{items:f,ship:(+o.ship||0)*r-adj,deposit:(+o.deposit||0)*r,twPaid:o.twPaid?+o.twPaid*r:o.twPaid,feeAmt:o.feeAmt?+o.feeAmt*r:o.feeAmt}))});
   return out}
 function render(){
   mig79();const st=scoped($('fc').value);renderBk();renderAr(st);
@@ -372,7 +372,7 @@ function openDetail(id,ix){
   else rows+=o.items.map(i=>`<div class="dr di"><span>${esc(i.name||'未命名')} ×${+i.qty||1}${o.status==='pre'&&i.got?'<small class="inote" style="color:var(--gr)">✓ 已到貨</small>':''}${i.note?`<small class="inote">${esc(i.note)}</small>`:''}</span><b>${pp(o,(+i.price||0)*(+i.qty||1))}</b></div>`).join('');
   rows+=chkWarn(o)+R('運費',+o.ship?money(o,+o.ship):'')+(single&&o.items.length>1||!single?'':'');
   if(!(o.items.length===1&&!+o.ship))rows+=R('訂單總額',pp(o,total(o)));
-  if(+o.twPaid>0)rows+=R('實際扣款','NT$'+Math.round(o.twPaid).toLocaleString());
+  if(+o.twPaid>0){rows+=R('實際扣款','NT$'+Math.round(o.twPaid).toLocaleString());if(o.feeLater==='1'){const fa=+o.feeAmt>0?+o.feeAmt:o.twPaid*feeOf(o)/100;rows+=R('手續費（後入帳）','NT$'+Math.round(fa).toLocaleString())}}
   rows+=R('付款',PAY[o.pay]+(bal(o)>0?`（待付 ${money(o,bal(o))}）`:''));
   rows+=R('購買日期',fmt(o.buyDate))+R('發售日',fmt(o.rel));
   if(o.status==='pre')rows+=R('預計到貨',o.eta?fmt(o.eta)+(late?'（已逾期）':''):'');
@@ -431,7 +431,7 @@ function drawEd(){
   ${cur.items.some(i=>ip(cur,i)==='1')&&cur.items.some(i=>ip(cur,i)!=='1')?`<div class="cd"><h3>朋友分攤</h3>${fr('朋友付你的金額','fpaid','number','例如 189')}<div class="msg" id="fph" style="margin-top:6px"></div></div>`:''}
   <div class="cd">${chkWarn(cur)}${sel('幣別','cur',Object.keys(CUR).map(c=>[c,CURN[c]+' '+CUR[c]]))}${fr('運費','ship','number','0')}
     <div class="fr"><span>總金額</span><b id="tot"></b></div></div>
-  ${true?`<div class="cd"><h3>${cur.cur==='TWD'?'付款方式／刷卡手續費':'換匯／刷卡（算成台幣用）'}</h3>${seg('pm',cur.cur==='TWD'?[['cash','現金／一般'],['card','刷卡（國外手續費）']]:[['cash','現金換匯'],['card','刷卡'],['other','其他']])}${cur.cur==='TWD'?'':fr('實際匯率（1 '+CURN[cur.cur]+' = 台幣）','rate','number',String(S.rates[cur.cur]||''))}${cur.pm==='card'?fr('國外手續費 %','fee','number','預設 '+(+S.cardFee||0)+'（可改）'):''}${fr('實際扣款（台幣，選填）','twPaid','number','刷卡帳單的金額')}<div class="hint" id="fxh"></div></div>`:''}
+  ${true?`<div class="cd"><h3>${cur.cur==='TWD'?'付款方式／刷卡手續費':'換匯／刷卡（算成台幣用）'}</h3>${seg('pm',cur.cur==='TWD'?[['cash','現金／一般'],['card','刷卡（國外手續費）']]:[['cash','現金換匯'],['card','刷卡'],['other','其他']])}${cur.cur==='TWD'?'':fr('實際匯率（1 '+CURN[cur.cur]+' = 台幣）','rate','number',String(S.rates[cur.cur]||''))}${cur.pm==='card'?fr('國外手續費 %','fee','number','預設 '+(+S.cardFee||0)+'（可改）'):''}${fr('實際扣款（台幣，選填）','twPaid','number','刷卡帳單的金額')}${+cur.twPaid>0?`<div class="seg">${[['','帳單已含手續費'],['1','手續費後來才入帳']].map(([v,n])=>`<button data-k="feeLater" data-v="${v}" class="${(cur.feeLater||'')===v?'on':''}">${n}</button>`).join('')}</div>${cur.feeLater==='1'?fr('手續費金額（台幣，選填）','feeAmt','number','沒填就用上面的 % 算'):''}`:''}<div class="hint" id="fxh"></div></div>`:''}
   <div class="cd"><h3>付款狀態</h3>${seg('pay',Object.keys(PAY).map(p=>[p,PAY[p]]))}
     ${cur.pay==='deposit'?fr('已付訂金','deposit','number','0'):''}
     <div class="fr"><span>待付金額</span><b id="bal"></b></div></div>
@@ -447,7 +447,7 @@ function upd(){
   $('bal').textContent=money(cur,bal(cur));
   const fh2=$('fph');if(fh2){const f=friendNet(cur);fh2.textContent=f?`朋友的品項成本 ${money(cur,f.fair)}（含分攤運費），朋友付你 ${money(cur,f.fp)}，${f.net>=0?'多收 '+money(cur,f.net):'少收 '+money(cur,-f.net)}。收藏櫃與統計裡，這筆你自己的實際成本 = ${money(cur,f.mineSub+(+cur.ship||0)*f.mineSub/sub(cur)-f.net)}。`:'填入朋友實際付給你的總額（含運費分攤），app 會自動算出你多收或少收多少，並從你的成本裡扣掉。'}
   const h=$('hint');if(h){if(cur.eta){const r=Math.round((new Date(cur.eta+'T00:00')-new Date(today()+'T00:00'))/864e5),w=cur.start?Math.max(0,Math.round((new Date(today()+'T00:00')-new Date(cur.start+'T00:00'))/864e5)):0;h.textContent=`已等待 ${w} 天，${r>=0?'剩餘 '+r+' 天':'已逾期 '+(-r)+' 天'}`}else h.textContent=''}
-  const fh=$('fxh');if(fh){const r=effRate(cur);fh.textContent='目前算法：1 '+CURN[cur.cur]+' ≈ NT$'+(Math.round(r*10000)/10000)+(+cur.twPaid>0?'（依實際扣款）':cur.pm==='card'&&!(+cur.rate>0)?'（預設匯率＋手續費 '+feeOf(cur)+'%）':+cur.rate>0?'（你填的匯率'+(cur.pm==='card'&&feeOf(cur)?'＋手續費 '+feeOf(cur)+'%':'')+'）':'（設定裡的預設匯率）')}
+  const fh=$('fxh');if(fh){const r=effRate(cur);fh.textContent='目前算法：1 '+CURN[cur.cur]+' ≈ NT$'+(Math.round(r*10000)/10000)+(+cur.twPaid>0?(cur.feeLater==='1'?'（實際扣款＋手續費）':'（依實際扣款）'):cur.pm==='card'&&!(+cur.rate>0)?'（預設匯率＋手續費 '+feeOf(cur)+'%）':+cur.rate>0?'（你填的匯率'+(cur.pm==='card'&&feeOf(cur)?'＋手續費 '+feeOf(cur)+'%':'')+'）':'（設定裡的預設匯率）')}
   const p=$('pf');if(p){const v=profitTW(cur);p.textContent=(v>=0?'+':'')+'NT$'+Math.round(v).toLocaleString();p.style.color=v>=0?'var(--gr)':'var(--rd)'}
 }
 const MO=$('mo');
