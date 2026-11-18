@@ -130,6 +130,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .mh .sv{background:var(--tx);color:var(--bg)}.mh .dl{color:var(--rd)}
 .cd{background:var(--card);border-radius:22px;margin:0 12px 12px;padding:4px 16px;box-shadow:0 2px 12px #3a2e1a0f}
 .cd.fold>*:not(h3){display:none}.cd h3::after{content:'收起 ▴';font:600 14px/1.4 inherit;font-family:inherit;color:var(--tx);opacity:.6;flex:none;margin-left:10px}.cd.fold h3::after{content:'展開 ▾'}.cd.fold h3{margin:16px 0}.cd h3{align-items:center}
+.warn{background:#fbe9e4;color:#a3402b;border-radius:14px;padding:10px 12px;margin:10px 0;font-size:13px;line-height:1.5}
 .cd h3{cursor:pointer;display:flex;justify-content:space-between;margin:12px 0 2px;font-family:inherit;font-size:16px;font-weight:700;color:var(--tx)}
 .fr{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--ln)}
 .fr:last-child{border:0}.fr>span:first-child{flex:none}
@@ -237,6 +238,7 @@ function calcEta(start,dur,unit){
   const d=new Date(s);if(unit==='day'){d.setDate(d.getDate()+n);return iso(d)}
   let k=0;while(k<n){d.setDate(d.getDate()+1);const w=d.getDay();if(w&&w<6)k++}return iso(d);
 }
+const chkWarn=o=>{if(!(+o.tot>0)||(o.cur&&o.cur!=='TWD'))return'';const sm=sub(o),sh=+o.ship||0,df=sm+sh-o.tot;return Math.abs(df)<1?'':`<div class="warn">⚠ 品項加總 ${sm.toLocaleString()} ＋ 運費 ${sh.toLocaleString()} ＝ ${(sm+sh).toLocaleString()}，和圖上總額 ${Math.round(o.tot).toLocaleString()} ${df>0?'多':'少'}了 ${Math.abs(Math.round(df)).toLocaleString()}。可能有折扣，或有品項價格抓錯，請核對。</div>`};
 const sub=o=>o.items.reduce((a,i)=>a+(+i.qty||0)*(+i.price||0),0);
 const total=o=>sub(o)+(+o.ship||0);
 const paidAmt=o=>o.pay==='paid'?total(o):o.pay==='deposit'?Math.min(+o.deposit||0,total(o)):0;
@@ -367,7 +369,7 @@ function openDetail(id,ix){
   let rows='';
   if(single){rows+=R('單價',pp(o,+it.price||0))+R('數量',q+' 件'+(n>0?`（已售 ${n}）`:''))+(q>1?R('小計',pp(o,(+it.price||0)*q)):'')+(it.note?R('備註',esc(it.note)):'')}
   else rows+=o.items.map(i=>`<div class="dr di"><span>${esc(i.name||'未命名')} ×${+i.qty||1}${o.status==='pre'&&i.got?'<small class="inote" style="color:var(--gr)">✓ 已到貨</small>':''}${i.note?`<small class="inote">${esc(i.note)}</small>`:''}</span><b>${pp(o,(+i.price||0)*(+i.qty||1))}</b></div>`).join('');
-  rows+=R('運費',+o.ship?money(o,+o.ship):'')+(single&&o.items.length>1||!single?'':'');
+  rows+=chkWarn(o)+R('運費',+o.ship?money(o,+o.ship):'')+(single&&o.items.length>1||!single?'':'');
   if(!(o.items.length===1&&!+o.ship))rows+=R('訂單總額',pp(o,total(o)));
   if(+o.twPaid>0)rows+=R('實際扣款','NT$'+Math.round(o.twPaid).toLocaleString());
   rows+=R('付款',PAY[o.pay]+(bal(o)>0?`（待付 ${money(o,bal(o))}）`:''));
@@ -425,7 +427,7 @@ function drawEd(){
     <div class="msg">到貨後，每個品項會在收藏櫃各自顯示。點左邊的縮圖，可以替這個品項單獨加照片、去背。盲盒有不同款式時，按「拆出一款」，每一款各自放照片；抽到重複的款式，就把數量留在那一款。</div>
     <button class="btn" id="addit">＋ 新增品項</button>${cur.items.filter(i=>i.img&&!i.img.o).length?`<button class="btn" id="bgord">✂️ 全部品項去背（${cur.items.filter(i=>i.img&&!i.img.o).length} 張）</button>`:''}${dupGroups(cur).length?`<button class="btn" id="mrg">合併相同品項（${dupGroups(cur).length} 組）</button>`:''}</div>
   ${cur.items.some(i=>ip(cur,i)==='1')&&cur.items.some(i=>ip(cur,i)!=='1')?`<div class="cd"><h3>朋友分攤</h3>${fr('朋友付你的金額','fpaid','number','例如 189')}<div class="msg" id="fph" style="margin-top:6px"></div></div>`:''}
-  <div class="cd">${sel('幣別','cur',Object.keys(CUR).map(c=>[c,CURN[c]+' '+CUR[c]]))}${fr('運費','ship','number','0')}
+  <div class="cd">${chkWarn(cur)}${sel('幣別','cur',Object.keys(CUR).map(c=>[c,CURN[c]+' '+CUR[c]]))}${fr('運費','ship','number','0')}
     <div class="fr"><span>總金額</span><b id="tot"></b></div></div>
   ${true?`<div class="cd"><h3>${cur.cur==='TWD'?'付款方式／刷卡手續費':'換匯／刷卡（算成台幣用）'}</h3>${seg('pm',cur.cur==='TWD'?[['cash','現金／一般'],['card','刷卡（國外手續費）']]:[['cash','現金換匯'],['card','刷卡'],['other','其他']])}${cur.cur==='TWD'?'':fr('實際匯率（1 '+CURN[cur.cur]+' = 台幣）','rate','number',String(S.rates[cur.cur]||''))}${cur.pm==='card'?fr('國外手續費 %','fee','number','預設 '+(+S.cardFee||0)+'（可改）'):''}${fr('實際扣款（台幣，選填）','twPaid','number','刷卡帳單的金額')}<div class="hint" id="fxh"></div></div>`:''}
   <div class="cd"><h3>付款狀態</h3>${seg('pay',Object.keys(PAY).map(p=>[p,PAY[p]]))}
@@ -747,7 +749,7 @@ async function doShot(files,re,O,quiet){
     if(d.category&&S.cats.includes(d.category))O.cat=d.category;
     const good=d.items.filter(i=>i&&(i.name||+i.price));
     if(good.length)O.items=good.map(i=>{const o={name:String(i.name||''),qty:+i.qty||1,price:+i.price||''};if(i.category&&S.cats.includes(i.category)&&i.category!==O.cat)o.cat=i.category;return o});
-    {const sum=(good.length?good:O.items).reduce((x,i)=>x+(+i.qty||0)*(+i.price||0),0);let sh=+d.ship||0;if(!sh&&+d.total>0&&good.length){const df=+d.total-sum;if(df>0&&df<=500)sh=df}if(sh)O.ship=sh}
+    {const sum=(good.length?good:O.items).reduce((x,i)=>x+(+i.qty||0)*(+i.price||0),0);let sh=+d.ship||0;if(!sh&&+d.total>0&&good.length){const df=+d.total-sum;if(df>0&&df<=500)sh=df}if(sh)O.ship=sh;if(+d.total>0)O.tot=+d.total}
     if(O.cur!=='TWD'&&+d.twTotal>0&&good.length)O.twPaid=+d.twTotal;
     if(d.eta){O.eta=d.eta;O.status='pre'}else if(['pre','wish','have'].includes(d.status))O.status=d.status;
     if(/^\d{4}-\d{2}-\d{2}$/.test(d.recvDate||'')){O.recvDate=d.recvDate;if(!d.eta)O.status='have'}
