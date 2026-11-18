@@ -41,7 +41,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .pr .tw{display:block;text-align:center;font-size:15px;color:#c4705c;margin-top:-1px}
 .bd{display:inline-block;font-size:11px;padding:1px 8px;border-radius:10px;background:var(--chip);color:var(--mu);margin-left:4px}
 .cell .bds,.sc .bds,.row .bds{position:absolute;top:2px;left:2px;z-index:1;display:flex;flex-direction:column;align-items:flex-start;gap:3px}.cell .bd,.sc .bd,.row .bd{margin:0}
-.row .im{position:relative;width:64px;height:64px}.row .bds{top:-4px;left:-6px}
+.row .im{position:relative;width:64px;height:64px}.row .bds{position:static;display:inline-flex;flex-direction:row;gap:4px;margin-right:6px;vertical-align:middle}.row .bd{font-size:11px;padding:1px 7px}.row .pr{font-size:21px;color:var(--tx);flex:none;text-align:right;line-height:1.1}.row .pr .tw{font-size:15px;text-align:right}.row .nm{font-size:16px}
 .sc .bds{z-index:4}
 .sc .nm{text-align:center;padding:6px 2px 0}.sc .pr{text-align:center;padding-bottom:8px;line-height:1.15}
 .bd.pre{background:#26406b;color:#fff}.bd.wish{background:#f3edc2;color:#8a7a2a}.bd.sold{background:#e8e4dc;color:#8a8478}.bd.due{background:#f6d9d3;color:#b05545}
@@ -340,7 +340,7 @@ function render(){
     return}
   $('main').innerHTML=view==='grid'
    ?`<div class="cab g4 stk"><div class="shf"><div class="shr">${cells.map(c=>`<div class="sc${c.hid?' hid':''}" data-id="${c.o.id}" data-ix="${c.ix}"${c.grp?` data-grp="${GRP.indexOf(c)}"`:''}>${c.grp?'':HB(c)}<div class="bds">${cb(c)}</div><div class="si">${c.img?`<img src="${c.img}" alt="">`:'<span style="font-size:11px;color:var(--mu)">無圖</span>'}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price)}</div></div>`).join('')}</div></div></div>`
-   :`<div class="list">${cells.map(c=>{const o=c.o;return `<div class="row${c.hid?' hid':''}" data-id="${o.id}" data-ix="${c.ix}"${c.grp?` data-grp="${GRP.indexOf(c)}"`:''}><div class="im"><div class="bds">${cb(c)}</div>${im(c)}</div><div class="mt"><div class="nm">${esc(c.name)}</div><small>${esc(o.src)} ${esc(o.seller)} · ${fmt(o.buyDate)}</small><small>${c.cat?esc(c.cat)+' · ':''}${PAY[o.pay]}${o.status==='pre'&&o.eta?' · 預計 '+fmt(o.eta):''}</small></div><div class="pr">${pp(o,c.price)}</div>${c.grp?'':HB(c)}</div>`}).join('')}</div>`;
+   :`<div class="list">${cells.map(c=>{const o=c.o;return `<div class="row${c.hid?' hid':''}" data-id="${o.id}" data-ix="${c.ix}"${c.grp?` data-grp="${GRP.indexOf(c)}"`:''}><div class="im">${im(c)}</div><div class="mt"><div class="nm">${esc(c.name)}</div><small><span class="bds">${cb(c)}</span>${esc(o.seller||o.src||'')}${o.buyDate?' · '+fmt(o.buyDate):''}</small></div><div class="pr">${o.cur==='TWD'?money(o,c.price):pp(o,c.price)}</div>${c.grp?'':HB(c)}</div>`}).join('')}</div>`;
 }
 
 /* editor */
