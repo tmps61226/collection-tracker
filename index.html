@@ -138,7 +138,8 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .dr.di span{flex:1;min-width:0;word-break:break-word}.dr.di b{flex:none;white-space:nowrap}.it .gotl{display:flex;flex-direction:row;align-items:center;gap:10px;padding:4px 0 8px;font-size:15px;width:auto}.it .gotl input{width:22px;height:22px;padding:0;margin:0;flex:none;border-radius:6px}.inote{display:block;font-size:13px;color:var(--mu);margin-top:3px;white-space:pre-wrap}
 .dr{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--ln);align-items:baseline;font-size:16px}.dr span{color:var(--mu);flex:none}.dr b{font-size:16px;font-weight:600;text-align:right;min-width:0;word-break:break-word}.dr.amt b,.dr.amt b .tw{font-size:21px}.dr b .tw{display:inline;margin-left:8px;font-size:16px;color:#c4705c;font-weight:400}.dr b a{color:var(--tx)}
 .dbt{display:block;width:100%;margin-top:10px;padding:12px;border-radius:30px;border:1.5px solid var(--tx);background:transparent;color:var(--tx);font-size:16px;font-weight:700}.dbt.red{border:0;color:var(--rd);font-weight:600;margin-top:4px}
-.mh{position:sticky;top:0;background:var(--bg);display:flex;justify-content:space-between;padding:12px;padding-top:calc(12px + env(safe-area-inset-top,0px));z-index:2}
+.dnv{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 14px 0 18px}.dnb{width:100%;height:4px;border-radius:3px;background:#e2dccb;overflow:hidden}.dnb i{display:block;height:100%;background:var(--tx);border-radius:3px}.dnv small{font-size:13px;color:var(--mu);letter-spacing:1px}
+.mh{align-items:center;position:sticky;top:0;background:var(--bg);display:flex;justify-content:space-between;padding:12px;padding-top:calc(12px + env(safe-area-inset-top,0px));z-index:2}
 .mh button{border:0;background:var(--card);border-radius:22px;padding:9px 18px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px #3a2e1a0d}
 .mh .sv{background:var(--tx);color:var(--bg)}.mh .dl{color:var(--rd)}
 .cd{background:var(--card);border-radius:22px;margin:0 12px 12px;padding:4px 16px;box-shadow:0 2px 12px #3a2e1a0f}
@@ -344,6 +345,7 @@ function render(){
    cells.length=0;out.forEach(x=>{if(!Array.isArray(x)){cells.push(x);return}if(x.length===1){cells.push(x[0]);return}const f=x[0],sq_=x.reduce((a,c)=>a+c.q,0);cells.push({...f,grp:x,name:f.base+' ×'+sq_,price:x.reduce((a,c)=>a+c.price,0),hid:x.every(c=>c.hid),bdh:(()=>{const seen=new Set();return x.map(c=>c.tag?`<span class="bd sold">${c.tag}</span>`:bd(c.o,c.st)).join('').match(/<span[^>]*>.*?<\/span>/g)?.filter(h=>{const t=h.replace(/<[^>]*>/g,'');if(seen.has(t))return false;seen.add(t);return true}).join('')||''})()})});
    window.GRP=cells.filter(c=>c.grp)}
   if(S.preTop!==false){const isP=c=>c.o.status==='pre'&&c.st!=='have'&&!c.tag;cells.splice(0,cells.length,...cells.filter(isP),...cells.filter(c=>!isP(c)))}
+  window.NAV=cells;
   $('dt').textContent+=' · 共 '+cells.length+' 件';
   const im=c=>c.img?`<img src="${c.img}" alt="">`:'<span style="font:12px var(--mono);color:var(--mu)">無圖片</span>';
   if(view==='shelf'){
@@ -372,8 +374,12 @@ const sel=(label,key,opts)=>`<div class="fr"><span>${label}</span><select data-f
 let dvState=null;
 function dH(n){let r='';for(let k=1;k<=5;k++)r+=`<span data-dh="${k}">${k<=n?'<svg viewBox="-4 -4 72 68" style="filter:drop-shadow(0 2px 2px #3a2e1a30)"><use href="#dhp" fill="url(#dhb)" stroke="#fff" stroke-width="6" stroke-linejoin="round"/><use href="#dhp" fill="url(#dhb)"/><circle cx="16" cy="14" r="3" fill="#fff" opacity=".9"/></svg>':'<svg viewBox="-4 -4 72 68" style="filter:drop-shadow(0 2px 2px #3a2e1a20)"><use href="#dhp" fill="#fff" stroke="#fff" stroke-width="6" stroke-linejoin="round"/><use href="#dhp" fill="#fbe9ed" stroke="#f3b8c6" stroke-width="2"/></svg>'}</span>`;return r}
 document.body.insertAdjacentHTML('beforeend','<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="dhb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb3c6"/><stop offset="1" stop-color="#ff7a9c"/></linearGradient><path id="dhp" d="M32 58C9 41 1 28 1 18 1 8.500 8.500 2 17 2c6.500 0 11.500 3 15 8.500C35.500 5 40.500 2 47 2c8.500 0 16 6.500 16 16 0 10-8 23-31 40z"/></defs></svg>');
+let dvNav=-1,dvKeep=0;
+function openNav(i){const c=window.NAV&&NAV[i];if(!c)return;dvNav=i;dvKeep=1;try{if(c.grp)openGrp(c);else openDetail(c.o.id,c.ix)}finally{dvKeep=0}}
+const dvNb=()=>{if(dvNav<0||!window.NAV||!NAV.length)return '<span></span>';const n=NAV.length;return `<div class="dnv"><div class="dnb"><i style="width:${Math.max(3,Math.round((dvNav+1)/n*100))}%"></i></div><small>${dvNav+1} / ${n}</small></div>`};
 function openGrp(c){if(!c)return;openGD(c.grp.map(x=>[x.o.id,x.ix]))}
 function openGD(ids){
+  if(!dvKeep)dvNav=-1;
   const L=ids.map(([id,ix])=>{const o=items.find(x=>x.id===id);if(!o)return null;if(!(ix>=0&&ix<o.items.length))ix=0;return o.items[ix]?{o,ix,it:o.items[ix]}:null}).filter(Boolean);if(!L.length)return;
   dvState={id:L[0].o.id,ix:L[0].ix,g:L.map(x=>[x.o.id,x.ix])};
   const ST={pre:'預購中',have:'已到貨',sold:'已售出',wish:'想買'};
@@ -389,12 +395,13 @@ function openGD(ids){
   const cards=L.map(x=>{const o=x.o,qq=+x.it.qty||1,late=o.status==='pre'&&o.eta&&o.eta<today(),p=(+x.it.price||0)*qq,ntp=Math.round(tw(o,p));
     const pay=bal(o)>0?'<span class="np">'+(PAY[o.pay]||'未付款')+'</span>':'<span class="okp">'+(PAY[o.pay]||'已付款')+'</span>';
     return `<div class="dcd go" data-oid="${o.id}" data-oix="${x.ix}"><div class="g1"><b>${esc(o.seller||o.src||'未填來源')}</b><span class="gp">NT$${ntp.toLocaleString()}</span></div><div class="g2"><span>${esc(fmt(o.buyDate)||'')} 下單</span><span>${qq} 件</span>${o.status!=='pre'?'<span>'+(ST[o.status]||'')+'</span>':(o.eta?'<span>預計 '+fmt(o.eta)+'</span>':'')}${late?'<span class="lp">已逾期</span>':''}${pay}${o.cur!=='TWD'?'<span>'+money(o,p)+'</span>':''}</div></div>`}).join('');
-  DV.innerHTML=`<div class="mh"><button id="dcx">關閉</button><span></span></div>
+  DV.innerHTML=`<div class="mh"><button id="dcx">關閉</button>${dvNb()}</div>
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${ST[f.o.status]||''}</span></span><div class="dvi">${im?`<img src="${im}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(base)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   <div class="dst"><div class="m"><b>${q} 件</b>數量</div><div class="p"><b>${L.length} 筆</b>訂單</div><div class="y"><b>${nt.toLocaleString()}</b>實付 NT$</div></div>${gprog}${gtot}${cards}</div>`;
   DV.classList.add('show');DV.scrollTop=0}
 function openDetail(id,ix){
+  if(!dvKeep)dvNav=-1;
   const o=items.find(x=>x.id===id);if(!o)return;if(!(ix>=0&&ix<o.items.length))ix=-1;dvState={id,ix};
   const single=ix>=0||o.items.length===1,it=ix>=0?o.items[ix]:o.items[0];
   const img=single&&it.img?it.img.s:cover(o),name=single?(it.name||'未命名'):title(o);
@@ -423,7 +430,7 @@ function openDetail(id,ix){
   const gi=(l,v)=>v?`<div class="gi"><small>${l}</small><b>${v}</b></div>`:'';
   const grid=`<div class="dcd dgr">${gi('來源',esc(o.seller&&o.seller!==o.src?(o.src||'')+(o.src?' · ':'')+o.seller:(o.src||o.seller||'')))}${gi('分類',esc(ic(o,single?it:null)||'未分類'))}${gi('購買日',fmt(o.buyDate))}${gi('付款',PAY[o.pay])}</div>`;
   const hv=single?lv(o,it):(o.love||0);
-  DV.innerHTML=`<div class="mh"><button id="dcx">關閉</button><span></span></div>
+  DV.innerHTML=`<div class="mh"><button id="dcx">關閉</button>${dvNb()}</div>
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog}${list}${chkWarn(o)}${tot}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
@@ -431,7 +438,9 @@ function openDetail(id,ix){
   DV.classList.add('show');DV.scrollTop=0}
 const DV=$('dv');
 function backDetail(){if(dvState&&items.find(x=>x.id===dvState.id))openDetail(dvState.id,dvState.ix);else dvState=null}
-DV.addEventListener('click',e=>{const h=e.target.closest('[data-dh]');if(h&&dvState){const o=items.find(x=>x.id===dvState.id);if(o){const k=+h.dataset.dh,ix=dvState.ix,it=ix>=0?o.items[ix]:(o.items.length===1?o.items[0]:null),cu=it?lv(o,it):(+o.love||0),nv=cu===k?k-1:k;const sc=DV.scrollTop;if(dvState.g){dvState.g.forEach(([i2,x2])=>{const oo=items.find(z=>z.id===i2);if(oo&&oo.items[x2])oo.items[x2].love=nv});const gg=dvState.g;save();render();openGD(gg)}else{if(it)it.love=nv;else o.love=nv;save();render();openDetail(o.id,ix)}DV.scrollTop=sc}return}
+{let sx=0,sy=0,st=0;DV.addEventListener('touchstart',e=>{const t=e.touches[0];sx=t.clientX;sy=t.clientY;st=Date.now()},{passive:true});
+DV.addEventListener('touchend',e=>{if(dvNav<0||!window.NAV)return;const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;if(Date.now()-st>700||Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.5)return;const j=dvNav+(dx<0?1:-1);if(j<0||j>=NAV.length)return;openNav(j);DV.scrollTop=0;try{DV.animate([{transform:`translateX(${dx<0?40:-40}px)`,opacity:.2},{transform:'none',opacity:1}],{duration:220,easing:'ease-out'})}catch(_){}},{passive:true})}
+DV.addEventListener('click',e=>{const h=e.target.closest('[data-dh]');if(h&&dvState){const o=items.find(x=>x.id===dvState.id);if(o){const k=+h.dataset.dh,ix=dvState.ix,it=ix>=0?o.items[ix]:(o.items.length===1?o.items[0]:null),cu=it?lv(o,it):(+o.love||0),nv=cu===k?k-1:k;const sc=DV.scrollTop;dvKeep=1;if(dvState.g){dvState.g.forEach(([i2,x2])=>{const oo=items.find(z=>z.id===i2);if(oo&&oo.items[x2])oo.items[x2].love=nv});const gg=dvState.g;save();render();openGD(gg)}else{if(it)it.love=nv;else o.love=nv;save();render();openDetail(o.id,ix)}dvKeep=0;DV.scrollTop=sc}return}
   const go=e.target.closest('[data-oid]');if(go){openDetail(go.dataset.oid,+go.dataset.oix);return}
   const b=e.target.closest('button');if(!b)return;
   if(b.id==='dcx'){DV.classList.remove('show');dvState=null}
@@ -1071,7 +1080,7 @@ function mergeDups(o){const g=dupGroups(o);if(!g.length)return 0;const drop=new 
 /* home events */
 $('chips').addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(b){$('fs').value=b.dataset.s;render()}});
 $('main').addEventListener('click',e=>{const hb=e.target.closest('[data-hide]');if(hb){e.stopPropagation();const [id,ix]=hb.dataset.hide.split('|'),o=items.find(x=>x.id===id);if(o){const its=+ix>=0?[o.items[+ix]]:o.items,v=!its.every(i=>i.hide);its.forEach(i=>{if(v)i.hide=true;else delete i.hide});save();render();toast(v?'已隱藏，勾選「顯示已隱藏」可找回':'已取消隱藏')}return}
-  if(e.target.closest('[data-add]')){$('sheet').classList.add('show');return}const n=e.target.closest('[data-id]');if(n){if(n.dataset.grp!==undefined){openGrp(GRP[+n.dataset.grp]);return}openDetail(n.dataset.id,+n.dataset.ix)}});
+  if(e.target.closest('[data-add]')){$('sheet').classList.add('show');return}const n=e.target.closest('[data-id]');if(n){const nv=n.dataset.grp!==undefined?NAV.indexOf(GRP[+n.dataset.grp]):NAV.findIndex(c=>!c.grp&&c.o.id===n.dataset.id&&c.ix===+n.dataset.ix);if(nv>=0){openNav(nv);return}if(n.dataset.grp!==undefined){openGrp(GRP[+n.dataset.grp]);return}openDetail(n.dataset.id,+n.dataset.ix)}});
 ['q','fs','fc','so','hs','hw','hp','hh'].forEach(i=>$(i).addEventListener('input',render));
 $('hp').addEventListener('input',()=>{try{localStorage.setItem('hp2',$('hp').value)}catch(e){}});
 $('fc').addEventListener('input',()=>setFc($('fc').value));
