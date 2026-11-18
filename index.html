@@ -438,7 +438,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div style="text-align:center;margin:0 0 10px">${gotBtn}</div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v144</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v145</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -882,20 +882,34 @@ function restoreCut(origUrl,cutUrl){return new Promise(res=>{const A=new Image()
 function flatCut(srcUrl){return new Promise(res=>{const im=new Image();im.onerror=()=>res(null);im.onload=()=>{try{
   const w0=im.width,h0=im.height,d0=Math.round(Math.min(w0,h0)*.015),w=w0-2*d0,h=h0-2*d0,N=w*h;if(w<20||h<20){res(null);return}
   const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(im,d0,d0,w,h,0,0,w,h);const D=g.getImageData(0,0,w,h),a=D.data;
-  const edge=[];for(let x=0;x<w;x++){edge.push(x,(h-1)*w+x)}for(let y=1;y<h-1;y++){edge.push(y*w,y*w+w-1)}
-  const bd=[[],[],[]];edge.forEach(p=>{for(let k=0;k<3;k++)bd[k].push(a[p*4+k])});const bg=bd.map(v=>v.sort((x,y)=>x-y)[v.length>>1]);
-  const dist0=p=>Math.abs(a[p*4]-bg[0])+Math.abs(a[p*4+1]-bg[1])+Math.abs(a[p*4+2]-bg[2]);
-  const TOL=30;const dist=p=>{const d=dist0(p);if(d<=TOL)return d;const r=a[p*4],g1=a[p*4+1],b1=a[p*4+2],mx=Math.max(r,g1,b1),mn=Math.min(r,g1,b1);return(mn>=185&&mx-mn<=10)?TOL:d};let ok=0;edge.forEach(p=>{if(dist(p)<=TOL)ok++});if(ok<edge.length*.8){res(null);return}
-  const rm=new Uint8Array(N),st=new Int32Array(N);let sp=0;
-  const seed=p=>{if(!rm[p]&&dist(p)<=TOL){rm[p]=1;st[sp++]=p}};edge.forEach(seed);
-  while(sp){const p=st[--sp],x=p%w,y=(p-x)/w;if(x>0)seed(p-1);if(x<w-1)seed(p+1);if(y>0)seed(p-w);if(y<h-1)seed(p+w)}
-  /* 被圍住的大塊背景（例如鍊子圈圈裡面）也清掉；小塊保留避免誤刪商品上的白色 */
+  const df=(p,q)=>Math.abs(a[p*4]-a[q*4])+Math.abs(a[p*4+1]-a[q*4+1])+Math.abs(a[p*4+2]-a[q*4+2]);
+  const nl=p=>{const r=a[p*4],g1=a[p*4+1],b=a[p*4+2],mx=Math.max(r,g1,b),mn=Math.min(r,g1,b);return mn>=185&&mx-mn<=10};
+  const STEP=12,DRIFT=64;
+  /* 從整圈邊緣往內長：顏色漸變（背景光影）可以通過，遇到明顯的邊（商品輪廓）就停 */
+  const rm=new Uint8Array(N),ref=new Int32Array(N),st=new Int32Array(N);let sp=0;
+  const seed=p=>{if(!rm[p]){rm[p]=1;ref[p]=p;st[sp++]=p}};
+  for(let x=0;x<w;x++){seed(x);seed((h-1)*w+x)}for(let y=1;y<h-1;y++){seed(y*w);seed(y*w+w-1)}
+  const tryq=(p,q)=>{if(rm[q])return;if((df(p,q)<=STEP&&df(q,ref[p])<=DRIFT)||(nl(p)&&nl(q))){rm[q]=1;ref[q]=ref[p];st[sp++]=q}};
+  while(sp){const p=st[--sp],x=p%w,y=(p-x)/w;if(x>0)tryq(p,p-1);if(x<w-1)tryq(p,p+1);if(y>0)tryq(p,p-w);if(y<h-1)tryq(p,p+w)}
+  let removed=0;for(let i=0;i<N;i++)if(rm[i])removed++;
+  if(removed<N*.2||removed>N*.97){res(null);return}
+  /* 被圍住的大塊純背景色（鍊子圈圈裡面） */
+  const bd=[[],[],[]];for(let i=0;i<N;i++)if(rm[i]){bd[0].push(a[i*4]);bd[1].push(a[i*4+1]);bd[2].push(a[i*4+2])}
+  const step=Math.max(1,Math.floor(bd[0].length/4000)),med=k=>{const v=bd[k].filter((_,i)=>i%step===0).sort((x,y)=>x-y);return v[v.length>>1]};const bg=[med(0),med(1),med(2)];
+  const d0f=p=>Math.abs(a[p*4]-bg[0])+Math.abs(a[p*4+1]-bg[1])+Math.abs(a[p*4+2]-bg[2]);
   const seen=new Uint8Array(N),min=N*.012;
-  for(let i=0;i<N;i++){if(rm[i]||seen[i]||dist(i)>TOL)continue;const comp=[];sp=0;st[sp++]=i;seen[i]=1;
-    while(sp){const p=st[--sp];comp.push(p);const x=p%w,y=(p-x)/w;for(const q of [x>0?p-1:-1,x<w-1?p+1:-1,y>0?p-w:-1,y<h-1?p+w:-1]){if(q>=0&&!seen[q]&&!rm[q]&&dist(q)<=TOL){seen[q]=1;st[sp++]=q}}}
+  for(let i=0;i<N;i++){if(rm[i]||seen[i]||d0f(i)>9)continue;const comp=[];sp=0;st[sp++]=i;seen[i]=1;
+    while(sp){const p=st[--sp];comp.push(p);const x=p%w,y=(p-x)/w;for(const q of [x>0?p-1:-1,x<w-1?p+1:-1,y>0?p-w:-1,y<h-1?p+w:-1]){if(q>=0&&!seen[q]&&!rm[q]&&d0f(q)<=9){seen[q]=1;st[sp++]=q}}}
     if(comp.length>=min)comp.forEach(p=>rm[p]=1)}
-  let kept=0;for(let i=0;i<N;i++)if(!rm[i])kept++;if(kept<N*.02||kept>N*.97){res(null);return}
-  for(let i=0;i<N;i++){if(rm[i]){a[i*4+3]=0}else{const x=i%w,y=(i-x)/w;if((x>0&&rm[i-1])||(x<w-1&&rm[i+1])||(y>0&&rm[i-w])||(y<h-1&&rm[i+w])){a[i*4+3]=Math.max(0,Math.min(255,Math.round((dist(i)-10)*7)))}}}
+  let kept=0;for(let i=0;i<N;i++)if(!rm[i])kept++;if(kept<N*.02){res(null);return}
+  /* 去掉零碎殘留（框線、小斑點）：只留夠大的連通塊 */
+  {const lab=new Int32Array(N),sz=[0];let nl2=0;
+   for(let i=0;i<N;i++){if(rm[i]||lab[i])continue;nl2++;let n=0;sp=0;st[sp++]=i;lab[i]=nl2;
+    while(sp){const p=st[--sp];n++;const x=p%w,y=(p-x)/w;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;const xx=x+dx,yy=y+dy;if(xx<0||yy<0||xx>=w||yy>=h)continue;const q=yy*w+xx;if(!rm[q]&&!lab[q]){lab[q]=nl2;st[sp++]=q}}}
+    sz.push(n)}
+   const mxs=Math.max(...sz);for(let i=0;i<N;i++)if(!rm[i]&&sz[lab[i]]<mxs*.04)rm[i]=1}
+  for(let i=0;i<N;i++){if(rm[i]){a[i*4+3]=0;continue}const x=i%w,y=(i-x)/w;let nb=-1;if(x>0&&rm[i-1])nb=i-1;else if(x<w-1&&rm[i+1])nb=i+1;else if(y>0&&rm[i-w])nb=i-w;else if(y<h-1&&rm[i+w])nb=i+w;
+    if(nb>=0)a[i*4+3]=Math.max(0,Math.min(255,Math.round((df(i,nb)-12)*8)))}
   g.putImageData(D,0,0);res(c.toDataURL('image/webp',.9))}catch(e){res(null)}};im.src=srcUrl})}
 /* manual crop */
 function openCrop(m){
