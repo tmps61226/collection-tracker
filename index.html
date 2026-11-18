@@ -438,7 +438,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div style="text-align:center;margin:0 0 10px">${gotBtn}</div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v140</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v141</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1006,11 +1006,12 @@ let syncBusy=false;
 function grabCfg(){const a=$('ghtok'),b=$('ghrepo');if(a)lsSet('ghTok',a.value.trim());if(b&&b.value.trim()!==GH().r){lsSet('ghRepo',b.value.trim());try{localStorage.removeItem('syncSha')}catch(e){}}}
 function syncMsg(){return lastSync()?'上次同步：'+new Date(lastSync()).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'還沒同步過'}
 async function putPrev(){try{const d=await db(),t=d.transaction('kv','readwrite');t.objectStore('kv').put({t:Date.now(),items,settings:S},'prev');lsSet('prevAt',String(Date.now()))}catch(e){}}
+const shaKnown=h=>{if(!h)return true;if(h===lsGet('syncSha'))return true;if(h===lsGet('syncPend')){lsSet('syncSha',h);return true}return false};
 let autoT;const autoOn=()=>GH().t&&lsGet('autoSync')!=='0';
 function schedAuto(){if(!autoOn())return;clearTimeout(autoT);autoT=setTimeout(()=>syncUp(true),6000)}
 let _lp=0;
 async function autoPull(){if(!autoOn()||syncBusy||!lsGet('syncSha')||Date.now()-_lp<30000)return;_lp=Date.now();
-  try{const {head}=await repoHead();if(!head||head===lsGet('syncSha'))return;
+  try{const {head}=await repoHead();if(!head||shaKnown(head))return;
     if(lsGet('dirty')==='1'){toast('雲端有較新的資料，但這支手機也有還沒上傳的修改。請到設定選「上傳」或「下載」',6000);return}
     await syncDown(true)}catch(e){}}
 async function syncUp(auto){
@@ -1020,13 +1021,13 @@ async function syncUp(auto){
     tt('連線中…',0);let {br,head}=await repoHead(),base=null,have=new Set();
     if(!head){const r=await ghj('/contents/README.md','PUT',{message:'init',content:b64('收藏櫃雲端資料')});head=r.commit.sha;base=r.commit.tree.sha;have.add('README.md')}
     else{const c=await ghj('/git/commits/'+head);base=c.tree.sha;const t=await ghj('/git/trees/'+base+'?recursive=1');(t.tree||[]).forEach(x=>have.add(x.path))}
-    if(have.has('data.json')&&head!==lsGet('syncSha')&&auto){toast('雲端有較新的資料，請到設定選「上傳」或「下載」處理',6000);return}
-    if(have.has('data.json')&&head!==lsGet('syncSha')&&!confirm('雲端的資料比這支手機上次同步的更新（可能在別的裝置改過）。\n繼續上傳會蓋掉雲端那份，確定嗎？\n（想拿雲端的，請按取消，改用「從雲端下載」）')){toast('已取消');return}
+    if(have.has('data.json')&&!shaKnown(head)&&auto){toast('雲端有較新的資料，請到設定選「上傳」或「下載」處理',6000);return}
+    if(have.has('data.json')&&!shaKnown(head)&&!confirm('雲端的資料比這支手機上次同步的更新（可能在別的裝置改過）。\n繼續上傳會蓋掉雲端那份，確定嗎？\n（想拿雲端的，請按取消，改用「從雲端下載」）')){toast('已取消');return}
     const {json,imgs}=packData();lsSet('dirty','0');const need=Object.keys(imgs).filter(n=>!have.has('img/'+n)),tree=[];let done=0;
     await pool(need,4,async n=>{const r=await ghj('/git/blobs','POST',{content:imgs[n],encoding:'base64'});tree.push({path:'img/'+n,mode:'100644',type:'blob',sha:r.sha});tt('上傳圖片 '+(++done)+'/'+need.length+'…',0)});
     const bl=await ghj('/git/blobs','POST',{content:b64(json),encoding:'base64'});tree.push({path:'data.json',mode:'100644',type:'blob',sha:bl.sha});
     const nt=await ghj('/git/trees','POST',{base_tree:base,tree}),cm=await ghj('/git/commits','POST',{message:'sync '+new Date().toISOString(),tree:nt.sha,parents:[head]});
-    await ghj('/git/refs/heads/'+br,'PATCH',{sha:cm.sha});
+    lsSet('syncPend',cm.sha);await ghj('/git/refs/heads/'+br,'PATCH',{sha:cm.sha});
     lsSet('syncSha',cm.sha);lsSet('lastSync',String(Date.now()));lsSet('lastBackup',String(Date.now()));lsSet('ghBr',br);
     toast(auto?'☁️ 已自動同步':'✓ 已上傳到雲端（'+items.length+' 筆，新增 '+need.length+' 張圖）',auto?1800:3500);renderBk();if(SO.classList.contains('show'))drawSet()
   }catch(e){lsSet('dirty','1');toast((auto?'自動同步失敗：':'同步失敗：')+e.message,5000)}finally{syncBusy=false}}
