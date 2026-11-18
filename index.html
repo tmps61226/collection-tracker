@@ -439,7 +439,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div style="text-align:center;margin:0 0 10px">${gotBtn}</div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v149</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v150</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -494,7 +494,7 @@ function drawEd(){
   <div class="cd"><h3>付款狀態</h3>${seg('pay',Object.keys(PAY).map(p=>[p,PAY[p]]))}
     ${cur.pay==='deposit'?fr('已付訂金','deposit','number','0'):''}
     <div class="fr"><span>待付金額</span><b id="bal"></b></div></div>
-  ${cur.status==='pre'?`<div class="cd"><h3>預計到貨</h3>${fr('預計到貨日','eta','date')}<div class="hint" id="hint"></div><details class="lead" ${cur.dur?'open':''}><summary>不知道確切日期？用「要等幾個月」推算</summary>${fr('從哪天開始算','start','date')}${fr('要等多久','dur','number','填數字，例如 3')}${seg('unit',[['month','個月'],['day','天'],['work','個工作天']])}</details></div>`:''}
+  ${cur.status==='pre'?`<div class="cd"><h3>預計到貨</h3>${fr('預計到貨日','eta','date')}<div class="fr"><span>還要等幾天</span><input data-f="_days" type="number" inputmode="numeric" value="${cur.eta?Math.max(0,Math.round((new Date(cur.eta+'T00:00')-new Date(today()+'T00:00'))/864e5)):''}" placeholder="填天數，例如 30"></div><div class="hint" id="hint"></div></div>`:''}
   ${cur.status==='have'||cur.status==='sold'?`<div class="cd">${fr('收貨日期','recvDate','date')}</div>`:''}
   ${cur.status==='sold'||soldUnits(cur)>0?`<div class="cd"><h3>出售（已售 ${soldUnits(cur)} / ${units(cur)} 件）</h3>${fr('出售日期','soldDate','date')}<div class="fr"><span>已售出部分淨賺／虧損</span><b id="pf"></b></div></div>`:''}
   <div class="cd"><div class="fr"><textarea data-f="note" placeholder="備註（可選）">${esc(cur.note)}</textarea></div></div>`;
@@ -515,7 +515,9 @@ function onField(ev){
   if(e.dataset.i!==undefined){const it=cur.items[+e.dataset.i];if(it){it[e.dataset.k]=e.value;upd()}return}
   const f=e.dataset.f;if(!f)return;
   if(f==='src'&&e.value==='__new'){const v=(prompt('新的購買來源名稱（例如：Yahoo拍賣、朋友A）')||'').trim();if(v){if(!SRC.includes(v)&&!(S.srcX||[]).includes(v)){S.srcX=(S.srcX||[]).concat(v);save()}cur.src=v}drawEd();return}
+  if(f==='_days'){const n=parseInt(e.value,10);if(n>=0){const d=new Date(today()+'T00:00');d.setDate(d.getDate()+n);const x=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');cur.eta=x;const q=MO.querySelector('[data-f="eta"]');if(q)q.value=x}else{cur.eta='';const q=MO.querySelector('[data-f="eta"]');if(q)q.value=''}upd();return}
   cur[f]=e.value;
+  if(f==='eta'){const q=MO.querySelector('[data-f="_days"]');if(q)q.value=e.value?Math.max(0,Math.round((new Date(e.value+'T00:00')-new Date(today()+'T00:00'))/864e5)):''}
   if(f==='start'||f==='dur'||f==='unit'){const x=calcEta(cur.start,cur.dur,cur.unit);if(x){cur.eta=x;const n=MO.querySelector('[data-f="eta"]');if(n)n.value=x}}
   if(f==='src'){if(e.value==='日本現場'||e.value==='門市／實體店')cur.cur=e.value==='日本現場'?'JPY':'TWD';drawEd();return}
   upd();
