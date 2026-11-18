@@ -325,7 +325,7 @@ function render(){
     else cells.push({o,ix:-1,q:o.items.length===1?(+o.items[0].qty||1):0,base:o.items.length===1?(o.items[0].name||''):'',hid:o.items.every(i=>i.hide),cat:ic(o,o.items[0]),name:title(o),img:(o.items.length===1&&o.items[0].img)?o.items[0].img.s:cover(o),price:total(o)});
   });
   {const G={},out=[];cells.forEach(c=>{if(!c.q||!c.base){out.push(c);return}const k=[c.cat,c.base.trim().toLowerCase(),c.tag||'',c.st||c.o.status].join('|');if(G[k]){G[k].push(c)}else{G[k]=[c];out.push(G[k])}});
-   cells.length=0;out.forEach(x=>{if(!Array.isArray(x)){cells.push(x);return}if(x.length===1){cells.push(x[0]);return}const f=x[0],sq_=x.reduce((a,c)=>a+c.q,0);cells.push({...f,grp:x,name:f.base+' ×'+sq_,price:x.reduce((a,c)=>a+c.price,0),hid:x.every(c=>c.hid),bdh:[...new Set(x.map(c=>c.tag?`<span class="bd sold">${c.tag}</span>`:bd(c.o,c.st)))].join('')})});
+   cells.length=0;out.forEach(x=>{if(!Array.isArray(x)){cells.push(x);return}if(x.length===1){cells.push(x[0]);return}const f=x[0],sq_=x.reduce((a,c)=>a+c.q,0);cells.push({...f,grp:x,name:f.base+' ×'+sq_,price:x.reduce((a,c)=>a+c.price,0),hid:x.every(c=>c.hid),bdh:(()=>{const seen=new Set();return x.map(c=>c.tag?`<span class="bd sold">${c.tag}</span>`:bd(c.o,c.st)).join('').match(/<span[^>]*>.*?<\/span>/g)?.filter(h=>{const t=h.replace(/<[^>]*>/g,'');if(seen.has(t))return false;seen.add(t);return true}).join('')||''})()})});
    window.GRP=cells.filter(c=>c.grp)}
   $('dt').textContent+=' · 共 '+cells.length+' 件';
   const im=c=>c.img?`<img src="${c.img}" alt="">`:'<span style="font:12px var(--mono);color:var(--mu)">無圖片</span>';
