@@ -439,7 +439,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div style="text-align:center;margin:0 0 10px">${gotBtn}</div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v154</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v155</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -466,7 +466,7 @@ function drawEd(){
   <div class="cd"><h3>商品圖片（點一下設為封面）</h3>
     <div class="thumbs">${cur.imgs.map((m,i)=>`<div class="th ${i===cur.cover?'cv':''}" data-c="${i}"><img src="${m.s}">${i===cur.cover?'<b>封面</b>':''}<i data-rm="${i}">×</i></div>`).join('')}</div>
     <button class="btn" id="addimg">＋ 新增圖片</button><input type="file" id="imgf" accept="image/*" multiple hidden>
-    ${cover(cur)?(cur.imgs[cur.cover]&&cur.imgs[cur.cover].o?'<button class="btn" id="undo">還原封面原圖</button><button class="btn" id="cclc">🧹 清殘影</button>':'<button class="btn" id="bg">✂️ 封面去背</button>')+'<button class="btn" id="crc">✂ 封面裁切</button><button class="btn" id="zm">🔍 封面放大主體</button>':''}
+    ${cover(cur)?(cur.imgs[cur.cover]&&cur.imgs[cur.cover].o?'<button class="btn" id="undo">還原封面原圖</button><button class="btn" id="cclc">🧹 清殘影</button>':'<button class="btn" id="bg">✂️ 封面去背</button>')+'<button class="btn" id="crc">✂ 封面裁切</button><button class="btn" id="zm">🔍 封面放大主體</button><button class="btn" id="pstc">📋 貼上去背圖</button>':''}
     <div class="msg" id="msg2"></div></div>
   <div class="cd">${seg('status',[['wish','想買'],['pre','預購中'],['have','已到貨'],['sold','已售出']])}
     ${seg('proxy',[['0','整筆是我的'],['1','整筆是幫朋友買']])+sel('分類（預設）','cat',[['','未分類'],...cats.map(c=>[c,c])])}
@@ -568,6 +568,7 @@ MO.addEventListener('click',ev=>{
   if(id==='reshot'){reShot();return}
   if(id==='shot'){const k=($('gk').value||'').trim();if(!k){setMsg('請先貼上 Gemini API Key');return}localStorage.setItem('gk',k);$('shotf').click()}
   if(id==='addimg')$('imgf').click();
+  if(id==='pstc'){pasteCut(cur.imgs[cur.cover],b);return}
   if(id==='zm'){const m=cur.imgs[cur.cover];busyBtn(b,'⏳ 處理中…');trimImg(m.s).then(t=>{const same=t===m.s;m.s=t;drawEd();toast(same?'這張圖已經沒有多餘空白了':'✓ 已放大主體')});return}
   if(id==='mrg'){const n=mergeDups(cur);drawEd();toast('已合併，數量已加總（共少了 '+n+' 列）');return}
   if(id==='crc'){openCrop(cur.imgs[cur.cover]);return}
