@@ -439,7 +439,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div style="text-align:center;margin:0 0 10px">${gotBtn}</div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v151</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v152</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -887,12 +887,12 @@ function flatCut(srcUrl){return new Promise(res=>{const im=new Image();im.onerro
   const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(im,d0,d0,w,h,0,0,w,h);const D=g.getImageData(0,0,w,h),a=D.data;
   const df=(p,q)=>Math.abs(a[p*4]-a[q*4])+Math.abs(a[p*4+1]-a[q*4+1])+Math.abs(a[p*4+2]-a[q*4+2]);
   const nl=p=>{const r=a[p*4],g1=a[p*4+1],b=a[p*4+2],mx=Math.max(r,g1,b),mn=Math.min(r,g1,b);return mn>=185&&mx-mn<=10};
-  const STEP=12,DRIFT=64;
+  const STEP=3,DRIFT=24,NLR=false;
   /* 從整圈邊緣往內長：顏色漸變（背景光影）可以通過，遇到明顯的邊（商品輪廓）就停 */
   const rm=new Uint8Array(N),ref=new Int32Array(N),st=new Int32Array(N);let sp=0;
   const seed=p=>{if(!rm[p]){rm[p]=1;ref[p]=p;st[sp++]=p}};
   for(let x=0;x<w;x++){seed(x);seed((h-1)*w+x)}for(let y=1;y<h-1;y++){seed(y*w);seed(y*w+w-1)}
-  const tryq=(p,q)=>{if(rm[q])return;if((df(p,q)<=STEP&&df(q,ref[p])<=DRIFT)||(nl(p)&&nl(q))){rm[q]=1;ref[q]=ref[p];st[sp++]=q}};
+  const tryq=(p,q)=>{if(rm[q])return;if((df(p,q)<=STEP&&df(q,ref[p])<=DRIFT)||(NLR&&nl(p)&&nl(q))){rm[q]=1;ref[q]=ref[p];st[sp++]=q}};
   while(sp){const p=st[--sp],x=p%w,y=(p-x)/w;if(x>0)tryq(p,p-1);if(x<w-1)tryq(p,p+1);if(y>0)tryq(p,p-w);if(y<h-1)tryq(p,p+w)}
   let removed=0;for(let i=0;i<N;i++)if(rm[i])removed++;
   if(removed<N*.2||removed>N*.97){res(null);return}
@@ -912,12 +912,12 @@ function flatCut(srcUrl){return new Promise(res=>{const im=new Image();im.onerro
     if(comp.length>=min)comp.forEach(p=>rm[p]=1)}
   let kept=0;for(let i=0;i<N;i++)if(!rm[i])kept++;if(kept<N*.02){res(null);return}
   /* 去掉零碎殘留（框線、小斑點）：只留夠大的連通塊 */
-  {const lab=new Int32Array(N),sz=[0];let nl2=0;
+  {const lab=new Int32Array(N),sz=[0],bb=[0],fl=[1];let nl2=0;
    for(let i=0;i<N;i++){if(rm[i]||lab[i])continue;nl2++;let n=0;sp=0;st[sp++]=i;lab[i]=nl2;
-    while(sp){const p=st[--sp];n++;const x=p%w,y=(p-x)/w;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;const xx=x+dx,yy=y+dy;if(xx<0||yy<0||xx>=w||yy>=h)continue;const q=yy*w+xx;if(!rm[q]&&!lab[q]){lab[q]=nl2;st[sp++]=q}}}
-    sz.push(n)}
+    let x0=w,x1=0,y0=h,y1=0;while(sp){const p=st[--sp];n++;const x=p%w,y=(p-x)/w;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;const xx=x+dx,yy=y+dy;if(xx<0||yy<0||xx>=w||yy>=h)continue;const q=yy*w+xx;if(!rm[q]&&!lab[q]){lab[q]=nl2;st[sp++]=q}}}
+    sz.push(n);bb.push(Math.min(x1-x0+1,y1-y0+1));fl.push(n/((x1-x0+1)*(y1-y0+1)))}
    const mxs=Math.max(...sz),tot=sz.reduce((x,y)=>x+y,0);if(mxs<tot*.4){res(null);return}
-   for(let i=0;i<N;i++)if(!rm[i]&&sz[lab[i]]<mxs*.04)rm[i]=1}
+   for(let i=0;i<N;i++)if(!rm[i]&&(sz[lab[i]]<mxs*.04||((bb[lab[i]]<Math.max(w,h)*.03||fl[lab[i]]<.3)&&sz[lab[i]]<mxs*.2)))rm[i]=1}
   for(let i=0;i<N;i++){if(rm[i]){a[i*4+3]=0;continue}const x=i%w,y=(i-x)/w;let nb=-1;if(x>0&&rm[i-1])nb=i-1;else if(x<w-1&&rm[i+1])nb=i+1;else if(y>0&&rm[i-w])nb=i-w;else if(y<h-1&&rm[i+w])nb=i+w;
     if(nb>=0)a[i*4+3]=Math.max(0,Math.min(255,Math.round((df(i,nb)-12)*8)))}
   g.putImageData(D,0,0);res(c.toDataURL('image/webp',.9))}catch(e){res(null)}};im.src=srcUrl})}
