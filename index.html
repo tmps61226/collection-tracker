@@ -136,7 +136,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .dth{font-weight:700;font-size:15px;margin-bottom:2px}.ddt summary{list-style:none;cursor:pointer;color:var(--mu);font-size:14px;display:flex;justify-content:space-between}.ddt summary::-webkit-details-marker{display:none}.ddt summary:after{content:"▾"}.ddt[open] summary:after{content:"▴"}.ddt[open] summary{margin-bottom:4px}
 .jbtn{border:1px solid var(--ln);background:#fff;border-radius:999px;padding:4px 12px;margin-left:6px;font-size:13px}
 .dr.di span{flex:1;min-width:0;word-break:break-word}.dr.di b{flex:none;white-space:nowrap}.it .gotl{display:flex;flex-direction:row;align-items:center;gap:10px;padding:4px 0 8px;font-size:15px;width:auto}.it .gotl input{width:22px;height:22px;padding:0;margin:0;flex:none;border-radius:6px}.inote{display:block;font-size:13px;color:var(--mu);margin-top:3px;white-space:pre-wrap}
-.dr{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--ln);align-items:baseline;font-size:16px}.dr span{color:var(--mu);flex:none}.dr b{font-size:20px;font-weight:600;text-align:right;min-width:0;word-break:break-word}.dr b .tw{display:inline;margin-left:8px;font-size:20px;color:#c4705c;font-weight:400}.dr b a{color:var(--tx)}
+.dr{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--ln);align-items:baseline;font-size:16px}.dr span{color:var(--mu);flex:none}.dr b{font-size:16px;font-weight:600;text-align:right;min-width:0;word-break:break-word}.dr.amt b,.dr.amt b .tw{font-size:21px}.dr b .tw{display:inline;margin-left:8px;font-size:16px;color:#c4705c;font-weight:400}.dr b a{color:var(--tx)}
 .dbt{display:block;width:100%;margin-top:10px;padding:12px;border-radius:30px;border:1.5px solid var(--tx);background:transparent;color:var(--tx);font-size:16px;font-weight:700}.dbt.red{border:0;color:var(--rd);font-weight:600;margin-top:4px}
 .mh{position:sticky;top:0;background:var(--bg);display:flex;justify-content:space-between;padding:12px;padding-top:calc(12px + env(safe-area-inset-top,0px));z-index:2}
 .mh button{border:0;background:var(--card);border-radius:22px;padding:9px 18px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px #3a2e1a0d}
@@ -398,7 +398,7 @@ function openDetail(id,ix){
   const o=items.find(x=>x.id===id);if(!o)return;if(!(ix>=0&&ix<o.items.length))ix=-1;dvState={id,ix};
   const single=ix>=0||o.items.length===1,it=ix>=0?o.items[ix]:o.items[0];
   const img=single&&it.img?it.img.s:cover(o),name=single?(it.name||'未命名'):title(o);
-  const R=(l,v)=>(v||v===0)&&v!==''?`<div class="dr"><span>${l}</span><b>${v}</b></div>`:'';
+  const R=(l,v)=>(v||v===0)&&v!==''?`<div class="dr${/^\s*(NT\$|HK\$|US\$|CN¥|¥|₩|-|＋|\+)/.test(String(v))?' amt':''}"><span>${l}</span><b>${v}</b></div>`:'';
   const q=+it.qty||1,n=sq(it),late=o.status==='pre'&&o.eta&&o.eta<today();
   let list='',rows='';
   if(single){if(it.note)rows+=R('備註',esc(it.note))}
