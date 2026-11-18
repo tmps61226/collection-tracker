@@ -815,7 +815,7 @@ function drawSet(){
     <div class="cr"><input id="newcat" placeholder="新增分類名稱"><button id="addcat" style="color:var(--ac)">新增</button></div></div>
   <div class="cd"><h3>標籤（娃娃、扭蛋、公仔、小物…）</h3>${KD().map((k,i)=>`<div class="cr"><input data-ki="${i}" value="${esc(k)}"><button data-kd="${i}">刪除</button></div>`).join('')}<div class="cr"><input id="newkind" placeholder="新增標籤"><button id="addkind">新增</button></div><div class="msg">每個品項可以在編輯頁選標籤，首頁會顯示目前分類（例如漢頓）裡各標籤的總數，點數字卡可以只看那個標籤。<button id="autokind" class="chip">依品名自動貼標籤</button></div></div>
   <div class="cd"><h3>收藏櫃不顯示的分類</h3>${S.cats.map((c,i)=>`<div class="fr"><span>${esc(c)}</span><input data-hid="${esc(c)}" type="checkbox" ${(S.hid||[]).includes(c)?'checked':''} style="flex:none;width:auto"></div>`).join('')}<div class="msg">勾選的分類平常不會出現在收藏櫃和統計裡；在上面「全部分類」直接選那個分類，還是看得到。</div></div>
-  ${(S.srcX||[]).length?`<div class="cd"><h3>自訂購買來源</h3>${S.srcX.map((c,i)=>`<div class="cr"><input value="${esc(c)}" readonly><button data-xd="${i}">刪除</button></div>`).join('')}<div class="msg">刪除後，已經用這個來源的訂單不受影響。</div></div>`:''}
+  <div class="cd"><h3>自訂購買來源</h3>${(S.srcX||[]).map((c,i)=>`<div class="cr"><input value="${esc(c)}" readonly><button data-xd="${i}">刪除</button></div>`).join('')}<div class="cr"><input id="newsrc" placeholder="新增來源（例如：Yahoo拍賣）"><button id="addsrc">新增</button></div><div class="msg">刪除後，已經用這個來源的訂單不受影響。</div></div>
   <div class="cd"><h3>朋友代買</h3><div class="fr"><span>朋友的東西到貨後自動隱藏</span><input id="ahp" type="checkbox" ${S.ahp!==false?'checked':''} style="flex:none;width:auto"></div><div class="msg">開啟後，幫朋友買的品項一旦標為「已到貨」，就不再出現在收藏櫃（含「含代買」「只看代買」），所以「只看代買」會剩下還沒到的。想看時，勾上方的「顯示已隱藏」。</div></div>
   <div class="cd"><h3>我的暱稱（喊單截圖用來找我的留言）</h3><div class="fr"><span>暱稱</span><input id="nick" value="${esc(S.nick||'瓜呱')}" placeholder="例如：瓜呱"></div></div>
   <div class="cd"><h3>隱藏總投入</h3><div class="fr"><span>首頁不顯示「總投入」金額</span><input id="hideamt" type="checkbox" ${S.hide?'checked':''} style="flex:none;width:auto"></div><div class="msg">開啟後，總投入、價格、總額、淨賺都顯示 ＊＊＊。輸入價格時還是看得到自己打的數字。首頁右上角的眼睛也可以隨時切換。</div></div>
@@ -862,6 +862,7 @@ SO.addEventListener('click',e=>{
   if(b.id==='im')$('imf').click();
   if(b.id==='ex')doBackup();
   if(b.id==='bgall')bgAll();
+  if(b.id==='addsrc'){const v=$('newsrc').value.trim();if(v&&!SRC.includes(v)&&!(S.srcX||[]).includes(v)){S.srcX=(S.srcX||[]).concat(v);save()}drawSet();return}
   if(b.dataset.xd!==undefined){S.srcX.splice(+b.dataset.xd,1);save();drawSet()}
   if(b.id==='syup')syncUp();
   if(b.id==='sydn')syncDown();
