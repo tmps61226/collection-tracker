@@ -412,7 +412,6 @@ function openDetail(id,ix){
   let list='',rows='';
   if(single){if(it.note)rows+=R('備註',esc(it.note))}
   else list=`<div class="dcd">`+o.items.map(i=>`<div class="dr di"><span>${esc(i.name||'未命名')} ×${+i.qty||1}${o.status==='pre'&&i.got?'<small class="inote" style="color:var(--gr)">✓ 已到貨</small>':''}${i.note?`<small class="inote">${esc(i.note)}</small>`:''}</span><b>${pp(o,(+i.price||0)*(+i.qty||1))}</b></div>`).join('')+`</div>`;
-  rows+=R('運費',+o.ship?'NT$'+Math.round(tw(o,+o.ship)).toLocaleString():'');
   if(!(o.items.length===1&&!+o.ship))rows+=R('訂單總額','NT$'+Math.round(tw(o,total(o))).toLocaleString());
   if(+o.twPaid>0){let ta=+o.twPaid;if(o.feeLater==='1')ta+=(+o.feeAmt>0?+o.feeAmt:o.twPaid*feeOf(o)/100);rows=rows.replace(/<div class="dr amt"><span>訂單總額<\/span>.*?<\/div>/,'');rows+=R('訂單總額','NT$'+Math.round(ta).toLocaleString())}
   rows+=R('發售日',fmt(o.rel));
@@ -437,7 +436,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div style="text-align:center;margin:0 0 10px">${gotBtn}</div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v137</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v138</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
