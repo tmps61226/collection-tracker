@@ -439,7 +439,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div style="text-align:center;margin:0 0 10px">${gotBtn}</div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v153</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v154</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -483,7 +483,7 @@ function drawEd(){
       <div class="fr love" style="padding:6px 0"><span>喜愛</span><span>${[1,2,3,4,5].map(n=>`<span data-hi="${i}|${n}">${n<=lv(cur,it)?'♥':'♡'}</span>`).join('')}</span></div>
       ${(+it.qty||1)>1?`<div style="margin:4px 0 6px"><button class="btn" data-split="${i}">＋ 拆出一款（盲盒不同款式）</button></div>`:''}<div class="two"><input data-i="${i}" data-k="qty" type="number" inputmode="numeric" placeholder="數量" value="${esc(it.qty)}"><input data-i="${i}" data-k="price" type="number" inputmode="decimal" placeholder="單價" value="${esc(it.price)}"></div>
       ${cur.status==='have'||cur.status==='sold'?`<div class="sell"><span>已售出</span><button data-sq="${i}" data-d="-1">−</button><b>${sq(it)} / ${+it.qty||1}</b><button data-sq="${i}" data-d="1">＋</button>${sq(it)?`<input data-i="${i}" data-k="sp" type="number" inputmode="decimal" placeholder="賣了多少（台幣總額）" value="${esc(it.sp||'')}">`:''}</div>`:''}
-      ${it.img?`<div style="margin-top:6px">${it.img.o?`<button class="btn" data-iun="${i}">還原原圖</button><button class="btn" data-icl="${i}">🧹 清殘影</button>`:`<button class="btn" data-ibg="${i}">✂️ 去背</button>`}<button class="btn" data-icr="${i}">✂ 裁切</button><button class="btn" data-izm="${i}">🔍 放大主體</button><button class="btn" data-irm="${i}">移除圖片</button></div>`:''}</div>`).join('')}
+      ${it.img?`<div style="margin-top:6px">${it.img.o?`<button class="btn" data-iun="${i}">還原原圖</button><button class="btn" data-icl="${i}">🧹 清殘影</button>`:`<button class="btn" data-ibg="${i}">✂️ 去背</button>`}<button class="btn" data-icr="${i}">✂ 裁切</button><button class="btn" data-izm="${i}">🔍 放大主體</button><button class="btn" data-ipst="${i}">📋 貼上去背圖</button><button class="btn" data-irm="${i}">移除圖片</button></div>`:''}</div>`).join('')}
     <input type="file" id="itf" accept="image/*" hidden>
     <div class="msg">到貨後，每個品項會在收藏櫃各自顯示。點左邊的縮圖，可以替這個品項單獨加照片、去背。盲盒有不同款式時，按「拆出一款」，每一款各自放照片；抽到重複的款式，就把數量留在那一款。</div>
     <button class="btn" id="addit">＋ 新增品項</button>${cur.items.filter(i=>i.img&&!i.img.o).length?`<button class="btn" id="bgord">✂️ 全部品項去背（${cur.items.filter(i=>i.img&&!i.img.o).length} 張）</button>`:''}${dupGroups(cur).length?`<button class="btn" id="mrg">合併相同品項（${dupGroups(cur).length} 組）</button>`:''}</div>
@@ -554,6 +554,7 @@ MO.addEventListener('click',ev=>{
   if(b.dataset.ibg!==undefined){busyBtn(b,'⏳ 去背中…');doBg(cur.items[+b.dataset.ibg].img);return}
   if(b.dataset.icl!==undefined){const m=cur.items[+b.dataset.icl].img;busyBtn(b,'⏳ 清理中…');cleanCut(m.s).then(t=>{m.s=t;drawEd();toast('✓ 已清掉殘影，不滿意可按「還原原圖」')});return}
   if(b.dataset.icr!==undefined){openCrop(cur.items[+b.dataset.icr].img);return}
+  if(b.dataset.ipst!==undefined){pasteCut(cur.items[+b.dataset.ipst].img,b);return}
   if(b.dataset.izm!==undefined){const m=cur.items[+b.dataset.izm].img;busyBtn(b,'⏳ 處理中…');trimImg(m.s).then(t=>{const same=t===m.s;m.s=t;drawEd();toast(same?'這張圖已經沒有多餘空白了':'✓ 已放大主體')});return}
   if(b.dataset.iun!==undefined){const m=cur.items[+b.dataset.iun].img;m.s=m.o;delete m.o;drawEd();toast('已還原原圖');return}
   if(b.dataset.irm!==undefined){delete cur.items[+b.dataset.irm].img;drawEd();return}
@@ -1128,6 +1129,16 @@ function gCount(){gReq++;try{localStorage.setItem('gu',JSON.stringify({d:gDay(),
 function updGu(){const el=$('gu');if(!el)return;const n=gUse();el.textContent='今天這支手機已送出約 '+n+' 次辨識請求（免費額度每個模型約 20 次，台灣時間 16:00 重置）'+(n>=15?'，快用完了':'');el.style.color=n>=15?'var(--rd)':''}
 /* batch bg removal */
 let bgAllRun=false;
+async function pasteCut(m,b){
+  if(!navigator.clipboard||!navigator.clipboard.read){toast('這個瀏覽器不能貼上圖片',4000);return}
+  try{
+    const its=await navigator.clipboard.read();let blob=null;
+    for(const it of its){const t=it.types.find(x=>x.startsWith('image/'));if(t){blob=await it.getType(t);break}}
+    if(!blob){toast('剪貼簿裡沒有圖片。請先長按上面的圖片 → 拷貝主體，再按這個',6000);return}
+    const u=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(blob)});
+    const t=await trimImg(u);if(!m.o)m.o=m.s;m.s=t;drawEd();toast('✓ 已貼上去背圖（想復原可按「還原原圖」）',3200)
+  }catch(e){toast('貼上失敗：'+String(e&&e.message||e).slice(0,100)+'。請再按一次，並在跳出的「貼上」按下允許',6000)}
+}
 async function bgOne(m){
   
   {const fc=await flatCut(m.s);if(fc==='skip')return;if(fc){m.o=m.s;m.s=await cleanCut(await trimImg(fc));return}}
