@@ -121,7 +121,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .note .nb{display:flex;gap:8px;margin-top:10px}.note .nb button{border:0;border-radius:18px;padding:9px 16px;font-size:14px;font-weight:600;background:var(--chip);color:var(--tx)}.note .nb button.pri{background:#26221e;color:#fff}
 .ar{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--ln);cursor:pointer}.ar:first-of-type{border-top:0}.ar span.t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;font-weight:600}.ar em{font-style:normal;font-size:12px;padding:2px 9px;border-radius:10px;background:var(--chip);color:var(--mu);flex:none}.ar em.late{background:#f6d9d3;color:#b05545}.ar em.soon{background:#26406b;color:#fff}
 #dv{z-index:5;overflow-x:hidden;overscroll-behavior-x:none;touch-action:pan-y}.dvb{min-width:0;max-width:100%}.go .gl .tw{margin-left:8px}.go .gl span:last-child{text-align:right}#mo{z-index:6}
-.dvp{position:relative;background:#fff;border-radius:14px;margin:36px 74px 6px;padding:26px 10px 10px;transform:rotate(-1.5deg);box-shadow:0 4px 14px #3a2e1a14;text-align:center}.dvp .dvi{height:176px;padding:0;align-items:center}.dvp .dvi img{width:100%;height:100%}.dvp .tp{display:none}
+.dgot{border:0;background:#d9f0e8;color:#2f7a66;border-radius:14px;padding:5px 13px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer}.dvp{position:relative;background:#fff;border-radius:14px;margin:36px 74px 6px;padding:26px 10px 10px;transform:rotate(-1.5deg);box-shadow:0 4px 14px #3a2e1a14;text-align:center}.dvp .dvi{height:176px;padding:0;align-items:center}.dvp .dvi img{width:100%;height:100%}.dvp .tp{display:none}
 .dvp .dch{position:absolute;top:-24px;left:50%;transform:translateX(-50%) rotate(-2deg);padding:11px 38px;font-weight:700;font-size:16px;letter-spacing:6px;white-space:nowrap;background-color:#a9ddcf;color:#2c6a58;border-radius:0;font-family:var(--hw);background-image:linear-gradient(#ffffff40 1px,transparent 1px),linear-gradient(90deg,#ffffff40 1px,transparent 1px);background-size:12px 12px;clip-path:polygon(0 8%,3% 0,6% 10%,9% 0,100% 0,97% 12%,100% 25%,97% 38%,100% 52%,97% 65%,100% 80%,97% 100%,6% 100%,3% 88%,0 100%,2% 70%,0 55%,2% 35%,0 20%)}.dvp .dch span{display:block;transform:rotate(2deg)}
 :root{--hw:var(--ff),sans-serif}
 .dvi{display:flex;justify-content:center;align-items:flex-end;height:170px;padding:2px 20px 0}.dvi img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 3px 5px #0003)}
@@ -425,9 +425,10 @@ function openDetail(id,ix){
   const ntTot=Math.round(single?unitCost(o,it)*q:tw(o,total(o))),ntUnit=Math.round(single?unitCost(o,it):tw(o,total(o))/(units(o)||1));
   const pst=(()=>{const pd=paidAmt(o),k=bal(o)<=0?['已付清','g']:(pd>0?['已付訂金','y']:['未付清','r']);return `<i class="pt ${k[1]}">${k[0]}</i>`})();
   const stats=`<div class="dst"><div class="m"><b>${cnt} 件</b>數量</div><div class="p"><b>${esc(ic(o,single?it:null)||'未分類')}</b>分類</div><div class="y">${pst}<b>NT$${ntUnit.toLocaleString()}</b><span>單件成本</span></div></div>`;
+  const gotBtn=o.status==='pre'?'<button class="dgot" id="dgot">✓ 已到貨</button>':'';
   let prog='';
   if(o.status==='pre'&&o.eta){const d0=new Date(today()+'T00:00'),e=new Date(o.eta+'T00:00'),st=new Date((o.buyDate||o.start||today())+'T00:00');const dl=Math.round((e-d0)/864e5),span=Math.max(1,Math.round((e-st)/864e5)),pct=Math.max(4,Math.min(100,Math.round((1-dl/span)*100)));
-    prog=`<div class="dcd"><div class="dpr${dl<0?' od':''}"><b>${dl<0?'已逾期 '+(-dl)+' 天':dl===0?'今天到貨':'還有 '+dl+' 天'}</b><span>預計到貨</span></div><div class="dbar${dl<0?' od':''}"><i style="width:${dl<0?100:pct}%"></i></div><div class="dpr s"><span>${o.buyDate?fmt(o.buyDate)+' 下單':''}</span><span>${fmt(o.eta)}</span></div></div>`}
+    prog=`<div class="dcd"><div class="dpr${dl<0?' od':''}"><b>${dl<0?'已逾期 '+(-dl)+' 天':dl===0?'今天到貨':'還有 '+dl+' 天'}</b>${gotBtn}</div><div class="dbar${dl<0?' od':''}"><i style="width:${dl<0?100:pct}%"></i></div><div class="dpr s"><span>${o.buyDate?fmt(o.buyDate)+' 下單':''}</span><span>預計 ${fmt(o.eta)}</span></div></div>`}
   const tot=`<div class="dcd dtot"><small>總成本</small><div class="dn">NT$${ntTot.toLocaleString()}</div><div class="r">${o.cur!=='TWD'?money(o,single?(+it.price||0)*q:total(o))+' · ':''}${(()=>{const pd=paidAmt(o),k=bal(o)<=0?['已付清','g']:(pd>0?['已付訂金','y']:['未付清','r']);return `<i class="pt ${k[1]}">${k[0]}</i>`})()}</div></div>`;
   const gi=(l,v)=>v?`<div class="gi"><small>${l}</small><b>${v}</b></div>`:'';
   const srcT=(o.seller&&o.seller!==o.src?(o.src||'')+' · '+o.seller:(o.src||o.seller||'')),grid=`<div class="dcd dgr${srcT.length>14?' lg':''}">${gi('來源',o.seller&&o.seller!==o.src?(o.src?`<span class="nb">${esc(o.src)} ·</span> `:'')+`<span class="nb">${esc(o.seller)}</span>`:`<span class="nb">${esc(o.src||o.seller||'')}</span>`)}${gi('購買日',fmt(o.buyDate))}</div>`;
@@ -435,8 +436,8 @@ function openDetail(id,ix){
   DV.innerHTML=`<div class="mh">${dvNb()}<button id="dcx" aria-label="關閉"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 3l12 12M15 3L3 15"/></svg></button></div>
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
-  ${stats}${prog}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v135</div></div>`;
+  ${stats}${prog||(gotBtn?`<div style="text-align:center;margin:0 0 10px">${gotBtn}</div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v136</div></div>`;
   DV.classList.add('show');DV.scrollTop=0}
 const DV=$('dv');
 function backDetail(){if(dvState&&items.find(x=>x.id===dvState.id)){const id=dvState.id,ix=dvState.ix,had=dvNav>=0;if(had&&window.NAV){const j=NAV.findIndex(c=>c.o&&c.o.id===id&&c.ix===ix);if(j>=0)dvNav=j}dvKeep=had?1:0;try{openDetail(id,ix)}finally{dvKeep=0}}else dvState=null}
@@ -446,6 +447,7 @@ DV.addEventListener('click',e=>{const h=e.target.closest('[data-dh]');if(h&&dvSt
   const go=e.target.closest('[data-oid]');if(go){openDetail(go.dataset.oid,+go.dataset.oix);return}
   const b=e.target.closest('button');if(!b)return;
   if(b.id==='dcx'){DV.classList.remove('show');dvState=null}
+  if(b.id==='dgot'&&dvState){const o=items.find(x=>x.id===dvState.id);if(o&&o.status==='pre'&&confirm('標記為已到貨？')){const ix=dvState.ix;if(o.items.length>1&&ix>=0){o.items[ix].got=true;if(o.items.every(i=>i.got)){o.status='have';o.recvDate=o.recvDate||today();o.items.forEach(i=>delete i.got)}}else{o.status='have';o.recvDate=o.recvDate||today();o.items.forEach(i=>delete i.got)}save();render();toast('已標記到貨');backDetail()}return}
   if(b.id==='ded'){DV.classList.remove('show');openEd(dvState.id)}
   if(b.id==='ddl'&&confirm('確定要刪除這筆訂單？')){items=items.filter(x=>x.id!==dvState.id);dvState=null;save();render();DV.classList.remove('show')}});
 function openEd(id){if(!id)dvState=null;cur=id?JSON.parse(JSON.stringify(items.find(o=>o.id===id))):newOrder();cur._new=!id;drawEd();$('mo').classList.add('show');$('mo').scrollTop=0}
