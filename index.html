@@ -438,7 +438,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div style="text-align:center;margin:0 0 10px">${gotBtn}</div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v139</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v140</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -833,7 +833,7 @@ async function doBg(m){
     
     const blob=await (await fetch(m.s)).blob();const out=await rmBg(blob);
     const u=URL.createObjectURL(out),im=new Image();
-    im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);m.o=m.s;trimImg(c.toDataURL('image/webp',.9)).then(cleanCut).then(t=>{m.s=t;bgBusy=false;drawEd();toast('✓ 去背完成（想復原可按「還原原圖」）',3200)})};
+    im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);m.o=m.s;restoreCut(m.s,c.toDataURL('image/webp',.9)).then(trimImg).then(cleanCut).then(t=>{m.s=t;bgBusy=false;drawEd();toast('✓ 去背完成（想復原可按「還原原圖」）',3200)})};
     im.onerror=()=>{bgBusy=false;drawEd();toast('去背失敗：圖片讀取錯誤',4000)};
     im.src=u;
   }catch(e){bgBusy=false;drawEd();toast('去背失敗：'+String(e&&e.message||e).slice(0,140),9000)}
@@ -848,6 +848,34 @@ function cleanCut(u){return new Promise(res=>{const im=new Image();im.onerror=()
     while(sp){const p=st[--sp];cnt++;const x=p%w,y=(p-x)/w;for(let dy=-1;dy<=1;dy++){const yy=y+dy;if(yy<0||yy>=h)continue;for(let dx=-1;dx<=1;dx++){const xx=x+dx;if(xx<0||xx>=w)continue;const q=yy*w+xx;if(!lab[q]&&a[q*4+3]){lab[q]=n;st[sp++]=q}}}}sz.push(cnt)}
   const mx=Math.max(0,...sz);for(let i=0;i<N;i++){const l=lab[i];if(l&&sz[l]<mx*.03)a[i*4+3]=0}
   g.putImageData(d,0,0);trimImg(c.toDataURL('image/webp',.9)).then(res)}catch(e){res(u)}};im.src=u})}
+
+/* 去背補救：模型把主體一部分（例如淺色身體）誤刪時，用「背景連通」法把被誤刪、且連著主體的部分補回來 */
+function restoreCut(origUrl,cutUrl){return new Promise(res=>{const A=new Image(),B=new Image();let n=0;const go=()=>{if(++n<2)return;try{
+  const w=A.width,h=A.height;if(!w||B.width!==w||B.height!==h){res(cutUrl);return}
+  const mk=im=>{const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(im,0,0);return [c,g,g.getImageData(0,0,w,h)]};
+  const [,,od]=mk(A),[cc,cg,cd]=mk(B),o=od.data,a=cd.data,N=w*h;
+  const bd=[[],[],[]];const edge=[];for(let x=0;x<w;x++){edge.push(x,(h-1)*w+x)}for(let y=0;y<h;y++){edge.push(y*w,y*w+w-1)}
+  edge.forEach(p=>{for(let ch=0;ch<3;ch++)bd[ch].push(o[p*4+ch])});const bg=bd.map(v=>v.sort((x,y)=>x-y)[v.length>>1]);
+  const near=p=>Math.abs(o[p*4]-bg[0])+Math.abs(o[p*4+1]-bg[1])+Math.abs(o[p*4+2]-bg[2])<=40;
+  const isbg=new Uint8Array(N),st=new Int32Array(N);let sp=0;
+  edge.forEach(p=>{if(!isbg[p]&&near(p)){isbg[p]=1;st[sp++]=p}});
+  while(sp){const p=st[--sp],x=p%w,y=(p-x)/w;if(x>0&&!isbg[p-1]&&near(p-1)){isbg[p-1]=1;st[sp++]=p-1}if(x<w-1&&!isbg[p+1]&&near(p+1)){isbg[p+1]=1;st[sp++]=p+1}if(y>0&&!isbg[p-w]&&near(p-w)){isbg[p-w]=1;st[sp++]=p-w}if(y<h-1&&!isbg[p+w]&&near(p+w)){isbg[p+w]=1;st[sp++]=p+w}}
+  let fg=new Uint8Array(N);for(let i=0;i<N;i++)fg[i]=isbg[i]?0:1;
+  const er=m=>{const r=new Uint8Array(N);for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const p=y*w+x;r[p]=m[p]&&m[p-1]&&m[p+1]&&m[p-w]&&m[p+w]?1:0}return r};
+  const di=(m,lim)=>{const r=new Uint8Array(N);for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const p=y*w+x;r[p]=lim[p]&&(m[p]||m[p-1]||m[p+1]||m[p-w]||m[p+w])?1:0}return r};
+  const full=fg;let safe=er(er(fg));safe=di(safe,full);
+  /* 模型最大連通塊 */
+  const lab=new Int32Array(N),sz=[0];let L=0;
+  for(let i=0;i<N;i++){if(lab[i]||a[i*4+3]<24)continue;L++;let q=0,c=0;st[q++]=i;lab[i]=L;while(q){const p=st[--q];c++;const x=p%w,y=(p-x)/w;for(let dy=-1;dy<=1;dy++){const yy=y+dy;if(yy<0||yy>=h)continue;for(let dx=-1;dx<=1;dx++){const xx=x+dx;if(xx<0||xx>=w)continue;const k=yy*w+xx;if(!lab[k]&&a[k*4+3]>=24){lab[k]=L;st[q++]=k}}}}sz.push(c)}
+  let big=0;for(let l=1;l<=L;l++)if(sz[l]>sz[big])big=l;if(!big){res(cutUrl);return}
+  /* 候選＝模型保留 ∪ 安全前景；只留下與最大塊相連的部分 */
+  const cand=new Uint8Array(N);for(let i=0;i<N;i++)cand[i]=(a[i*4+3]>=24||safe[i])?1:0;
+  const keep=new Uint8Array(N);sp=0;for(let i=0;i<N;i++)if(lab[i]===big){keep[i]=1;st[sp++]=i}
+  while(sp){const p=st[--sp],x=p%w,y=(p-x)/w;for(let dy=-1;dy<=1;dy++){const yy=y+dy;if(yy<0||yy>=h)continue;for(let dx=-1;dx<=1;dx++){const xx=x+dx;if(xx<0||xx>=w)continue;const k=yy*w+xx;if(!keep[k]&&cand[k]){keep[k]=1;st[sp++]=k}}}}
+  let add=0;for(let i=0;i<N;i++){if(keep[i]&&a[i*4+3]<24&&safe[i]){a[i*4]=o[i*4];a[i*4+1]=o[i*4+1];a[i*4+2]=o[i*4+2];a[i*4+3]=255;add++}}
+  if(add<N*.002){res(cutUrl);return}
+  cg.putImageData(cd,0,0);res(cc.toDataURL('image/webp',.9))}catch(e){res(cutUrl)}};
+  A.onload=go;B.onload=go;A.onerror=B.onerror=()=>res(cutUrl);A.src=origUrl;B.src=cutUrl})}
 /* manual crop */
 function openCrop(m){
   if(!m)return;const src=m.o||m.s;let el=$('cr');if(!el){el=document.createElement('div');el.id='cr';document.body.appendChild(el)}
@@ -1059,7 +1087,7 @@ async function bgOne(m){
   const out=await rmBg(await (await fetch(m.s)).blob());
   const u=URL.createObjectURL(out);
   const c=await new Promise((res,rej)=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);res(c)};im.onerror=()=>rej(new Error('圖片讀取錯誤'));im.src=u});
-  m.o=m.s;m.s=await cleanCut(await trimImg(c.toDataURL('image/webp',.9)))}
+  m.o=m.s;m.s=await cleanCut(await trimImg(await restoreCut(m.s,c.toDataURL('image/webp',.9))))}
 async function bgOrder(){
   if(bgAllRun||bgBusy){toast('還在處理中，請稍等');return}
   const T=cur.items.filter(i=>i.img&&!i.img.o).map(i=>i.img);if(!T.length)return;
