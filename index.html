@@ -358,7 +358,7 @@ const sel=(label,key,opts)=>`<div class="fr"><span>${label}</span><select data-f
 let dvState=null;
 function openGrp(c){if(!c)return;let sh=document.getElementById('grpSheet');if(!sh){sh=document.createElement('div');sh.id='grpSheet';sh.className='sheet';document.body.appendChild(sh);sh.addEventListener('click',e=>{const b=e.target.closest('[data-oid]');if(b){sh.classList.remove('show');openDetail(b.dataset.oid,+b.dataset.oix);return}if(e.target===sh||e.target.closest('[data-gx]'))sh.classList.remove('show')})}
   const ST={pre:'預購中',have:'已到貨',sold:'已售出',wish:'想買'};
-  sh.innerHTML=`<div class="box"><div style="font-weight:700;margin:2px 4px 8px">${esc(c.base)} ×${c.grp.reduce((a,x)=>a+x.q,0)}</div><div class="msg" style="margin:0 4px 8px">共 ${c.grp.length} 筆訂單，點一筆看明細</div>${c.grp.map(x=>`<button data-oid="${x.o.id}" data-oix="${x.ix}"><b>${esc(x.o.buyDate||'')} ${esc(x.o.src||x.o.seller||'')}</b><small>${x.tag||(x.st==='have'?'已到貨':ST[x.o.status]||'')} · ${x.q} 件 · ${pp(x.o,x.price)}</small></button>`).join('')}<button data-gx>關閉</button></div>`;
+  sh.innerHTML=`<div class="box"><div style="font-weight:700;margin:2px 4px 8px">${esc(c.base)} ×${c.grp.reduce((a,x)=>a+x.q,0)}</div><div class="msg" style="margin:0 4px 8px">共 ${c.grp.length} 筆訂單，點一筆看明細</div>${c.grp.map(x=>`<button data-oid="${x.o.id}" data-oix="${x.ix}"><b>${esc(x.o.buyDate||'')} ${esc(x.o.seller||x.o.src||'')}</b><small>${x.tag||(x.st==='have'?'已到貨':ST[x.o.status]||'')} · ${x.q} 件 · ${pp(x.o,x.price)}</small></button>`).join('')}<button data-gx>關閉</button></div>`;
   requestAnimationFrame(()=>sh.classList.add('show'))}
 function openDetail(id,ix){
   const o=items.find(x=>x.id===id);if(!o)return;if(!(ix>=0&&ix<o.items.length))ix=-1;dvState={id,ix};
