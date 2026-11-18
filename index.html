@@ -105,8 +105,8 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .pill button{flex:1;height:50px;border:0;border-radius:25px;background:#f3f0e8;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:1;color:#9a9284}
 .pill button.on{background:#d9f0e8;color:#2f7a66;box-shadow:inset 0 0 0 2px #b4e0d2}
 .pill svg{width:23px;height:23px}
-.plus{pointer-events:auto;flex:none;width:58px;height:58px;margin-top:-18px;border-radius:50%;border:4px solid #fff;background:#8fd3c0;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 14px #3a8a7440}
-.plus svg{width:26px;height:26px;stroke-width:2.6}
+.plus{pointer-events:auto;flex:none;width:50px;height:50px;border-radius:50%;border:0;background:#8fd3c0;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 8px #3a8a7440}
+.plus svg{width:24px;height:24px;stroke-width:2.6}
 .sheet{position:fixed;inset:0;background:#0006;display:none;z-index:6;align-items:flex-end}
 .sheet.show{display:flex}
 .sheet .box{width:100%;background:var(--bg);border-radius:26px 26px 0 0;padding:16px 14px calc(18px + env(safe-area-inset-bottom,0px))}
@@ -198,9 +198,9 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 
 <script>
 const SRC=['LINE社群','蝦皮','露天拍賣','FB','團購','噗浪','書店','電商','賣貨便','日本代購','門市／實體店','日本現場','朋友幫買','其他'];
-const CUR={TWD:'NT$',JPY:'¥',CNY:'CN¥',KRW:'₩',USD:'US$'},CURN={TWD:'台幣',JPY:'日幣',CNY:'人民幣',KRW:'韓圜',USD:'美金'};
+const CUR={TWD:'NT$',JPY:'¥',CNY:'CN¥',KRW:'₩',USD:'US$',HKD:'HK$'},CURN={TWD:'台幣',JPY:'日幣',CNY:'人民幣',KRW:'韓圜',USD:'美金',HKD:'港幣'};
 const PAY={unpaid:'未付款',deposit:'已付訂金',paid:'已付款',cod:'貨到付款'},ST={wish:'想買',pre:'預購中',have:'已到貨',sold:'已售出'};
-let itT=0,items=[],S={cats:['漢頓','玩具','衣服','隱形眼鏡','化妝品'],cardFee:1.5,rates:{TWD:1,JPY:.21,CNY:4.5,KRW:.023,USD:31}},view='shelf',cur=null;
+let itT=0,items=[],S={cats:['漢頓','玩具','衣服','隱形眼鏡','化妝品'],cardFee:1.5,rates:{TWD:1,JPY:.21,CNY:4.5,KRW:.023,USD:31,HKD:4}},view='shelf',cur=null;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const iso=d=>{const z=new Date(d);return z.getFullYear()+'-'+String(z.getMonth()+1).padStart(2,'0')+'-'+String(z.getDate()).padStart(2,'0')};
@@ -248,7 +248,7 @@ const feeOf=o=>(o.fee===''||o.fee==null)?(+S.cardFee||0):(+o.fee||0);
 function effRate(o){
   const t=total(o);if(+o.twPaid>0&&t>0)return o.twPaid/t;
   if(o.cur==='TWD')return 1+(o.pm==='card'?feeOf(o)/100:0);
-  const r=+o.rate>0?+o.rate:(+S.rates[o.cur]||1);
+  const r=+o.rate>0?+o.rate:(+S.rates[o.cur]||({HKD:4}[o.cur])||1);
   return r*(1+(o.pm==='card'?feeOf(o)/100:0));
 }
 const tw=(o,n)=>n*effRate(o);
@@ -632,7 +632,7 @@ async function testKey(){
 }
 const SHOT_SCHEMA=()=>({type:'OBJECT',properties:{
   sourceType:{type:'STRING',enum:SRC},seller:{type:'STRING'},link:{type:'STRING'},buyDate:{type:'STRING'},recvDate:{type:'STRING'},
-  status:{type:'STRING',enum:['wish','pre','have','']},currency:{type:'STRING',enum:['TWD','JPY','CNY','KRW','USD']},ship:{type:'NUMBER'},total:{type:'NUMBER'},
+  status:{type:'STRING',enum:['wish','pre','have','']},currency:{type:'STRING',enum:['TWD','JPY','CNY','KRW','USD','HKD']},ship:{type:'NUMBER'},total:{type:'NUMBER'},
   pay:{type:'STRING',enum:['unpaid','deposit','paid','cod']},deposit:{type:'NUMBER'},twTotal:{type:'NUMBER'},eta:{type:'STRING'},category:{type:'STRING'},orig:{type:'STRING'},
   items:{type:'ARRAY',items:{type:'OBJECT',properties:{name:{type:'STRING'},category:{type:'STRING'},qty:{type:'NUMBER'},price:{type:'NUMBER'},img:{type:'INTEGER'},box:{type:'ARRAY',items:{type:'NUMBER'}}},required:['name','qty','price']}}
 },required:['items']});
@@ -642,7 +642,7 @@ function shotPrompt(n){return `你是繁體中文訂單辨識器。以下 ${n} �
 【品項（最重要）】
 1. 若其中有一張是清單或明細表（有品項、數量、外幣金額、台幣金額、合計），品項、數量、金額一律以它為準；商品頁截圖拿來取得商品照片與完整品名。
 2. items 每個品項一筆，絕對不要漏掉。name 整理成台灣常用的完整繁體中文（角色、系列、款式、商品類型都要寫），看不清楚不要亂猜；qty 是數量；price 是「單價」。
-3. 外幣訂單：currency 填外幣（JPY／KRW／CNY／USD），price 填外幣單價；若圖上有使用者已換算好的台幣總額，填在 twTotal。台幣訂單 currency 填 TWD。
+3. 外幣訂單：currency 填外幣（JPY／KRW／CNY／USD／HKD），price 填外幣單價；若圖上有使用者已換算好的台幣總額，填在 twTotal。台幣訂單 currency 填 TWD。
 4. 不要把商品頁上的原價、劃線價、廣告價當成單價，除非那就是實際購買價。同一筆訂單有多個品項就列多筆。看不出來的欄位用空字串或 0。
 
 【商品照片】
@@ -826,7 +826,7 @@ function drawSet(){
   <div class="cd"><h3>我的暱稱（喊單截圖用來找我的留言）</h3><div class="fr"><span>暱稱</span><input id="nick" value="${esc(S.nick||'瓜呱')}" placeholder="例如：瓜呱"></div></div>
   <div class="cd"><h3>隱藏總投入</h3><div class="fr"><span>首頁不顯示「總投入」金額</span><input id="hideamt" type="checkbox" ${S.hide?'checked':''} style="flex:none;width:auto"></div><div class="msg">開啟後，總投入、價格、總額、淨賺都顯示 ＊＊＊。輸入價格時還是看得到自己打的數字。首頁右上角的眼睛也可以隨時切換。</div></div>
   <div class="cd"><h3>刷卡</h3><div class="fr"><span>國外手續費 %（刷卡自動加上）</span><input id="cardfee" type="number" inputmode="decimal" step="any" value="${+S.cardFee||0}"></div></div>
-  <div class="cd"><h3>匯率（換算成台幣，用於統計）</h3>${['JPY','CNY','KRW','USD'].map(c=>`<div class="fr"><span>1 ${CURN[c]} =</span><input data-rate="${c}" type="number" inputmode="decimal" step="any" value="${S.rates[c]}"></div>`).join('')}</div>
+  <div class="cd"><h3>匯率（換算成台幣，用於統計）</h3>${['JPY','CNY','KRW','USD','HKD'].map(c=>`<div class="fr"><span>1 ${CURN[c]} =</span><input data-rate="${c}" type="number" inputmode="decimal" step="any" value="${S.rates[c]||({HKD:4}[c])}"></div>`).join('')}</div>
   <div class="cd"><h3>商品圖</h3><button class="btn" id="bgall">✂️ 全部商品去背</button><button class="btn" id="unall">↩ 全部還原原圖</button><button class="btn" id="cleanall">🧹 全部去背圖清殘影</button><button class="btn" id="cmpimg">🗜 縮小全部圖片</button><div class="msg">替還沒去背的商品圖一次去背，櫃子會更好看。需要網路，張數多時請保持畫面開著。</div></div>
   <div class="cd"><h3>☁️ 雲端同步（你自己的私人 GitHub）</h3><div class="msg" style="margin:0 0 8px">${syncMsg()}</div>
     <div class="fr"><span>金鑰</span><input id="ghtok" type="password" autocomplete="off" placeholder="github_pat_…" value="${esc(GH().t)}"></div>
@@ -1063,7 +1063,7 @@ try{const v=localStorage.getItem('view');if(VB[v])view=v;Object.entries(VB).forE
   function walk(root){
     const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>{const p=n.parentNode;if(!p||skip[p.nodeName]||(p.classList&&(p.classList.contains('cs')||p.classList.contains('nt'))))return NodeFilter.FILTER_REJECT;return /NT\$|US\$|CN¥|¥|₩/.test(n.nodeValue)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT}});
     const L=[];while(w.nextNode())L.push(w.currentNode);
-    L.forEach(n=>{const parts=n.nodeValue.split(/(NT\$|US\$|CN¥|¥|₩)/),f=document.createDocumentFragment();parts.forEach((t,i)=>{if(i%2){const e=document.createElement('i');e.className='cs';e.textContent=t;f.appendChild(e)}else if(t)f.appendChild(document.createTextNode(t))});n.parentNode.replaceChild(f,n)})}
+    L.forEach(n=>{const parts=n.nodeValue.split(/(NT\$|US\$|HK\$|CN¥|¥|₩)/),f=document.createDocumentFragment();parts.forEach((t,i)=>{if(i%2){const e=document.createElement('i');e.className='cs';e.textContent=t;f.appendChild(e)}else if(t)f.appendChild(document.createTextNode(t))});n.parentNode.replaceChild(f,n)})}
   let q=0;new MutationObserver(()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;walk(document.body)})}).observe(document.body,{childList:true,subtree:true,characterData:true});
   walk(document.body)})();
 </script></body></html>
