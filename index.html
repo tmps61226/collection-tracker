@@ -439,7 +439,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div style="text-align:center;margin:0 0 10px">${gotBtn}</div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v150</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v151</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -806,6 +806,7 @@ async function doShot(files,re,O,quiet){
       const p2=[{text:'請只做一件事：把這些圖片中這筆訂單的所有品項列出來（品名用繁體中文、數量、單價）。若有清單或明細表，以它為準，一個品項都不要漏。'+shotPrompt(files.length)},...imgParts];
       try{const d2=await callShot(k,p2,true,on);if(d2.items.some(i=>i&&i.name))d=Object.assign({},d,{items:d2.items,currency:d.currency||d2.currency,twTotal:d.twTotal||d2.twTotal})}catch(e2){if(isQuota(e2.message))throw e2}
     }
+    {const nd=v=>{const m=String(v||'').match(/(\d{4})\s*[-\/.年]\s*(\d{1,2})\s*[-\/.月]\s*(\d{1,2})/);return m?m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0'):''};d.eta=nd(d.eta);d.buyDate=nd(d.buyDate);d.recvDate=nd(d.recvDate)}
     if(d.sourceType&&SRC.includes(d.sourceType))O.src=d.sourceType;
     if(d.seller)O.seller=d.seller;if(d.link)O.link=d.link;if(/^\d{4}-\d{2}-\d{2}$/.test(d.buyDate||''))O.buyDate=d.buyDate;
     if(CUR[d.currency])O.cur=d.currency;
