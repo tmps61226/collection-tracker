@@ -25,7 +25,7 @@ body{margin:0;background-color:var(--bg);background-image:url("data:image/svg+xm
 .mini div{background:var(--card);border-radius:18px;padding:10px 14px;box-shadow:0 2px 10px #3a2e1a0d}
 .kchips{display:flex;gap:6px;overflow-x:auto;margin:0 0 12px;padding:2px 0 4px;scrollbar-width:none}.kchips::-webkit-scrollbar{display:none}.kc{flex:none;border:0;background:var(--card);border-radius:16px;padding:7px 13px;font:inherit;font-size:13px;color:var(--mu);box-shadow:0 2px 10px #3a2e1a0d}.kc b{font:600 16px var(--num);color:var(--tx);margin-left:3px}.kc small{font-size:11px;margin-left:3px}.kc.on{background:#26221d;color:#f3f0e8}.kc.on b{color:#fff}.kh{font-size:12px;color:var(--mu);margin:4px 4px 6px;display:flex;justify-content:space-between}.kh button{border:0;background:var(--chip);border-radius:10px;font-size:11px;padding:2px 8px;color:var(--tx)}.mini.cnt{grid-template-columns:repeat(3,1fr);gap:6px}.mini.cnt .cc{cursor:pointer;padding:8px 10px}.mini.cnt b{font-size:19px}.mini.cnt .cc.on{outline:2px solid #26221d}.mini.cnt .cc small{font-size:11px;color:var(--mu)}.mini.cnt .cc b i{font:600 12px var(--num);margin-left:2px;color:var(--mu)}.mini span{font-size:11px;color:var(--mu)}.mini b{display:block;font:600 21px var(--num);margin-top:3px;line-height:1.15}
 input,select,textarea,button{font:inherit;color:var(--tx)}
-.sr{width:100%;padding:12px 16px;border-radius:16px;border:0;background:var(--card);margin-bottom:10px;box-shadow:0 2px 10px #3a2e1a0d}
+.srw{position:relative}.srw .sr{padding-right:54px}#isbtn{position:absolute;right:8px;top:5px;width:36px;height:36px;border:0;border-radius:50%;background:#d9f0e8;color:#2f7a66;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}#isb:empty{display:none}.isb{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:16px;padding:8px 12px;margin-bottom:10px;box-shadow:0 2px 10px #3a2e1a0d;font-size:14px;color:var(--mu)}.isb img{width:44px;height:44px;object-fit:cover;border-radius:10px}.isb span{flex:1}.isb button{border:0;background:var(--bg);border-radius:14px;padding:6px 12px;font-size:14px;font-family:inherit;color:var(--tx);cursor:pointer}.sr{width:100%;padding:12px 16px;border-radius:16px;border:0;background:var(--card);margin-bottom:10px;box-shadow:0 2px 10px #3a2e1a0d}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
 .chip{flex:none;border:0;border-radius:20px;padding:8px 16px;background:var(--card);font-size:13px;cursor:pointer;box-shadow:0 2px 8px #3a2e1a0d}
 .chip.on{background:var(--tx);color:var(--bg)}
@@ -196,7 +196,7 @@ html,body{touch-action:manipulation}#dv{z-index:5;max-width:100vw;overflow-x:hid
 <div class="w">
   <div class="top"><button class="circ" id="gear" aria-label="設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg></button><div><div class="ttl">收藏櫃</div><div class="dt" id="dt"></div></div><button class="circ" id="eye" aria-label="隱藏金額"></button></div>
   <div id="stats"></div>
-  <input class="sr" id="q" placeholder="搜尋品名、賣家、備註">
+  <div class="srw"><input class="sr" id="q" placeholder="搜尋品名、賣家、備註"><button id="isbtn" type="button" aria-label="以圖搜尋"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.3-2h6.4l1.3 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.3"/></svg></button><input type="file" id="isf" accept="image/*" hidden></div><div id="isb"></div>
   <div id="jb"></div><div id="bk"></div><div id="ar"></div>
   <div class="chips" id="chips"></div>
   <select id="fs" hidden><option value="all">全部</option><option value="pre">預購中</option><option value="have">已到貨</option><option value="wish">想買</option><option value="sold">已售出</option></select>
@@ -318,6 +318,7 @@ function render(){
   $('eye').innerHTML=EYE[S.hide?1:0];
   $('dt').textContent=new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
   $('chips').innerHTML=[['all','全部'],['pre','預購中'],['have','已到貨'],['wish','想買'],['sold','已售出']].map(c=>`<button class="chip ${$('fs').value===c[0]?'on':''}" data-s="${c[0]}">${c[1]}</button>`).join('');
+  $('isb').innerHTML=imgQ?`<div class="isb"><img src="${imgQ.src}" alt=""><span>以圖搜尋：最像的排最前面</span><button type="button">取消</button></div>`:'';
   const q=$('q').value.trim().toLowerCase(),fs=$('fs').value,fc=$('fc').value,so=$('so').value;
   let l=items.filter(o=>{
     if(fs!=='all'&&!(fs==='sold'?(o.status==='sold'||soldUnits(o)>0):fs==='have'?(o.status==='have'||(o.status==='pre'&&o.items.some(i=>i.got))):o.status===fs))return false;if(!o.items.some(i=>vis(o,i,fc)))return false;
@@ -347,6 +348,7 @@ function render(){
    cells.length=0;out.forEach(x=>{if(!Array.isArray(x)){cells.push(x);return}if(x.length===1){cells.push(x[0]);return}const f=x[0],sq_=x.reduce((a,c)=>a+c.q,0);cells.push({...f,grp:x,name:f.base+' ×'+sq_,price:x.reduce((a,c)=>a+c.price,0),hid:x.every(c=>c.hid),bdh:(()=>{const seen=new Set();return x.map(c=>c.tag?`<span class="bd sold">${c.tag}</span>`:bd(c.o,c.st)).join('').match(/<span[^>]*>.*?<\/span>/g)?.filter(h=>{const t=h.replace(/<[^>]*>/g,'');if(seen.has(t))return false;seen.add(t);return true}).join('')||''})()})});
    window.GRP=cells.filter(c=>c.grp)}
   if(S.preTop!==false){const isP=c=>c.o.status==='pre'&&c.st!=='have'&&!c.tag;cells.splice(0,cells.length,...cells.filter(isP),...cells.filter(c=>!isP(c)))}
+  if(imgQ){const sc=new Map(cells.map(c=>[c,imScore(c)]));cells.sort((a,b)=>sc.get(b)-sc.get(a));const k=cells.filter(c=>sc.get(c)>=.2).length;cells.splice(Math.min(12,Math.max(3,k)))}
   window.NAV=cells;
   $('dt').textContent+=' · 共 '+cells.length+' 件';
   const im=c=>c.img?`<img src="${c.img}" alt="">`:'<span style="font:12px var(--mono);color:var(--mu)">無圖片</span>';
@@ -436,7 +438,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div style="text-align:center;margin:0 0 10px">${gotBtn}</div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v138</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v139</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1086,6 +1088,34 @@ $('chips').addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(
 $('main').addEventListener('click',e=>{const hb=e.target.closest('[data-hide]');if(hb){e.stopPropagation();const [id,ix]=hb.dataset.hide.split('|'),o=items.find(x=>x.id===id);if(o){const its=+ix>=0?[o.items[+ix]]:o.items,v=!its.every(i=>i.hide);its.forEach(i=>{if(v)i.hide=true;else delete i.hide});save();render();toast(v?'已隱藏，勾選「顯示已隱藏」可找回':'已取消隱藏')}return}
   if(e.target.closest('[data-add]')){$('sheet').classList.add('show');return}const n=e.target.closest('[data-id]');if(n){const nv=n.dataset.grp!==undefined?NAV.indexOf(GRP[+n.dataset.grp]):NAV.findIndex(c=>!c.grp&&c.o.id===n.dataset.id&&c.ix===+n.dataset.ix);if(nv>=0){openNav(nv);return}if(n.dataset.grp!==undefined){openGrp(GRP[+n.dataset.grp]);return}openDetail(n.dataset.id,+n.dataset.ix)}});
 ['q','fs','fc','so','hs','hw','hp','hh'].forEach(i=>$(i).addEventListener('input',render));
+/* ---- 以圖搜尋（輕量版：顏色＋形狀特徵） ---- */
+const IF=new Map();let imgQ=null;
+function imVec(im){const N=48,c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d',{willReadFrequently:true});x.fillStyle='#fff';x.fillRect(0,0,N,N);x.drawImage(im,0,0,N,N);
+  const d=x.getImageData(0,0,N,N).data,bd=[[],[],[]];
+  for(let i=0;i<N;i++)for(const [px,py] of [[i,0],[i,N-1],[0,i],[N-1,i]]){const k=(py*N+px)*4;for(let ch=0;ch<3;ch++)bd[ch].push(d[k+ch])}
+  const bg=bd.map(a=>a.sort((p,q)=>p-q)[a.length>>1]);
+  let x0=N,y0=N,x1=-1,y1=-1,fg=0;const hist=new Float32Array(64);
+  for(let y=0;y<N;y++)for(let xx=0;xx<N;xx++){const k=(y*N+xx)*4,r=d[k],g=d[k+1],b=d[k+2];
+    if(Math.abs(r-bg[0])+Math.abs(g-bg[1])+Math.abs(b-bg[2])>54){fg++;if(xx<x0)x0=xx;if(xx>x1)x1=xx;if(y<y0)y0=y;if(y>y1)y1=y;hist[(r>>6)*16+(g>>6)*4+(b>>6)]++}}
+  if(fg<N*N*.03){x0=0;y0=0;x1=N-1;y1=N-1}
+  let hs=0;for(let i=0;i<64;i++)hs+=hist[i];if(hs)for(let i=0;i<64;i++)hist[i]/=hs;
+  const M=16,c2=document.createElement('canvas');c2.width=c2.height=M;const x2=c2.getContext('2d',{willReadFrequently:true});x2.fillStyle='#fff';x2.fillRect(0,0,M,M);x2.drawImage(c,x0,y0,x1-x0+1,y1-y0+1,0,0,M,M);
+  const d2=x2.getImageData(0,0,M,M).data,g=new Float32Array(M*M*3);let m=0;for(let i=0,j=0;i<d2.length;i+=4){g[j++]=d2[i];g[j++]=d2[i+1];g[j++]=d2[i+2]}
+  for(let i=0;i<g.length;i++)m+=g[i];m/=g.length;let n=0;for(let i=0;i<g.length;i++){g[i]-=m;n+=g[i]*g[i]}n=Math.sqrt(n)||1;for(let i=0;i<g.length;i++)g[i]/=n;
+  return {h:hist,g}}
+const imLoad=src=>new Promise(res=>{const im=new Image();im.onload=()=>{try{res(imVec(im))}catch(e){res(null)}};im.onerror=()=>res(null);im.src=src});
+async function imEnsure(srcs){for(const s of srcs){if(!s||IF.has(s))continue;IF.set(s,await imLoad(s))}}
+function imSim(a,b){if(!a||!b)return 0;let hi=0;for(let i=0;i<64;i++)hi+=Math.min(a.h[i],b.h[i]);let dt=0;for(let i=0;i<a.g.length;i++)dt+=a.g[i]*b.g[i];return .5*hi+.5*Math.max(0,dt)}
+const imScore=c=>{if(!imgQ)return 0;const L=c.grp||[c];let m=0;for(const x of L){const v=IF.get(x.img);const s=imSim(imgQ.v,v);if(s>m)m=s}return m};
+async function imSearch(file){if(!file)return;const src=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.onerror=()=>r(null);fr.readAsDataURL(file)});if(!src)return;
+  toast('比對中…',1500);const v=await imLoad(src);if(!v){toast('這張圖讀不到，換一張試試');return}
+  const all=[];items.forEach(o=>{o.items.forEach(i=>{if(i.img&&i.img.s)all.push(i.img.s)});const cv=cover(o);if(cv)all.push(cv)});
+  await imEnsure(all);imgQ={v,src};$('q').value='';render();window.scrollTo(0,0)}
+$('isbtn').onclick=()=>$('isf').click();
+$('isf').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];e.target.value='';imSearch(f)});
+$('isb').addEventListener('click',e=>{if(e.target.closest('button')){imgQ=null;render()}});
+$('q').addEventListener('input',()=>{if(imgQ&&$('q').value){imgQ=null;render()}});
+
 $('hp').addEventListener('input',()=>{try{localStorage.setItem('hp2',$('hp').value)}catch(e){}});
 $('fc').addEventListener('input',()=>setFc($('fc').value));
 const VB={grid:'vg',list:'vl',shelf:'vs'};
