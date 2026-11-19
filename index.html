@@ -418,7 +418,7 @@ function openDetail(id,ix){
   if(!(o.items.length===1&&!+o.ship))rows+=R('訂單總額','NT$'+Math.round(tw(o,total(o))).toLocaleString());
   if(+o.twPaid>0){let ta=+o.twPaid;if(o.feeLater==='1')ta+=(+o.feeAmt>0?+o.feeAmt:o.twPaid*feeOf(o)/100);rows=rows.replace(/<div class="dr amt"><span>訂單總額<\/span>.*?<\/div>/,'');rows+=R('訂單總額','NT$'+Math.round(ta).toLocaleString())}
   rows+=R('發售日',fmt(o.rel));
-  rows+=R('收貨日期',fmt(o.recvDate));
+  if(o.status!=='pre'&&o.status!=='wish')rows+=R('收貨日期',fmt(o.recvDate));
   if(n>0){rows+=R('出售日期',fmt(o.soldDate))+R('賣出金額',+it.sp?'NT$'+Math.round(+it.sp).toLocaleString():'');if(single&&+it.sp){const p=(+it.sp||0)-unitCost(o,it)*n;rows+=R('淨賺／虧損',(p>=0?'+':'')+'NT$'+Math.round(p).toLocaleString())}}
   if(ip(o,single?it:null)==='1')rows+=R('歸屬','幫朋友買（不算我的）');
   if(o.link)rows+=R('連結',`<a href="${esc(o.link)}" target="_blank" rel="noopener">開啟</a>`);
@@ -427,7 +427,7 @@ function openDetail(id,ix){
   const ntTot=Math.round(single?unitCost(o,it)*q:tw(o,total(o))),ntUnit=Math.round(single?unitCost(o,it):tw(o,total(o))/(units(o)||1));
   const pst=(()=>{const pd=paidAmt(o),k=bal(o)<=0?['已付清','g']:(pd>0?['已付訂金','y']:['未付清','r']);return `<i class="pt ${k[1]}">${k[0]}</i>`})();
   const stats=`<div class="dst"><div class="m"><b>${cnt} 件</b>數量</div><div class="p"><b>${esc(ic(o,single?it:null)||'未分類')}</b>分類</div><div class="y">${pst}<b>NT$${ntUnit.toLocaleString()}</b><span>單件成本</span></div></div>`;
-  const gotBtn=o.status==='pre'&&!(single&&it.got&&o.items.length>1)?'<button class="dgot" id="dgot">✓ 已到貨</button>':'';
+  const gotBtn=o.status==='pre'&&!(single&&it.got&&o.items.length>1)?'<button class="dgot" id="dgot">標記已到貨</button>':'';
   let prog='';
   if(o.status==='pre'&&o.eta){const d0=new Date(today()+'T00:00'),e=new Date(o.eta+'T00:00'),st=new Date((o.buyDate||o.start||today())+'T00:00');const dl=Math.round((e-d0)/864e5),span=Math.max(1,Math.round((e-st)/864e5)),pct=Math.max(4,Math.min(100,Math.round((1-dl/span)*100)));
     prog=`<div class="dcd"><div class="dpr${dl<0?' od':''}"><b>${dl<0?'已逾期 '+(-dl)+' 天':dl===0?'今天到貨':'還有 '+dl+' 天'}</b>${gotBtn}</div><div class="dbar${dl<0?' od':''}"><i style="width:${dl<0?100:pct}%"></i></div><div class="dpr s"><span>${o.buyDate?fmt(o.buyDate)+' 下單':''}</span><span>預計 ${fmt(o.eta)}</span></div></div>`}
@@ -439,7 +439,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div style="text-align:center;margin:0 0 10px">${gotBtn}</div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v160</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v161</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
