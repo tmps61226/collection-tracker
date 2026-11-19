@@ -279,7 +279,7 @@ const sq=i=>Math.max(0,Math.min(+i.sq||0,+i.qty||1));
 const units=o=>o.items.reduce((a,i)=>a+(+i.qty||1),0);
 const soldUnits=o=>o.items.reduce((a,i)=>a+sq(i),0);
 const soldRev=o=>o.items.reduce((a,i)=>a+(sq(i)?(+i.sp||0):0),0);
-const unitCost=(o,i)=>tw(o,+i.price||0)+tw(o,+o.ship||0)/(units(o)||1);
+const unitCost=(o,i)=>tw(o,+i.price||0)+(o.shipBy==='p'&&sub(o)>0?tw(o,+o.ship||0)*(+i.price||0)/sub(o):tw(o,+o.ship||0)/(units(o)||1));
 const soldCost=o=>o.items.reduce((a,i)=>a+sq(i)*unitCost(o,i),0);
 const profitTW=o=>soldRev(o)-soldCost(o);
 function derive(o){if(o.status!=='have'&&o.status!=='sold')return;o.status=soldUnits(o)>=units(o)?'sold':'have';if(soldUnits(o)>0&&!o.soldDate)o.soldDate=today()}
@@ -440,7 +440,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v166</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v167</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1289,9 +1289,9 @@ $('bulkf').addEventListener('change',e=>{const fs=[...e.target.files];e.target.v
 /* ===== 合併訂單 / 平均分攤 ===== */
 function setEven(o,on){
   if(on){const u=units(o)||1,sb=sub(o);o.items.forEach(i=>{if(i.p0===undefined)i.p0=i.price;i.price=Math.round(sb/u*10000)/10000});o.even='1'}
-  else{o.items.forEach(i=>{if(i.p0!==undefined){i.price=i.p0;delete i.p0}});o.even=''}
+  else{o.items.forEach(i=>{if(i.p0!==undefined){i.price=i.p0;delete i.p0}});o.even='';o.shipBy='p'}
 }
-let mgSel=[],mgQ='',mgEven=true;
+let mgSel=[],mgQ='',mgEven=false;
 const mgSum=o=>{const n=o.items.filter(i=>i.name).map(i=>i.name);return (n[0]||'（未命名）')+(o.items.length>1?' 等'+o.items.length+'項':'')};
 function drawMg(){
   const first=items.find(o=>o.id===mgSel[0]),q=mgQ.trim().toLowerCase();
@@ -1302,7 +1302,7 @@ function drawMg(){
   <div style="padding:0 16px 150px"><input id="mgq" class="mgq" placeholder="搜尋品名／賣家" value="${esc(mgQ)}">
   <div class="msg" style="margin:6px 0 10px">勾選要合併的訂單。需要「狀態」和「幣別」相同，不同的會變灰色。</div>
   ${list.map(o=>{const on=mgSel.includes(o.id),dis=!on&&!ok(o);return `<label class="mgr${on?' on':''}${dis?' dis':''}"><input type="checkbox" data-mg="${o.id}" ${on?'checked':''} ${dis?'disabled':''}><span class="mgt"><b>${esc(mgSum(o))}</b><small>${esc(ST[o.status])} · ${esc(o.seller||o.src||'')} · ${units(o)} 件</small></span><span class="mgp">${money(o,total(o))}</span></label>`}).join('')||'<div class="empty">沒有訂單</div>'}</div>
-  <div class="mgb"><label class="mgv"><input type="checkbox" id="mgev" ${mgEven?'checked':''}> 整筆總價平均分給每件（運費、手續費也一起平分）</label>
+  <div class="mgb"><label class="mgv"><input type="checkbox" id="mgev" ${mgEven?'checked':''}> 每件平均分（不勾＝依各品項原價比例分，運費、手續費也照比例）</label>
   <div class="msg">${ch.length?`已選 ${ch.length} 筆，共 ${un} 件${sh?'，運費合計 '+money(ch[0],sh):''}`:'還沒選'}</div>
   <button class="btn mgg" id="mgo" ${ch.length<2?'disabled':''}>合併成一筆</button></div>`;
   const qi=$('mgq');if(qi&&mgQ){qi.focus();const l=qi.value.length;qi.setSelectionRange(l,l)}
@@ -1324,7 +1324,7 @@ function doMerge(){
   m.seller=[...new Set(ch.map(o=>o.seller).filter(Boolean))].join('、')||f.seller;
   m.note=ch.map(o=>(o.note||'').trim()).filter(Boolean).join('\n');
   m.imgs=[].concat(...ch.map(o=>o.imgs||[]));
-  m.even='';if($('mgev').checked)setEven(m,true);
+  m.even='';m.shipBy='p';if($('mgev').checked)setEven(m,true);
   putPrev();const at=items.indexOf(f);items=items.filter(o=>!mgSel.includes(o.id));items.splice(Math.min(at,items.length),0,m);
   save();render();$('mg').classList.remove('show');toast('✓ 已合併成一筆（'+m.items.length+' 個品項）',3500);
 }
