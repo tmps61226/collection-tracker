@@ -439,7 +439,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div style="text-align:center;margin:0 0 10px">${gotBtn}</div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v155</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v156</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -462,7 +462,7 @@ function drawEd(){
   <div class="mh"><button id="cx">取消</button><span>${cur._new?'':'<button class="dl" id="dl">刪除</button> '}<button class="sv" id="sv">儲存</button></span></div>
   <div class="cd"><h3>截圖自動填表（可一次選多張，視為同一筆訂單）</h3>
     <div class="fr"><span>Gemini Key</span><input id="gk" type="password" placeholder="貼上免費金鑰" value="${esc(k)}"></div>
-    <div><button class="btn pri" id="shot">上傳訂單截圖</button>${cur.imgs.length?'<button class="btn" id="reshot">🔄 重新偵測</button>':''}<button class="btn" id="tk">測試金鑰</button><input type="file" id="shotf" accept="image/*" multiple hidden><div class="msg" id="msg">辨識完成後請檢查內容，錯的可以直接改</div><div class="msg" id="gu"></div></div></div>
+    <div><button class="btn pri" id="shot">上傳訂單截圖</button>${cur.imgs.length?'<button class="btn" id="reshot">🔄 重新偵測</button>':''}<button class="btn" id="tk">測試金鑰</button><button class="btn" id="doc">📄 上傳檔案（PDF／文字）</button><input type="file" id="docf" accept="application/pdf,.pdf,.txt,.md,.csv,.json,.html,.htm,text/*,image/*" multiple hidden><input type="file" id="shotf" accept="image/*" multiple hidden><div class="msg" id="msg">辨識完成後請檢查內容，錯的可以直接改</div><div class="msg" id="gu"></div></div></div>
   <div class="cd"><h3>商品圖片（點一下設為封面）</h3>
     <div class="thumbs">${cur.imgs.map((m,i)=>`<div class="th ${i===cur.cover?'cv':''}" data-c="${i}"><img src="${m.s}">${i===cur.cover?'<b>封面</b>':''}<i data-rm="${i}">×</i></div>`).join('')}</div>
     <button class="btn" id="addimg">＋ 新增圖片</button><input type="file" id="imgf" accept="image/*" multiple hidden>
@@ -532,6 +532,7 @@ MO.addEventListener('change',ev=>{
   if(e.id==='itf'&&e.files[0]){shrink(e.files[0]).then(u=>{if(u&&cur.items[itT]){cur.items[itT].img={s:u};drawEd()}})}
   if(e.id==='imgf'&&e.files.length)addImgs([...e.files]);
   if(e.id==='shotf'&&e.files.length){if(guardOK())doShot([...e.files])}
+  if(e.id==='docf'&&e.files.length){if(guardOK())doShot([...e.files])}
 });
 MO.addEventListener('click',ev=>{
   const t=ev.target,b=t.closest('button'),h=t.closest('[data-h]'),rm=t.closest('[data-rm]'),th=t.closest('[data-c]');
@@ -566,6 +567,7 @@ MO.addEventListener('click',ev=>{
   if(id==='cx'){MO.classList.remove('show');backDetail()}
   if(id==='tk'){testKey();return}
   if(id==='reshot'){reShot();return}
+  if(id==='doc'){const k=($('gk').value||'').trim();if(!k){setMsg('請先貼上 Gemini API Key');return}localStorage.setItem('gk',k);$('docf').click();return}
   if(id==='shot'){const k=($('gk').value||'').trim();if(!k){setMsg('請先貼上 Gemini API Key');return}localStorage.setItem('gk',k);$('shotf').click()}
   if(id==='addimg')$('imgf').click();
   if(id==='pstc'){pasteCut(cur.imgs[cur.cover],b);return}
@@ -699,7 +701,7 @@ const SHOT_SCHEMA=()=>({type:'OBJECT',properties:{
   pay:{type:'STRING',enum:['unpaid','deposit','paid','cod']},deposit:{type:'NUMBER'},twTotal:{type:'NUMBER'},eta:{type:'STRING'},category:{type:'STRING'},orig:{type:'STRING'},
   items:{type:'ARRAY',items:{type:'OBJECT',properties:{name:{type:'STRING'},category:{type:'STRING'},qty:{type:'NUMBER'},price:{type:'NUMBER'},img:{type:'INTEGER'},box:{type:'ARRAY',items:{type:'NUMBER'}}},required:['name','qty','price']}}
 },required:['items']});
-function shotPrompt(n){return `你是繁體中文訂單辨識器。以下 ${n} 張圖片屬於同一筆預購或訂單，請整合成一筆，依指定格式回傳 JSON。
+function shotPrompt(n){return `你是繁體中文訂單辨識器。以下 ${n} 份內容（圖片、PDF 或文字檔）屬於同一筆預購或訂單，請整合成一筆，依指定格式回傳 JSON。
 圖片可能是：蝦皮／賣貨便訂單、LINE 社群喊單（貼文加留言）、日韓商品頁截圖、代購或使用者自己整理的「清單／明細表」。
 
 【品項（最重要）】
@@ -797,7 +799,16 @@ async function doShot(files,re,O,quiet){
   M('辨識中，請稍等…');
   try{
     const small=[],imgParts=[];
-    for(const f of files){const u=await shrink(f,1400);if(u){small.push(u);imgParts.push({inline_data:{mime_type:'image/webp',data:u.split(',')[1]}})}}
+    for(const f of files){
+      const isPdf=f.type==='application/pdf'||/\.pdf$/i.test(f.name||''),isImg=/^image\//.test(f.type||'');
+      if(isPdf){if(f.size>15e6){M('這個 PDF 太大（超過 15MB），請換小一點的檔案');return{ok:false,err:'PDF 太大'}}
+        const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=rej;r.readAsDataURL(f)});
+        imgParts.push({inline_data:{mime_type:'application/pdf',data:b64}})}
+      else if(isImg){const u=await shrink(f,1400);if(u){small.push(u);imgParts.push({inline_data:{mime_type:'image/webp',data:u.split(',')[1]}})}}
+      else{let t='';try{t=await f.text()}catch(e){}
+        if(!t.trim()){M('讀不到「'+(f.name||'檔案')+'」的文字內容');return{ok:false,err:'讀不到文字'}}
+        imgParts.push({text:'--- 檔案「'+(f.name||'')+'」內容 ---\n'+t.slice(0,60000)})}
+    }
     const on=m=>M('辨識中（'+m+'），最久約 15～40 秒…');
     const parts=[{text:shotPrompt(files.length)},...imgParts];
     let d;
