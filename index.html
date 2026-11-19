@@ -440,7 +440,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v164</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v165</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1285,7 +1285,7 @@ $('bulkf').addEventListener('change',e=>{const fs=[...e.target.files];e.target.v
 
 /* iOS 鍵盤彈出時，視窗會被推動，造成輸入框選取反白錯位、點不到文字：讓編輯視窗跟著「可視範圍」走 */
 (function(){const vv=window.visualViewport;if(!vv)return;
-  const fit=()=>{const kb=vv.height<window.innerHeight-80;document.querySelectorAll('.mo.show').forEach(m=>{if(kb){m.style.top=vv.offsetTop+'px';m.style.bottom='auto';m.style.height=vv.height+'px'}else{m.style.top='';m.style.bottom='';m.style.height=''}});if(kb&&document.querySelector('.mo.show')&&(window.scrollY||document.documentElement.scrollTop))window.scrollTo(0,0)};
+  const fit=()=>{const ae=document.activeElement,typing=ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&!/^(checkbox|radio|button|file)$/.test(ae.type||''),kb=typing&&vv.height<window.innerHeight-80;document.querySelectorAll('.mo').forEach(m=>{if(kb&&m.classList.contains('show')&&m.id!=='dv'){m.style.top=vv.offsetTop+'px';m.style.bottom='auto';m.style.height=vv.height+'px'}else{m.style.top='';m.style.bottom='';m.style.height=''}});if(kb&&document.querySelector('.mo.show')&&(window.scrollY||document.documentElement.scrollTop))window.scrollTo(0,0)};
   vv.addEventListener('resize',fit);vv.addEventListener('scroll',fit);document.addEventListener('focusout',()=>setTimeout(fit,250));document.addEventListener('focusin',()=>setTimeout(fit,350))})();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 async function autoTrimAll(){
