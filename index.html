@@ -462,7 +462,7 @@ function drawEd(){
   <div class="mh"><button id="cx">取消</button><span>${cur._new?'':'<button class="dl" id="dl">刪除</button> '}<button class="sv" id="sv">儲存</button></span></div>
   <div class="cd"><h3>截圖自動填表（可一次選多張，視為同一筆訂單）</h3>
     <div class="fr"><span>Gemini Key</span><input id="gk" type="password" placeholder="貼上免費金鑰" value="${esc(k)}"></div>
-    <div><button class="btn pri" id="shot">上傳訂單截圖</button>${cur.imgs.length?'<button class="btn" id="reshot">🔄 重新偵測</button>':''}<button class="btn" id="tk">測試金鑰</button><button class="btn" id="doc">📄 上傳檔案（PDF／文字）</button><input type="file" id="docf" accept="application/pdf,.pdf,.txt,.md,.csv,.json,.html,.htm,text/*,image/*" multiple hidden><input type="file" id="shotf" accept="image/*" multiple hidden><div class="msg" id="msg">辨識完成後請檢查內容，錯的可以直接改</div><div class="msg" id="gu"></div></div></div>
+    <div><button class="btn pri" id="shot">上傳訂單截圖</button>${cur.imgs.length?'<button class="btn" id="reshot">🔄 重新偵測</button>':''}<button class="btn" id="tk">測試金鑰</button><button class="btn" id="doc">📄 上傳檔案（PDF／Excel／Word／CSV／文字）</button><input type="file" id="docf" accept="application/pdf,.pdf,.txt,.md,.csv,.tsv,.json,.html,.htm,.eml,.xlsx,.xlsm,.xls,.ods,.docx,text/*,image/*" multiple hidden><input type="file" id="shotf" accept="image/*" multiple hidden><div class="msg" id="msg">辨識完成後請檢查內容，錯的可以直接改</div><div class="msg" id="gu"></div></div></div>
   <div class="cd"><h3>商品圖片（點一下設為封面）</h3>
     <div class="thumbs">${cur.imgs.map((m,i)=>`<div class="th ${i===cur.cover?'cv':''}" data-c="${i}"><img src="${m.s}">${i===cur.cover?'<b>封面</b>':''}<i data-rm="${i}">×</i></div>`).join('')}</div>
     <button class="btn" id="addimg">＋ 新增圖片</button><input type="file" id="imgf" accept="image/*" multiple hidden>
@@ -793,6 +793,22 @@ $('jb').addEventListener('click',e=>{
   if(b=g('data-jd')){jobs=jobs.filter(x=>x.id!==b.dataset.jd);jgen++;jr=false;saveJobs();renderJobs();runJobs();return}
   if(b=g('data-jok')){const o=items.find(x=>x.id===b.dataset.jok);if(o){delete o.chk;save();renderJobs()}return}
   if(b=g('data-jo'))openDetail(b.dataset.jo,-1)});
+const loadJs=u=>new Promise((res,rej)=>{if(document.querySelector('script[data-u="'+u+'"]'))return res();const e=document.createElement('script');e.src=u;e.dataset.u=u;e.onload=res;e.onerror=()=>rej(new Error('載入讀檔工具失敗，請確認網路'));document.head.appendChild(e)});
+/* 各種檔案格式 → 純文字（再交給 Gemini 辨識）：Excel／Word／CSV（含 Big5 編碼）／文字／網頁／郵件 */
+async function fileText(f){
+  const n=(f.name||'').toLowerCase();
+  if(/\.(xlsx|xlsm|xls|ods|numbers)$/.test(n)){
+    await loadJs('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+    const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+    return wb.SheetNames.map(sn=>'【工作表：'+sn+'】\n'+XLSX.utils.sheet_to_csv(wb.Sheets[sn],{blankrows:false})).join('\n\n')}
+  if(/\.docx$/.test(n)){
+    await loadJs('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+    const z=await JSZip.loadAsync(await f.arrayBuffer()),x=z.file('word/document.xml');if(!x)throw new Error('這個 Word 檔讀不出內容');
+    return (await x.async('string')).replace(/<\/w:p>/g,'\n').replace(/<w:tab\/>/g,'\t').replace(/<\/w:tc>/g,' | ').replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')}
+  const buf=await f.arrayBuffer();let t=new TextDecoder('utf-8').decode(buf);
+  if((t.match(/\uFFFD/g)||[]).length>3){try{t=new TextDecoder('big5').decode(buf)}catch(e){}}
+  if(/\.(html?|eml|mht)$/.test(n))t=t.replace(/<(script|style)[\s\S]*?<\/\1>/gi,'').replace(/<br\s*\/?>|<\/(p|div|tr|li|h\d)>/gi,'\n').replace(/<\/t[dh]>/gi,' | ').replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&');
+  return t}
 async function doShot(files,re,O,quiet){
   O=O||cur;const g0=gReq;const M=t=>{if(quiet){jobMsg=t;renderJobs()}else setMsg(t)},DE=()=>{if(!quiet)drawEd()};
   const k=(localStorage.getItem('gk')||'').replace(/[^\x21-\x7e]/g,'');if(!k){M('請先貼上 Gemini API Key');return{ok:false,err:'還沒填 Gemini 金鑰（設定裡貼上）',quota:true}}
@@ -805,7 +821,7 @@ async function doShot(files,re,O,quiet){
         const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=rej;r.readAsDataURL(f)});
         imgParts.push({inline_data:{mime_type:'application/pdf',data:b64}})}
       else if(isImg){const u=await shrink(f,1400);if(u){small.push(u);imgParts.push({inline_data:{mime_type:'image/webp',data:u.split(',')[1]}})}}
-      else{let t='';try{t=await f.text()}catch(e){}
+      else{let t='';try{t=await fileText(f)}catch(e){M('讀取「'+(f.name||'檔案')+'」失敗：'+String(e&&e.message||e).slice(0,80));return{ok:false,err:'讀檔失敗'}}
         if(!t.trim()){M('讀不到「'+(f.name||'檔案')+'」的文字內容');return{ok:false,err:'讀不到文字'}}
         imgParts.push({text:'--- 檔案「'+(f.name||'')+'」內容 ---\n'+t.slice(0,60000)})}
     }
