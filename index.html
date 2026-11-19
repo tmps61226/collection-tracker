@@ -440,7 +440,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v167</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v168</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -487,7 +487,7 @@ function drawEd(){
       ${it.img?`<div style="margin-top:6px">${it.img.o?`<button class="btn" data-iun="${i}">還原原圖</button><button class="btn" data-icl="${i}">🧹 清殘影</button>`:`<button class="btn" data-ibg="${i}">✂️ 去背</button>`}<button class="btn" data-icr="${i}">✂ 裁切</button><button class="btn" data-izm="${i}">🔍 放大主體</button><button class="btn" data-ipst="${i}">📋 貼上去背圖</button><button class="btn" data-irm="${i}">移除圖片</button></div>`:''}</div>`).join('')}
     <input type="file" id="itf" accept="image/*" hidden>
     <div class="msg">到貨後，每個品項會在收藏櫃各自顯示。點左邊的縮圖，可以替這個品項單獨加照片、去背。盲盒有不同款式時，按「拆出一款」，每一款各自放照片；抽到重複的款式，就把數量留在那一款。</div>
-    <button class="btn" id="addit">＋ 新增品項</button>${units(cur)>1?(cur.even?'<button class="btn" id="evn">↩ 還原各自價格（目前已平均分攤）</button>':'<button class="btn" id="evn">⚖ 整筆總價平均分給每件</button>'):''}${cur.items.filter(i=>i.img&&!i.img.o).length?`<button class="btn" id="bgord">✂️ 全部品項去背（${cur.items.filter(i=>i.img&&!i.img.o).length} 張）</button>`:''}${dupGroups(cur).length?`<button class="btn" id="mrg">合併相同品項（${dupGroups(cur).length} 組）</button>`:''}</div>
+    <button class="btn" id="addit">＋ 新增品項</button>${units(cur)>1?(cur.even?'<button class="btn" id="evn">↩ 還原各自價格（目前已平均分攤）</button>':'<button class="btn" id="evn">⚖ 整筆總價平均分給每件</button>'+(cur.items.some(i=>+i.price>0)&&cur.items.some(i=>!(+i.price>0))?'<button class="btn" id="fil">🧮 沒填價格的品項，平均分剩下的金額</button>':'')):''}${cur.items.filter(i=>i.img&&!i.img.o).length?`<button class="btn" id="bgord">✂️ 全部品項去背（${cur.items.filter(i=>i.img&&!i.img.o).length} 張）</button>`:''}${dupGroups(cur).length?`<button class="btn" id="mrg">合併相同品項（${dupGroups(cur).length} 組）</button>`:''}</div>
   ${cur.items.some(i=>ip(cur,i)==='1')&&cur.items.some(i=>ip(cur,i)!=='1')?`<div class="cd"><h3>朋友分攤</h3>${fr('朋友付你的金額','fpaid','number','例如 189')}<div class="msg" id="fph" style="margin-top:6px"></div></div>`:''}
   <div class="cd">${chkWarn(cur)}${sel('幣別','cur',Object.keys(CUR).map(c=>[c,CURN[c]+' '+CUR[c]]))}${fr('運費','ship','number','0')}
     <div class="fr"><span>總金額</span><b id="tot"></b></div></div>
@@ -513,7 +513,7 @@ function upd(){
 const MO=$('mo');
 function onField(ev){
   const e=ev.target;
-  if(e.dataset.i!==undefined){const it=cur.items[+e.dataset.i];if(it){it[e.dataset.k]=e.value;if(e.dataset.k==='price'&&cur.even){cur.even='';cur.items.forEach(x=>delete x.p0)}upd()}return}
+  if(e.dataset.i!==undefined){const it=cur.items[+e.dataset.i];if(it){it[e.dataset.k]=e.value;if(e.dataset.k==='price'&&cur.even){cur.even='';delete cur.tw0;cur.items.forEach(x=>delete x.p0)}upd()}return}
   const f=e.dataset.f;if(!f)return;
   if(f==='src'&&e.value==='__new'){const v=(prompt('新的購買來源名稱（例如：Yahoo拍賣、朋友A）')||'').trim();if(v){if(!SRC.includes(v)&&!(S.srcX||[]).includes(v)){S.srcX=(S.srcX||[]).concat(v);save()}cur.src=v}drawEd();return}
   if(f==='_days'){const n=parseInt(e.value,10);if(n>=0){const d=new Date(today()+'T00:00');d.setDate(d.getDate()+n);const x=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');cur.eta=x;const q=MO.querySelector('[data-f="eta"]');if(q)q.value=x}else{cur.eta='';const q=MO.querySelector('[data-f="eta"]');if(q)q.value=''}upd();return}
@@ -564,6 +564,7 @@ MO.addEventListener('click',ev=>{
     it.qty=q-1;if(+it.sq>it.qty){it.sq=it.qty}
     const n={name:it.name,qty:1,price:it.price};if(it.cat)n.cat=it.cat;cur.items.splice(i+1,0,n);drawEd();toast('已拆出一款，可以改名字、加照片');return}
   if(b.dataset.del!==undefined){cur.items.splice(+b.dataset.del,1);if(!cur.items.length)cur.items.push({name:'',qty:1,price:''});drawEd();return}
+  if(id==='fil'){const r0=effRate(cur),def=Math.round(+cur.twPaid>0?+cur.twPaid:tw(cur,total(cur))),v=prompt('這筆訂單實際總共付了多少台幣？\n（已填價格的品項照原價，剩下的金額平均分給沒填價格的品項）',def);if(v===null)return;const T=parseFloat(v);if(!(T>0)){toast('請輸入台幣金額');return}const er=fillZero(cur,T);if(er){toast(er,4000);return}drawEd();toast('已把剩餘金額平均分給沒填價格的品項',3500);return}
   if(id==='evn'){setEven(cur,!cur.even);drawEd();toast(cur.even?'已把品項價格平均分攤（每件 '+Math.round((+cur.items[0].price||0)*100)/100+'）':'已還原各自價格');return}
   if(id==='addit'){cur.items.push({name:'',qty:1,price:''});drawEd();return}
   if(id==='cx'){MO.classList.remove('show');backDetail()}
@@ -1287,9 +1288,15 @@ $('bulkf').addEventListener('change',e=>{const fs=[...e.target.files];e.target.v
 
 
 /* ===== 合併訂單 / 平均分攤 ===== */
+function fillZero(o,T){ // 未填價格的品項，平均分掉「實際總額 − 已知價格」的剩餘
+  const r0=effRate(o),zi=o.items.filter(i=>!(+i.price>0)),zu=zi.reduce((a,i)=>a+(+i.qty||1),0);
+  if(!zu||!(r0>0))return '沒有未填價格的品項';
+  const rest=T/r0-sub(o)-(+o.ship||0);if(rest<=0)return '實際總額太小，扣掉已知價格後沒有剩下的金額';
+  o.tw0=o.twPaid===undefined?'':o.twPaid;o.items.forEach(i=>{if(i.p0===undefined)i.p0=i.price});
+  const per=Math.round(rest/zu*10000)/10000;zi.forEach(i=>{i.price=per});o.twPaid=Math.round(T*100)/100;o.feeLater='';o.even='f';o.shipBy='p';return ''}
 function setEven(o,on){
   if(on){const u=units(o)||1,sb=sub(o);o.items.forEach(i=>{if(i.p0===undefined)i.p0=i.price;i.price=Math.round(sb/u*10000)/10000});o.even='1'}
-  else{o.items.forEach(i=>{if(i.p0!==undefined){i.price=i.p0;delete i.p0}});o.even='';o.shipBy='p'}
+  else{o.items.forEach(i=>{if(i.p0!==undefined){i.price=i.p0;delete i.p0}});o.even='';o.shipBy='p';if(o.tw0!==undefined){o.twPaid=o.tw0;delete o.tw0}}
 }
 let mgSel=[],mgQ='',mgEven=false;
 const mgSum=o=>{const n=o.items.filter(i=>i.name).map(i=>i.name);return (n[0]||'（未命名）')+(o.items.length>1?' 等'+o.items.length+'項':'')};
