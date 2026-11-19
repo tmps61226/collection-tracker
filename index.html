@@ -203,7 +203,7 @@ html,body{touch-action:manipulation}#dv{z-index:5;max-width:100vw;overflow-x:hid
   <select id="fs" hidden><option value="all">全部</option><option value="pre">預購中</option><option value="have">已到貨</option><option value="wish">想買</option><option value="sold">已售出</option></select>
   <div class="bar">
     <select id="fc"></select>
-    <select id="so"><option value="buy">購買時間</option><option value="eta">預計到貨</option><option value="price">價格高低</option></select>
+    <select id="so"><option value="buy">購買時間（久的在上）</option><option value="eta">預計到貨</option><option value="price">價格高低</option></select>
     <label><input type="checkbox" id="hs">隱藏已售</label><label><input type="checkbox" id="hw">隱藏種草</label><label><input type="checkbox" id="hh">顯示已隱藏</label><select id="hp"><option value="hide">不含代買</option><option value="all">含代買</option><option value="only">只看代買</option></select>
   </div>
   <div id="main"></div>
@@ -326,7 +326,7 @@ function render(){
     if($('hs').checked&&o.status==='sold')return false;if($('hw').checked&&o.status==='wish')return false;
     if(!q)return true;
     return [o.items.map(i=>i.name+' '+(i.cat||'')).join(' '),o.seller,o.src,o.cat,o.note].join(' ').toLowerCase().includes(q)});
-  l.sort((a,b)=>so==='price'?tw(b,total(b))-tw(a,total(a)):so==='eta'?((a.eta||'9999')<(b.eta||'9999')?-1:1):(b.buyDate||'').localeCompare(a.buyDate||''));
+  l.sort((a,b)=>so==='price'?tw(b,total(b))-tw(a,total(a)):so==='eta'?((a.eta||'9999')<(b.eta||'9999')?-1:1):(a.buyDate||'9999').localeCompare(b.buyDate||'9999'));
   
   if(!l.length){$('main').innerHTML='<div class="empty">'+(items.length?'找不到符合的訂單':'還沒有任何收藏<br>按下方 ＋ 新增第一件')+'</div>';return}
   const due=o=>o.status==='pre'&&o.eta&&o.eta<today();
@@ -439,7 +439,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div style="text-align:center;margin:0 0 10px">${gotBtn}</div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v158</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v159</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
