@@ -296,7 +296,7 @@ const friendNet=o=>{ // 朋友付的 − 朋友品項應分攤的成本 (正=多
   const sb=a=>a.reduce((x,i)=>x+(+i.qty||0)*(+i.price||0),0),fs=sb(fr),all=sb(o.items),fair=fs+(all?(+o.ship||0)*fs/all:0);return{fp,fair,net:fp-fair,mineSub:sb(mine)}};
 const got=(o,it)=>o.status==='have'||o.status==='sold'||(o.status==='pre'&&!!it.got);
 let kindF='';const KD=()=>S.kinds||['娃娃','扭蛋','公仔','小物','徽章'];
-const vis=(o,it,fc)=>{if(it.hide&&!$('hh').checked)return false;if(kindF&&(it.kind||'')!==kindF)return false;const m=$('hp').value,p=ip(o,it)==='1';if(p&&S.ahp!==false&&got(o,it)&&!$('hh').checked)return false;if(m==='hide'&&p)return false;if(m==='only')return p&&(fc==='all'||ic(o,it)===fc);if(fc==='all'&&(S.hid||[]).includes(ic(o,it)))return false;return fc==='all'||ic(o,it)===fc};
+const vis=(o,it,fc)=>{if(it.hide&&!$('hh').checked)return false;if(kindF&&(it.kind||'')!==kindF)return false;const m=$('hp').value,p=ip(o,it)==='1';const owe=p&&o.fpd==='0'&&got(o,it);if(p&&S.ahp!==false&&got(o,it)&&!owe&&!$('hh').checked)return false;if(m==='hide'&&p&&!owe)return false;if(m==='only')return p&&(fc==='all'||ic(o,it)===fc);if(fc==='all'&&(S.hid||[]).includes(ic(o,it)))return false;return fc==='all'||ic(o,it)===fc};
 function scoped(fc){
   const out=[];items.forEach(o=>{const f=o.items.filter(i=>vis(o,i,fc));if(!f.length)return;if(f.length===o.items.length){out.push(o);return}
     const r=sub(o)?f.reduce((a,i)=>a+(+i.qty||0)*(+i.price||0),0)/sub(o):0;
@@ -365,7 +365,7 @@ function render(){
 }
 
 /* editor */
-const seg=(key,opts)=>`<div class="seg">${opts.map(o=>`<button data-k="${key}" data-v="${o[0]}" class="${(cur[key]===o[0]||(key==='proxy'&&cur[key]==null&&o[0]==='0'))?'on':''}">${o[1]}</button>`).join('')}</div>`;
+const seg=(key,opts)=>`<div class="seg">${opts.map(o=>`<button data-k="${key}" data-v="${o[0]}" class="${(cur[key]===o[0]||(key==='proxy'&&cur[key]==null&&o[0]==='0')||(key==='fpd'&&cur[key]==null&&o[0]==='1'))?'on':''}">${o[1]}</button>`).join('')}</div>`;
 const STORES=['三麗鷗門市','Sanrio Gift Gate','Sanrio Puroland','三麗鷗專賣店','寶可夢中心','迪士尼商店','Animate','Donki 唐吉訶德','扭蛋／轉蛋','Loft','Village Vanguard','機場免稅店'];
 function storeRow(){
   if(cur.src==='朋友幫買')return fr('幫買的朋友','seller','text','朋友名字');
@@ -421,7 +421,7 @@ function openDetail(id,ix){
   rows+=R('發售日',fmt(o.rel));
   if(o.status!=='pre'&&o.status!=='wish')rows+=R('收貨日期',fmt(o.recvDate));
   if(n>0){rows+=R('出售日期',fmt(o.soldDate))+R('賣出金額',+it.sp?'NT$'+Math.round(+it.sp).toLocaleString():'');if(single&&+it.sp){const p=(+it.sp||0)-unitCost(o,it)*n;rows+=R('淨賺／虧損',(p>=0?'+':'')+'NT$'+Math.round(p).toLocaleString())}}
-  if(ip(o,single?it:null)==='1')rows+=R('歸屬','幫朋友買（不算我的）');
+  if(ip(o,single?it:null)==='1')rows+=R('歸屬','幫朋友買（不算我的）'+(o.fpd==='0'?'・朋友還沒付錢':''));
   if(o.link)rows+=R('連結',`<a href="${esc(o.link)}" target="_blank" rel="noopener">開啟</a>`);
   rows+=R('備註',esc(o.note||'').replace(/\n/g,'<br>'));
   const cnt=single?q:o.items.reduce((a,i)=>a+(+i.qty||1),0);
@@ -440,7 +440,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v172</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v173</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -488,6 +488,7 @@ function drawEd(){
     <input type="file" id="itf" accept="image/*" hidden>
     <div class="msg">到貨後，每個品項會在收藏櫃各自顯示。點左邊的縮圖，可以替這個品項單獨加照片、去背。盲盒有不同款式時，按「拆出一款」，每一款各自放照片；抽到重複的款式，就把數量留在那一款。</div>
     <button class="btn" id="addit">＋ 新增品項</button>${units(cur)>1?(cur.even?'<button class="btn" id="evn">↩ 還原各自價格（目前已平均分攤）</button>':'<button class="btn" id="evn">⚖ 整筆總價平均分給每件</button>'+(cur.items.some(i=>+i.price>0)&&cur.items.some(i=>!(+i.price>0))?'<button class="btn" id="fil">🧮 沒填價格的品項，平均分剩下的金額</button>':'')):''}${cur.items.filter(i=>i.img&&!i.img.o).length?`<button class="btn" id="bgord">✂️ 全部品項去背（${cur.items.filter(i=>i.img&&!i.img.o).length} 張）</button>`:''}${dupGroups(cur).length?`<button class="btn" id="mrg">合併相同品項（${dupGroups(cur).length} 組）</button>`:''}</div>
+  ${cur.items.some(i=>ip(cur,i)==='1')?`<div class="cd"><h3>朋友付款狀態</h3>${seg('fpd',[['0','朋友還沒付錢'],['1','朋友已付錢']])}<div class="msg">到貨後，「朋友還沒付錢」的商品會繼續顯示在收藏櫃，提醒你跟朋友收錢；選「已付錢」才會自動隱藏。</div></div>`:''}
   ${cur.items.some(i=>ip(cur,i)==='1')&&cur.items.some(i=>ip(cur,i)!=='1')?`<div class="cd"><h3>朋友分攤</h3>${fr('朋友付你的金額','fpaid','number','例如 189')}<div class="msg" id="fph" style="margin-top:6px"></div></div>`:''}
   <div class="cd">${chkWarn(cur)}${sel('幣別','cur',Object.keys(CUR).map(c=>[c,CURN[c]+' '+CUR[c]]))}${fr('運費','ship','number','0')}
     <div class="fr"><span>總金額</span><b id="tot"></b></div>${cur.cur==='TWD'?'':`<div class="fr"><span>只知道總額？直接填實際付款總額（${CURN[cur.cur]}）</span><input data-f="_paid" type="number" inputmode="decimal" placeholder="例如 60"></div><div class="hint">填了之後：有品項沒填價格的，差額平均分給那些品項；每個品項都有價格的，差額算進運費。</div>`}</div>
@@ -513,7 +514,7 @@ function upd(){
 const MO=$('mo');
 function onField(ev){
   const e=ev.target;
-  if(e.dataset.i!==undefined){const it=cur.items[+e.dataset.i];if(it){it[e.dataset.k]=e.value;if(e.dataset.k==='price'&&cur.even){cur.even='';delete cur.tw0;delete cur._s0;cur.items.forEach(x=>delete x.p0)}upd()}return}
+  if(e.dataset.i!==undefined){const it=cur.items[+e.dataset.i];if(it){it[e.dataset.k]=e.value;if(e.dataset.k==='proxy'&&e.value==='1'&&cur.fpd==null){cur.fpd='0';drawEd();return}if(e.dataset.k==='price'&&cur.even){cur.even='';delete cur.tw0;delete cur._s0;cur.items.forEach(x=>delete x.p0)}upd()}return}
   const f=e.dataset.f;if(!f)return;
   if(f==='src'&&e.value==='__new'){const v=(prompt('新的購買來源名稱（例如：Yahoo拍賣、朋友A）')||'').trim();if(v){if(!SRC.includes(v)&&!(S.srcX||[]).includes(v)){S.srcX=(S.srcX||[]).concat(v);save()}cur.src=v}drawEd();return}
   if(f==='_paid'){const n=parseFloat(e.value);if(n>=0){if(cur._s0===undefined)cur._s0=+cur.ship||0;cur.items.forEach(i=>{if(i.p0===undefined)i.p0=i.price});
@@ -550,7 +551,7 @@ MO.addEventListener('click',ev=>{
   if(th){cur.cover=+th.dataset.c;drawEd();return}
   if(!b)return;const id=b.id;
   if(b.dataset.sq!==undefined){const it=cur.items[+b.dataset.sq],q=+it.qty||1;it.sq=Math.max(0,Math.min(q,sq(it)+(+b.dataset.d)));if(!it.sq)it.sp='';derive(cur);drawEd();return}
-  if(b.dataset.k){let v=b.dataset.v;const prev=cur[b.dataset.k];
+  if(b.dataset.k){let v=b.dataset.v;const prev=cur[b.dataset.k];if(b.dataset.k==='proxy'&&v==='1'&&cur.fpd==null)cur.fpd='0';
     if(b.dataset.k==='status'){
       if(v==='have'&&soldUnits(cur)>0){if(!confirm('改回「已到貨」會清除出售紀錄，確定嗎？'))return;cur.items.forEach(it=>{it.sq=0;it.sp=''})}
       if(v==='sold')cur.items.forEach(it=>{it.sq=+it.qty||1});
