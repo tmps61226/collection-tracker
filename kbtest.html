@@ -9,17 +9,21 @@ input{border:0;background:#fff;border-radius:12px;padding:10px 12px;width:60%;fo
 .m{margin:12px;padding:12px;background:#fff;border-radius:14px;font-size:14px}
 /* A：目前 app 的做法 */
 body.A #w{position:fixed;inset:0;overflow:auto;padding-bottom:55vh;background:#f3f0e8}
+/* D/E：和真實 app 一樣，後面還有一頁很長的收藏櫃（E 不鎖定，D 鎖住後面那頁） */
+body.D #w,body.E #w{position:fixed;inset:0;overflow:auto;padding-bottom:55vh;background:#f3f0e8;z-index:9}
+#bg{display:none}body.D #bg,body.E #bg{display:block;height:3000px;background:linear-gradient(#e8e2d2,#cfe8df)}
+html.lk,html.lk body{overflow:hidden}
 /* B：容器貼著「看得到的區域」，鍵盤顯示時跟著縮 */
 body.B #w{position:fixed;left:0;right:0;top:0;height:100%;overflow:auto;background:#f3f0e8}
 /* C：不用固定容器，整頁就是一般頁面往下長 */
 body.C #w{padding-bottom:55vh}
 </style></head><body>
-<div class="m" id="mm"></div>
+<div class="m" id="mm"></div><div id="bg">（後面那一頁很長）</div>
 <div id="w"><div class="hd"><button>取消</button><button class="s">儲存</button></div>
 <div id="b"></div></div>
 <script>
-const m=(new URLSearchParams(location.search).get('m')||'A').toUpperCase();document.body.className=m;
-document.getElementById('mm').innerHTML='目前是 <b>'+m+'</b> 版。　<a href="?m=A">A</a>　<a href="?m=B">B</a>　<a href="?m=C">C</a><br>請點最下面的輸入欄，用注音打幾個字，再長按選字。看：①上面「取消／儲存」有沒有還在 ②選取把手有沒有和文字對齊 ③畫面有沒有亂跳';
+const m=(new URLSearchParams(location.search).get('m')||'A').toUpperCase();document.body.className=m;if(m==='D')document.documentElement.classList.add('lk');
+document.getElementById('mm').innerHTML='目前是 <b>'+m+'</b> 版。　<a href="?m=A">A</a>　<a href="?m=B">B</a>　<a href="?m=C">C</a>　<a href="?m=E">E</a>　<a href="?m=D">D</a><br>請點最下面的輸入欄，用注音打幾個字，再長按選字。看：①上面「取消／儲存」有沒有還在 ②選取把手有沒有和文字對齊 ③畫面有沒有亂跳';
 let h='';for(let i=1;i<=14;i++)h+='<div class="c"><div class="f"><span>欄位 '+i+'</span><input placeholder="打字測試"></div><div class="f"><span>備註</span><input placeholder="備註"></div></div>';
 document.getElementById('b').innerHTML=h;
 if(m==='B'&&window.visualViewport){const w=document.getElementById('w'),v=visualViewport;const f=()=>{w.style.top=v.offsetTop+'px';w.style.height=v.height+'px'};v.addEventListener('resize',f);v.addEventListener('scroll',f);f()}
