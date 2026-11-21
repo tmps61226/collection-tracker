@@ -227,7 +227,10 @@ const fmt=s=>{if(!s)return'';const d=new Date(s+'T00:00');return d.getFullYear()
 /* storage */
 let dbp;const db=()=>dbp||(dbp=new Promise((res,rej)=>{try{const r=indexedDB.open('collection-tracker',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}}));
 const kvGet=async k=>{try{const d=await db();return await new Promise(r=>{const q=d.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r(undefined)})}catch(e){return undefined}};
-async function save(){try{localStorage.setItem('dirty','1');localStorage.setItem('lastSave',String(Date.now()))}catch(e){}schedAuto();try{const d=await db(),t=d.transaction('kv','readwrite'),s=t.objectStore('kv');s.put(items,'items');s.put(S,'settings')}catch(e){console.error(e)}}
+let saveFail=0;
+const idbPut=()=>db().then(d=>new Promise((res,rej)=>{const t=d.transaction('kv','readwrite'),st=t.objectStore('kv');st.put(items,'items');st.put(S,'settings');t.oncomplete=()=>res();t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error||new Error('abort'))}));
+async function save(){try{localStorage.setItem('dirty','1');localStorage.setItem('lastSave',String(Date.now()))}catch(e){}schedAuto();
+  try{await idbPut();saveFail=0}catch(e){console.error(e);try{await new Promise(r=>setTimeout(r,800));await idbPut();saveFail=0}catch(e2){console.error(e2);if(!saveFail++||saveFail%5===0)toast('⚠ 這次沒存進手機！資料只在目前畫面，關掉 app 會消失。請先到設定按「上傳」或「備份」。（'+((e2&&e2.name)||'錯誤')+'）',12000)}}}
 
 /* partial sales: items carry sq (units sold) and sp (TWD revenue) */
 function migSold(o){
@@ -441,7 +444,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v185</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v186</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1381,6 +1384,7 @@ $('fl').addEventListener('click',e=>{const t=e.target.closest('button');if(!t){c
     setTimeout(()=>{if(document.activeElement!==t)return;try{const r=t.getBoundingClientRect(),vh=(window.visualViewport?window.visualViewport.height:innerHeight);if(r.bottom>vh-90||r.top<90)t.scrollIntoView({block:'center',behavior:'smooth'})}catch(_){}},350)});
   document.addEventListener('focusout',()=>setTimeout(()=>{if(typing(document.activeElement))return;document.querySelectorAll('.mo').forEach(m=>{m.style.paddingBottom='';m.style.top='';m.style.bottom='';m.style.height=''})},250));
 })();
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 async function autoTrimAll(){
   let ch=false;
