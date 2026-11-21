@@ -444,7 +444,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v193</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v194</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -608,8 +608,9 @@ function busyBtn(b,t){if(b){b.disabled=true;b.textContent=t}}
 let bgBusy=false,rbMod;
 async function rmBg(blob){
   if(!rbMod){let err;for(const u of ['https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm','https://esm.sh/@imgly/background-removal@1.5.5']){try{rbMod=await import(u);break}catch(e){err=e}}if(!rbMod)throw new Error('載入去背程式失敗（'+((err&&err.message)||'網路')+'）')}
-  let last;for(const c of [{model:'isnet_fp16'},{model:'isnet_quint8'},{model:'isnet_fp16',publicPath:'https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.5.5/dist/'}]){try{return await rbMod.removeBackground(blob,c)}catch(e){last=e}}
-  throw new Error('去背模型下載或執行失敗（'+((last&&last.message)||last)+'）')}
+  const D='@imgly/background-removal-data/1.5.5/dist/',errs=[];
+  for(const c of [{model:'isnet_fp16'},{model:'isnet_fp16',publicPath:'https://staticimgly.com/'+D},{model:'isnet_quint8',publicPath:'https://unpkg.com/'+D.replace('/1.5.5/','@1.5.5/')},{model:'isnet_fp16',publicPath:'https://cdn.jsdelivr.net/npm/'+D.replace('/1.5.5/','@1.5.5/')}]){try{return await rbMod.removeBackground(blob,c)}catch(e){errs.push(((c.publicPath||'預設').replace(/^https:\/\//,'').split('/')[0])+'：'+((e&&e.message)||e))}}
+  throw new Error('去背模型下載或執行失敗（'+errs.join('；')+'）')}
 function shrink(file,max=640){return new Promise(res=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/webp',.78))};im.onerror=()=>res(null);im.src=r.result};r.readAsDataURL(file)})}
 function trimImg(u){return new Promise(res=>{const im=new Image();im.onerror=()=>res(u);im.onload=()=>{try{
   const k=Math.min(1,640/Math.max(im.width,im.height)),w=Math.max(1,Math.round(im.width*k)),h=Math.max(1,Math.round(im.height*k)),c=document.createElement('canvas');c.width=w;c.height=h;
