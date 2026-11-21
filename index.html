@@ -213,7 +213,7 @@ html,body{touch-action:manipulation}#dv{z-index:5;max-width:100vw;overflow-x:hid
 </div>
 <div class="nav"><div class="pill"><button id="vs" aria-label="櫃子"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M4 9.2h16M4 14.8h16"/></svg></button><button id="vg" aria-label="想買"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5S3.5 15 3.5 8.9A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 8.5 1.9C20.5 15 12 20.5 12 20.5z"/></svg></button><button id="vl" aria-label="列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button><button id="vf" aria-label="朋友的商品"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.4-3.4 2.7-5.2 5.5-5.2s5.1 1.8 5.5 5.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M16.5 14.2c2.4 0 3.8 1.6 4.1 4"/></svg></button></div><button class="plus" id="add" aria-label="新增"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
 <div id="toast"></div>
-<div class="sheet" id="sheet"><div class="box"><button data-n="have"><b>已買到了</b><small>門市、日本現場、自己去買的</small></button><button data-n="pre"><b>預購／喊單</b><small>還沒到貨，等收貨</small></button><button data-n="wish"><b>想買</b><small>先記起來，之後再決定</small></button><button data-n="file"><b>📄 匯入檔案新增商品</b><small>Excel、CSV、JSON、PDF、Word、文字都可以</small></button><button data-n="merge"><b>🔗 合併現有訂單</b><small>好幾筆合成一筆，運費、手續費平均分給每件</small></button><button data-n="dup"><b>🔍 找重複的商品</b><small>名稱相同的，讓你確認要保留哪一筆再覆蓋</small></button><button data-n="del"><b>🗑 批次刪除訂單</b><small>一次勾選很多筆刪掉，刪前會先自動備份</small></button></div></div><div class="mo" id="mg" style="z-index:7"></div><div class="mo" id="fl" style="z-index:4"></div><input type="file" id="bulkf" accept=".json,.csv,.tsv,.xlsx,.xlsm,.xls,.ods,.docx,.pdf,.txt,.md,.html,.htm,.eml,application/pdf,text/*,image/*" multiple hidden>
+<div class="sheet" id="sheet"><div class="box"><button data-n="have"><b>已買到了</b><small>門市、日本現場、自己去買的</small></button><button data-n="pre"><b>預購／喊單</b><small>還沒到貨，等收貨</small></button><button data-n="wish"><b>想買</b><small>先記起來，之後再決定</small></button><button data-n="file"><b>📄 匯入檔案新增商品</b><small>Excel、CSV、JSON、PDF、Word、文字都可以</small></button><button data-n="merge"><b>🔗 合併現有訂單</b><small>好幾筆合成一筆，運費、手續費平均分給每件</small></button><button data-n="bag"><b>🛍 找紙袋／袋子品項</b><small>找出收據裡的紙袋，確認後把金額分攤到其他商品</small></button><button data-n="dup"><b>🔍 找重複的商品</b><small>名稱相同的，讓你確認要保留哪一筆再覆蓋</small></button><button data-n="del"><b>🗑 批次刪除訂單</b><small>一次勾選很多筆刪掉，刪前會先自動備份</small></button></div></div><div class="mo" id="mg" style="z-index:7"></div><div class="mo" id="fl" style="z-index:4"></div><input type="file" id="bulkf" accept=".json,.csv,.tsv,.xlsx,.xlsm,.xls,.ods,.docx,.pdf,.txt,.md,.html,.htm,.eml,application/pdf,text/*,image/*" multiple hidden>
 <div id="selbar"><button id="selx">取消</button><span id="selmsg"></span><button id="seldel">刪除</button></div><div class="mo" id="dv"></div><div class="mo" id="mo"></div><div class="mo" id="so2"></div>
 
 <script>
@@ -466,7 +466,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v216</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v217</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1314,6 +1314,7 @@ $('sheet').addEventListener('click',e=>{
   if(!b){if(e.target.id==='sheet')$('sheet').classList.remove('show');return}
   $('sheet').classList.remove('show');
   if(b.dataset.n==='file'){$('bulkf').click();return}
+  if(b.dataset.n==='bag'){mgMode='bag';bgInit();drawMg();$('mg').classList.add('show');return}
   if(b.dataset.n==='dup'){mgMode='dup';dupInit();drawMg();$('mg').classList.add('show');return}
   if(b.dataset.n==='del'){mgMode='del';mgSel=[];mgQ='';mgNoImg=false;drawMg();$('mg').classList.add('show');return}
   if(b.dataset.n==='merge'){mgMode='';mgSel=[];mgQ='';drawMg();$('mg').classList.add('show');return}
@@ -1409,6 +1410,15 @@ let dmSel=[],dmG=[],dmKeep='';
 const dmKey=(o,i)=>o.id+'|'+i;
 const dmThumb=(o,it)=>it.img||cover(o);
 const dmRow=(o,it,i)=>{const t=dmThumb(o,it),q=+it.qty||1;return `<span class="dupi">${t?`<img src="${t}" alt="">`:''}</span><span class="mgt"><b>${esc(it.name||'（未命名）')}${q>1?' ×'+q:''}</b><small>${esc(ST[o.status])} · ${esc(o.seller||o.src||'')}${o.buyDate?' · '+fmt(o.buyDate):''}${o.items.length>1?' · 同單共 '+o.items.length+' 項':''}</small></span><span class="mgp">${money(o,(+it.price||0)*q)}</span>`};
+let bgL=[],bgSel=[];
+function bgInit(){bgL=items.filter(o=>o.status!=='wish'&&o.items.length>1&&o.items.some(i=>!isBag(i.name)&&!i.ap)&&o.items.some(i=>isBag(i.name)&&!i.ap));bgSel=bgL.map(o=>o.id)}
+function drawBag(){
+  $('mg').innerHTML=`<div class="mh"><button id="mgx">取消</button><b>找紙袋／袋子</b><span style="width:48px"></span></div>
+  <div style="padding:0 16px 150px"><div class="msg" style="margin:6px 0 10px">${bgL.length?'找到 '+bgL.length+' 張收據有袋子品項。勾選的會把袋子金額分攤到同一張訂單的其他商品（袋子本身成本變 0），不要的取消勾選。':'沒有找到需要處理的袋子品項。'}</div>
+  ${bgL.map(o=>{const on=bgSel.includes(o.id),bags=o.items.filter(i=>isBag(i.name)&&!i.ap),T=bags.reduce((a,i)=>a+(+i.qty||1)*(+i.price||0),0);return `<label class="mgr${on?' on':''}"><input type="checkbox" data-bg="${o.id}" ${on?'checked':''}><span class="mgt"><b>${esc(mgSum(o))}</b><small>${esc(o.seller||o.src||'')}${o.buyDate?' · '+fmt(o.buyDate):''} · ${esc(bags.map(i=>i.name).join('、'))} ${money(o,T)}</small></span><span class="mgp">${money(o,total(o))}</span></label>`}).join('')}</div>
+  <div class="mgb"><div class="msg">${bgSel.length?'已選 '+bgSel.length+' 張':'還沒選'}</div><button class="btn mgg" id="bggo" ${bgSel.length?'':'disabled'}>套用到所選的 ${bgSel.length} 張</button></div>`}
+function doBag(){if(!bgSel.length)return;if(!confirm('要把 '+bgSel.length+' 張收據的袋子金額分攤到其他商品嗎？\n（套用前會先自動備份，可在設定裡「還原」）'))return;
+  putPrev().then(()=>{let n=0;items.forEach(o=>{if(!bgSel.includes(o.id))return;o.items.forEach(i=>{if(isBag(i.name)&&!i.ap){i.ap=1;n++}})});save();$('mg').classList.remove('show');renderCats();render();toast('已處理 '+n+' 個袋子品項')})}
 function drawDupM(){
   const q=mgQ.trim().toLowerCase(),L=[];
   items.slice().reverse().forEach(o=>o.items.forEach((it,i)=>{if(!q||[it.name,it.cat,o.seller,o.src,o.cat].join(' ').toLowerCase().includes(q))L.push([o,it,i])}));
@@ -1449,6 +1459,7 @@ function drawMg(){
   if(mgMode==='del'){drawDel();return}
   if(mgMode==='dup'){drawDup();return}
   if(mgMode==='dupm'){drawDupM();return}
+  if(mgMode==='bag'){drawBag();return}
   if(mgMode==='dupi'){drawDupI();return}
   const first=items.find(o=>o.id===mgSel[0]),q=mgQ.trim().toLowerCase();
   const ok=o=>!first||(o.status===first.status&&o.cur===first.cur);
@@ -1484,8 +1495,8 @@ function doMerge(){
   putPrev();const at=items.indexOf(f);items=items.filter(o=>!mgSel.includes(o.id));items.splice(Math.min(at,items.length),0,m);
   save();render();$('mg').classList.remove('show');toast('✓ 已合併成一筆（'+m.items.length+' 個品項）',3500);
 }
-$('mg').addEventListener('click',e=>{const t=e.target;if(mgMode==='dup'){const dr=t.closest('[data-dk]'),ds=t.closest('[data-ds]');if(dr){const [i,id]=dr.dataset.dk.split('|');dupKeep[i]=id;drawMg();return}if(ds){dupSkip[ds.dataset.ds]=true;dupNoAdd(dupG[+ds.dataset.ds]);drawMg();return}}if(t.id==='dupm'){mgMode='dupm';dmSel=[];mgQ='';drawMg();return}if(t.id==='dupmgo'){if(dmSel.length<2)return;dmG=dmSel.slice();dmKeep=dmG[0];mgMode='dupi';drawMg();return}if(mgMode==='dupi'){const dr=t.closest('[data-di]');if(dr){dmKeep=dr.dataset.di;drawMg();return}if(t.id==='dupigo'){doDupI();return}}if(t.id==='mgx'){$('mg').classList.remove('show')}else if(t.id==='mgo')doMerge();else if(t.id==='mgdel')doDel();else if(t.id==='dupgo')doDup();else if(t.id==='mgall'){const q=mgQ.trim().toLowerCase(),ids=items.filter(o=>(!q||(mgSum(o)+(o.seller||'')+o.items.map(i=>i.name).join(' ')).toLowerCase().includes(q))&&(!mgNoImg||!hasImg(o))).map(o=>o.id);const all=ids.length&&ids.every(i=>mgSel.includes(i));mgSel=all?mgSel.filter(i=>!ids.includes(i)):[...new Set([...mgSel,...ids])];drawMg()}});
-$('mg').addEventListener('change',e=>{const t=e.target;if(t.dataset.dm){const i=dmSel.indexOf(t.dataset.dm);i>=0?dmSel.splice(i,1):dmSel.push(t.dataset.dm);drawMg()}else if(t.dataset.mg){const i=mgSel.indexOf(t.dataset.mg);i>=0?mgSel.splice(i,1):mgSel.push(t.dataset.mg);drawMg()}else if(t.id==='mgev')mgEven=t.checked;else if(t.id==='mgni'){mgNoImg=t.checked;drawMg()}else if(t.id==='dupimg')dupAddImg=t.checked});
+$('mg').addEventListener('click',e=>{const t=e.target;if(mgMode==='dup'){const dr=t.closest('[data-dk]'),ds=t.closest('[data-ds]');if(dr){const [i,id]=dr.dataset.dk.split('|');dupKeep[i]=id;drawMg();return}if(ds){dupSkip[ds.dataset.ds]=true;dupNoAdd(dupG[+ds.dataset.ds]);drawMg();return}}if(mgMode==='bag'){if(t.id==='bggo'){doBag();return}}if(t.id==='dupm'){mgMode='dupm';dmSel=[];mgQ='';drawMg();return}if(t.id==='dupmgo'){if(dmSel.length<2)return;dmG=dmSel.slice();dmKeep=dmG[0];mgMode='dupi';drawMg();return}if(mgMode==='dupi'){const dr=t.closest('[data-di]');if(dr){dmKeep=dr.dataset.di;drawMg();return}if(t.id==='dupigo'){doDupI();return}}if(t.id==='mgx'){$('mg').classList.remove('show')}else if(t.id==='mgo')doMerge();else if(t.id==='mgdel')doDel();else if(t.id==='dupgo')doDup();else if(t.id==='mgall'){const q=mgQ.trim().toLowerCase(),ids=items.filter(o=>(!q||(mgSum(o)+(o.seller||'')+o.items.map(i=>i.name).join(' ')).toLowerCase().includes(q))&&(!mgNoImg||!hasImg(o))).map(o=>o.id);const all=ids.length&&ids.every(i=>mgSel.includes(i));mgSel=all?mgSel.filter(i=>!ids.includes(i)):[...new Set([...mgSel,...ids])];drawMg()}});
+$('mg').addEventListener('change',e=>{const t=e.target;if(t.dataset.bg){const i=bgSel.indexOf(t.dataset.bg);i>=0?bgSel.splice(i,1):bgSel.push(t.dataset.bg);drawMg();return}if(t.dataset.dm){const i=dmSel.indexOf(t.dataset.dm);i>=0?dmSel.splice(i,1):dmSel.push(t.dataset.dm);drawMg()}else if(t.dataset.mg){const i=mgSel.indexOf(t.dataset.mg);i>=0?mgSel.splice(i,1):mgSel.push(t.dataset.mg);drawMg()}else if(t.id==='mgev')mgEven=t.checked;else if(t.id==='mgni'){mgNoImg=t.checked;drawMg()}else if(t.id==='dupimg')dupAddImg=t.checked});
 $('mg').addEventListener('input',e=>{if(e.target.id==='mgq'){mgQ=e.target.value;if(e.isComposing||mgComp)return;drawMg()}});
 let mgComp=false;
 $('mg').addEventListener('compositionstart',e=>{if(e.target.id==='mgq')mgComp=true});
