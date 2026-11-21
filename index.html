@@ -444,7 +444,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v195</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v196</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1039,7 +1039,7 @@ SO.addEventListener('change',e=>{
   if(t.id==='ghrepo'){lsSet('ghRepo',t.value.trim());localStorage.removeItem('syncSha')}
   if(t.id==='nick'){S.nick=t.value.trim()||'瓜呱';save()}
   if(t.dataset.rate){S.rates[t.dataset.rate]=+t.value||S.rates[t.dataset.rate];save();render()}
-  if(t.id==='imf'&&t.files[0]){const r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result),its=Array.isArray(d)?d:d.items;if(!Array.isArray(its))throw 0;if(d&&d.imgOnly===true){const ms=its.filter(x=>x&&x.imgs&&x.imgs.length&&items.some(y=>y.id===x.id));if(!ms.length){alert('這個檔案裡的訂單，app 裡都找不到，所以沒有圖片可以換');return}if(confirm('要把 '+ms.length+' 筆訂單的圖片換成高清版嗎？（只換圖片，其他資料不動）')){ms.forEach(x=>{const o=items.find(y=>y.id===x.id);o.imgs=x.imgs;o.cover=0});save();renderCats();render();drawSet();toast('已更新 '+ms.length+' 筆的圖片')}return}if(d&&d.merge===true){const have=new Set(items.map(x=>x.id)),add=its.filter(x=>!have.has(x.id));if(!add.length){alert('這些資料都已經匯入過了');return}if(confirm('要「加入」'+add.length+' 筆資料嗎？（不會動到你現有的資料）')){items=items.concat(add.map(mig));save();renderCats();render();drawSet();toast('已加入 '+add.length+' 筆')}return}
+  if(t.id==='imf'&&t.files[0]){const r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result),its=Array.isArray(d)?d:d.items;if(!Array.isArray(its))throw 0;if(d&&d.imgOnly===true){imgOnlyImport(its);return}if(d&&d.merge===true){const have=new Set(items.map(x=>x.id)),add=its.filter(x=>!have.has(x.id));if(!add.length){alert('這些資料都已經匯入過了');return}if(confirm('要「加入」'+add.length+' 筆資料嗎？（不會動到你現有的資料）')){items=items.concat(add.map(mig));save();renderCats();render();drawSet();toast('已加入 '+add.length+' 筆')}return}
   if(confirm('匯入 '+its.length+' 筆資料，會取代目前的資料，確定嗎？')){items=its.map(mig);if(d.settings&&d.settings.cats)S=Object.assign(S,d.settings);save();renderCats();render();drawSet()}}catch(x){alert('檔案格式不正確')}};r.readAsText(t.files[0])}
 });
 SO.addEventListener('click',e=>{
@@ -1292,10 +1292,11 @@ function rowsToOrders(rows){
     if(o.status==='have')o.recvDate=o.buyDate||today();
     out.push(o);if(gk)grp[gk]=o}
   return out}
+function imgOnlyImport(its){const ms=its.filter(x=>x&&x.imgs&&x.imgs.length&&items.some(y=>y.id===x.id));if(!ms.length){alert('這個檔案裡的訂單，app 裡都找不到，所以沒有圖片可以換');return}if(confirm('要把 '+ms.length+' 筆訂單的圖片換成高清版嗎？（只換圖片，其他資料不動）')){ms.forEach(x=>{const o=items.find(y=>y.id===x.id);o.imgs=x.imgs;o.cover=0});save();renderCats();render();try{drawSet()}catch(e){}toast('已更新 '+ms.length+' 筆的圖片')}}
 async function bulkImport(files){
   const f=files[0],nm=(f.name||'').toLowerCase();let add=null;
   try{
-    if(files.length===1&&/\.json$/.test(nm)){const d=JSON.parse(await f.text()),a=Array.isArray(d)?d:d.items;if(!Array.isArray(a))throw new Error('JSON 裡找不到商品清單');add=a.filter(x=>x&&(x.items||x.name)).map(mig)}
+    if(files.length===1&&/\.json$/.test(nm)){const d=JSON.parse(await f.text()),a=Array.isArray(d)?d:d.items;if(!Array.isArray(a))throw new Error('JSON 裡找不到商品清單');if(d&&d.imgOnly===true){imgOnlyImport(a);return}add=a.filter(x=>x&&(x.items||x.name)).map(mig)}
     else if(files.length===1&&/\.(csv|tsv)$/.test(nm)){add=rowsToOrders(csvRows((await fileText(f)).replace(/^﻿/,'')))}
     else if(files.length===1&&/\.(xlsx|xlsm|xls|ods)$/.test(nm)){await loadJs('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});add=[];for(const sn of wb.SheetNames)add=add.concat(rowsToOrders(XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,blankrows:false,raw:false})))}
   }catch(e){alert('讀檔失敗：'+String(e&&e.message||e).slice(0,100));return}
