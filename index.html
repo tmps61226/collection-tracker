@@ -458,7 +458,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v211</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v212</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1382,6 +1382,9 @@ let dupG=[],dupKeep={},dupSkip={},dupAddImg=true;
 const dnorm=t=>String(t||'').normalize('NFKC').toLowerCase().replace(/[\s\-_－—・·、，,。.！!？?（）()\[\]【】「」『』~～:：;；'"“”‘’×x*]/g,'');
 const dkey=o=>{const n=o.items.map(i=>dnorm(i.name)).filter(Boolean).sort();return n.join('|')};
 const dscore=o=>(o.seller?1:0)+(o.cat?1:0)+(o.items.some(i=>+i.price>0)?2:0)+(o.cur&&o.cur!=='TWD'?1:0)+(o.imgs&&o.imgs.length?1:0)+(o.buyDate?1:0);
+const dupNoGet=()=>{try{return new Set(JSON.parse(localStorage.getItem('dupNo')||'[]'))}catch(e){return new Set()}};
+const dupNoKey=g=>g.map(o=>o.id).sort().join(',');
+function dupNoAdd(g){try{const s=dupNoGet();s.add(dupNoKey(g));localStorage.setItem('dupNo',JSON.stringify([...s]))}catch(e){}}
 function dupInit(){
   const L=items.filter(o=>o.status!=='wish').map(o=>({o,k:dkey(o),s:dnorm(o.seller||o.src||'')})).filter(x=>x.k.length>=3);
   const sellerOk=(a,b)=>!!a&&a===b;
@@ -1389,7 +1392,7 @@ function dupInit(){
   const p=L.map((_,i)=>i),f=i=>{while(p[i]!==i){p[i]=p[p[i]];i=p[i]}return i};
   for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){if(sellerOk(L[i].s,L[j].s)&&nameOk(L[i].k,L[j].k))p[f(j)]=f(i)}
   const m={};L.forEach((x,i)=>{(m[f(i)]=m[f(i)]||[]).push(x.o)});
-  dupG=Object.values(m).filter(g=>g.length>1);
+  {const no=dupNoGet();dupG=Object.values(m).filter(g=>g.length>1&&!no.has(dupNoKey(g)))}
   dupKeep={};dupSkip={};dupG.forEach((g,i)=>{dupKeep[i]=g.slice().sort((a,b)=>dscore(b)-dscore(a))[0].id})}
 let dmSel=[],dmG=[],dmKeep='';
 const dmKey=(o,i)=>o.id+'|'+i;
@@ -1423,8 +1426,8 @@ function doDupI(){
 function drawDup(){
   const act=dupG.map((g,i)=>dupSkip[i]?0:g.length-1).reduce((a,b)=>a+b,0),ng=dupG.filter((g,i)=>!dupSkip[i]).length;
   $('mg').innerHTML=`<div class="mh"><button id="mgx">取消</button><b>找重複的商品</b><span style="width:48px"></span></div>
-  <div style="padding:0 16px 170px"><div class="msg" style="margin:6px 0 10px">${dupG.length?'找到 '+dupG.length+' 組「名稱和賣家都完全相同」的。每組點選要「保留」的那一筆，其他會被刪除。如果不是重複，按「這組不是重複」。':'沒有找到名稱和賣家都完全相同的商品。'}</div><button class="btn" id="dupm" style="margin-bottom:12px">自己挑：搜尋商品，勾選哪幾個是重複</button>
-  ${dupG.map((g,i)=>`<div class="dupg${dupSkip[i]?' skip':''}"><div class="duph">${esc(mgSum(g[0]))}</div>${g.map(o=>{const on=dupKeep[i]===o.id;return `<div class="dupr${on?' on':''}" data-dk="${i}|${o.id}"><div class="dupi">${cover(o)?`<img src="${cover(o)}" alt="">`:''}</div><span class="mgt"><b>${esc(mgSum(o))}</b><small>${esc(ST[o.status])} · ${esc(o.seller||o.src||'')}${o.buyDate?' · '+fmt(o.buyDate):''} · ${(o.imgs||[]).length} 張圖</small></span><span class="mgp">${money(o,total(o))}</span><i class="dupk">${on?'保留':'刪除'}</i></div>`}).join('')}<button class="btn" data-ds="${i}" style="margin-top:6px">${dupSkip[i]?'↩ 還是要處理這組':'這組不是重複'}</button></div>`).join('')}</div>
+  <div style="padding:0 16px 170px"><div class="msg" style="margin:6px 0 10px">${dupG.length-dupG.filter((g,i)=>dupSkip[i]).length?'還有 '+(dupG.length-dupG.filter((g,i)=>dupSkip[i]).length)+' 組「名稱和賣家都完全相同」的。每組點選要「保留」的那一筆，其他會被刪除。如果不是重複，按「這組不是重複」。':'沒有找到名稱和賣家都完全相同的商品。'}</div><button class="btn" id="dupm" style="margin-bottom:12px">自己挑：搜尋商品，勾選哪幾個是重複</button>
+  ${dupG.map((g,i)=>dupSkip[i]?'':`<div class="dupg"><div class="duph">${esc(mgSum(g[0]))}</div>${g.map(o=>{const on=dupKeep[i]===o.id;return `<div class="dupr${on?' on':''}" data-dk="${i}|${o.id}"><div class="dupi">${cover(o)?`<img src="${cover(o)}" alt="">`:''}</div><span class="mgt"><b>${esc(mgSum(o))}</b><small>${esc(ST[o.status])} · ${esc(o.seller||o.src||'')}${o.buyDate?' · '+fmt(o.buyDate):''} · ${(o.imgs||[]).length} 張圖</small></span><span class="mgp">${money(o,total(o))}</span><i class="dupk">${on?'保留':'刪除'}</i></div>`}).join('')}<button class="btn" data-ds="${i}" style="margin-top:6px">這組不是重複</button></div>`).join('')}</div>
   <div class="mgb"><label class="mgv"><input type="checkbox" id="dupimg" ${dupAddImg?'checked':''}> 被刪除那筆的圖片，也加進保留的那筆</label><div class="msg">${ng?'將處理 '+ng+' 組，刪除 '+act+' 筆':'沒有要處理的'}</div><button class="btn mgg" id="dupgo" ${ng?'':'disabled'}>確認，保留所選並覆蓋</button></div>`}
 function doDup(){const g=dupG.map((x,i)=>[x,i]).filter(([x,i])=>!dupSkip[i]);if(!g.length)return;const del=g.reduce((a,[x])=>a+x.length-1,0);if(!confirm('要處理 '+g.length+' 組，刪除 '+del+' 筆嗎？\n（刪除前會先自動備份，可在設定裡「還原」）'))return;
   putPrev().then(()=>{const rm=new Set();g.forEach(([x,i])=>{const keep=items.find(o=>o.id===dupKeep[i]);x.forEach(o=>{if(o.id===dupKeep[i])return;if(dupAddImg&&keep){keep.imgs=(keep.imgs||[]).concat(o.imgs||[])}else if(keep&&!(keep.imgs||[]).length){keep.imgs=(o.imgs||[]).slice()}rm.add(o.id)})});
@@ -1470,7 +1473,7 @@ function doMerge(){
   putPrev();const at=items.indexOf(f);items=items.filter(o=>!mgSel.includes(o.id));items.splice(Math.min(at,items.length),0,m);
   save();render();$('mg').classList.remove('show');toast('✓ 已合併成一筆（'+m.items.length+' 個品項）',3500);
 }
-$('mg').addEventListener('click',e=>{const t=e.target;if(mgMode==='dup'){const dr=t.closest('[data-dk]'),ds=t.closest('[data-ds]');if(dr){const [i,id]=dr.dataset.dk.split('|');dupKeep[i]=id;drawMg();return}if(ds){dupSkip[ds.dataset.ds]=!dupSkip[ds.dataset.ds];drawMg();return}}if(t.id==='dupm'){mgMode='dupm';dmSel=[];mgQ='';drawMg();return}if(t.id==='dupmgo'){if(dmSel.length<2)return;dmG=dmSel.slice();dmKeep=dmG[0];mgMode='dupi';drawMg();return}if(mgMode==='dupi'){const dr=t.closest('[data-di]');if(dr){dmKeep=dr.dataset.di;drawMg();return}if(t.id==='dupigo'){doDupI();return}}if(t.id==='mgx'){$('mg').classList.remove('show')}else if(t.id==='mgo')doMerge();else if(t.id==='mgdel')doDel();else if(t.id==='dupgo')doDup();else if(t.id==='mgall'){const q=mgQ.trim().toLowerCase(),ids=items.filter(o=>(!q||(mgSum(o)+(o.seller||'')+o.items.map(i=>i.name).join(' ')).toLowerCase().includes(q))&&(!mgNoImg||!hasImg(o))).map(o=>o.id);const all=ids.length&&ids.every(i=>mgSel.includes(i));mgSel=all?mgSel.filter(i=>!ids.includes(i)):[...new Set([...mgSel,...ids])];drawMg()}});
+$('mg').addEventListener('click',e=>{const t=e.target;if(mgMode==='dup'){const dr=t.closest('[data-dk]'),ds=t.closest('[data-ds]');if(dr){const [i,id]=dr.dataset.dk.split('|');dupKeep[i]=id;drawMg();return}if(ds){dupSkip[ds.dataset.ds]=true;dupNoAdd(dupG[+ds.dataset.ds]);drawMg();return}}if(t.id==='dupm'){mgMode='dupm';dmSel=[];mgQ='';drawMg();return}if(t.id==='dupmgo'){if(dmSel.length<2)return;dmG=dmSel.slice();dmKeep=dmG[0];mgMode='dupi';drawMg();return}if(mgMode==='dupi'){const dr=t.closest('[data-di]');if(dr){dmKeep=dr.dataset.di;drawMg();return}if(t.id==='dupigo'){doDupI();return}}if(t.id==='mgx'){$('mg').classList.remove('show')}else if(t.id==='mgo')doMerge();else if(t.id==='mgdel')doDel();else if(t.id==='dupgo')doDup();else if(t.id==='mgall'){const q=mgQ.trim().toLowerCase(),ids=items.filter(o=>(!q||(mgSum(o)+(o.seller||'')+o.items.map(i=>i.name).join(' ')).toLowerCase().includes(q))&&(!mgNoImg||!hasImg(o))).map(o=>o.id);const all=ids.length&&ids.every(i=>mgSel.includes(i));mgSel=all?mgSel.filter(i=>!ids.includes(i)):[...new Set([...mgSel,...ids])];drawMg()}});
 $('mg').addEventListener('change',e=>{const t=e.target;if(t.dataset.dm){const i=dmSel.indexOf(t.dataset.dm);i>=0?dmSel.splice(i,1):dmSel.push(t.dataset.dm);drawMg()}else if(t.dataset.mg){const i=mgSel.indexOf(t.dataset.mg);i>=0?mgSel.splice(i,1):mgSel.push(t.dataset.mg);drawMg()}else if(t.id==='mgev')mgEven=t.checked;else if(t.id==='mgni'){mgNoImg=t.checked;drawMg()}else if(t.id==='dupimg')dupAddImg=t.checked});
 $('mg').addEventListener('input',e=>{if(e.target.id==='mgq'){mgQ=e.target.value;if(e.isComposing||mgComp)return;drawMg()}});
 let mgComp=false;
