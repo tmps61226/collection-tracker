@@ -292,7 +292,7 @@ const sq=i=>Math.max(0,Math.min(+i.sq||0,+i.qty||1));
 const units=o=>o.items.reduce((a,i)=>a+(+i.qty||1),0);
 const soldUnits=o=>o.items.reduce((a,i)=>a+sq(i),0);
 const soldRev=o=>o.items.reduce((a,i)=>a+(sq(i)?(+i.sp||0):0),0);
-const txI=(o,i)=>o.taxf==='done'?Math.max(0,+i.tx||0):0;
+const txI=(o,i)=>{if(o.taxf!=='done')return 0;if(o.items.some(x=>+x.tx>0))return Math.max(0,+i.tx||0);const T=+o.taxT||0,sb=sub(o);return T>0&&sb>0?T*((+i.qty||0)*(+i.price||0))/sb:0};
 const txO=o=>o.items.reduce((a,i)=>a+txI(o,i),0);
 const unitCost=(o,i)=>Math.max(0,tw(o,+i.price||0)-tw(o,txI(o,i))/(+i.qty||1))+(o.shipBy==='p'&&sub(o)>0?tw(o,+o.ship||0)*(+i.price||0)/sub(o):tw(o,+o.ship||0)/(units(o)||1));
 const soldCost=o=>o.items.reduce((a,i)=>a+sq(i)*unitCost(o,i),0);
@@ -438,7 +438,7 @@ function openDetail(id,ix){
   else list=`<div class="dcd">`+o.items.map(i=>`<div class="dr di"><span>${esc(i.name||'未命名')} ×${+i.qty||1}${o.status==='pre'&&i.got?'<small class="inote" style="color:var(--gr)">✓ 已到貨</small>':''}${i.note?`<small class="inote">${esc(i.note)}</small>`:''}</span><b>${pp(o,(+i.price||0)*(+i.qty||1))}</b></div>`).join('')+`</div>`;
   if(!(o.items.length===1&&!+o.ship))rows+=R('訂單總額','NT$'+Math.round(tw(o,total(o))).toLocaleString());
   if(+o.twPaid>0){let ta=+o.twPaid;if(o.feeLater==='1')ta+=(+o.feeAmt>0?+o.feeAmt:o.twPaid*feeOf(o)/100);rows=rows.replace(/<div class="dr amt"><span>訂單總額<\/span>.*?<\/div>/,'');rows+=R('訂單總額','NT$'+Math.round(ta).toLocaleString())}
-  if(o.taxf==='done'&&(single?+it.tx>0:txO(o)>0))rows+=R('已退稅','−'+pp(o,single?+it.tx:txO(o)));else if(o.taxf==='can')rows+=R('退稅','可退稅・還沒領');
+  if(o.taxf==='done'&&(single?txI(o,it)>0:txO(o)>0))rows+=R('已退稅','−'+pp(o,single?txI(o,it):txO(o)));else if(o.taxf==='can')rows+=R('退稅','可退稅・還沒領');
   rows+=R('發售日',fmt(o.rel));
   if(o.status!=='pre'&&o.status!=='wish')rows+=R('收貨日期',fmt(o.recvDate));
   if(n>0){rows+=R('出售日期',fmt(o.soldDate))+R('賣出金額',+it.sp?'NT$'+Math.round(+it.sp).toLocaleString():'');if(single&&+it.sp){const p=(+it.sp||0)-unitCost(o,it)*n;rows+=R('淨賺／虧損',(p>=0?'+':'')+'NT$'+Math.round(p).toLocaleString())}}
@@ -461,7 +461,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v213</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v214</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -506,7 +506,7 @@ function drawEd(){
       <div class="fr" style="padding:6px 0"><span>分類</span><select data-i="${i}" data-k="cat"><option value="">同訂單（${esc(cur.cat||'未分類')}）</option>${(S.cats.includes(it.cat)||!it.cat?S.cats:[...S.cats,it.cat]).map(c=>`<option value="${esc(c)}" ${it.cat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
       <div class="fr" style="padding:6px 0"><span>標籤</span><select data-i="${i}" data-k="kind"><option value="">未標籤</option>${(KD().includes(it.kind)||!it.kind?KD():[...KD(),it.kind]).map(k=>`<option ${it.kind===k?'selected':''}>${esc(k)}</option>`).join('')}</select></div>
       <div class="fr love" style="padding:6px 0"><span>喜愛</span><span>${[1,2,3,4,5].map(n=>`<span data-hi="${i}|${n}">${n<=lv(cur,it)?'♥':'♡'}</span>`).join('')}</span></div>
-      ${(+it.qty||1)>1?`<div style="margin:4px 0 6px"><button class="btn" data-split="${i}">＋ 拆出一款（盲盒不同款式）</button></div>`:''}<div class="two"><input data-i="${i}" data-k="qty" type="number" inputmode="numeric" placeholder="數量" value="${esc(it.qty)}"><input data-i="${i}" data-k="price" type="number" inputmode="decimal" placeholder="單價" value="${esc(it.price)}"></div>${cur.taxf?`<input data-i="${i}" data-k="tx" type="number" inputmode="decimal" placeholder="這個品項的退稅金額（${CURN[cur.cur]||cur.cur}，合計）" value="${esc(it.tx||'')}" style="margin-top:6px">`:''}
+      ${(+it.qty||1)>1?`<div style="margin:4px 0 6px"><button class="btn" data-split="${i}">＋ 拆出一款（盲盒不同款式）</button></div>`:''}<div class="two"><input data-i="${i}" data-k="qty" type="number" inputmode="numeric" placeholder="數量" value="${esc(it.qty)}"><input data-i="${i}" data-k="price" type="number" inputmode="decimal" placeholder="單價" value="${esc(it.price)}"></div>${cur.taxf?`<input data-i="${i}" data-k="tx" type="number" inputmode="decimal" placeholder="（選填）這個品項的退稅金額（${CURN[cur.cur]||cur.cur}，合計）" value="${esc(it.tx||'')}" style="margin-top:6px">`:''}
       ${cur.status==='have'||cur.status==='sold'?`<div class="sell"><span>已售出</span><button data-sq="${i}" data-d="-1">−</button><b>${sq(it)} / ${+it.qty||1}</b><button data-sq="${i}" data-d="1">＋</button>${sq(it)?`<input data-i="${i}" data-k="sp" type="number" inputmode="decimal" placeholder="賣了多少（台幣總額）" value="${esc(it.sp||'')}">`:''}</div>`:''}
       ${it.img?`<div style="margin-top:6px">${it.img.o?`<button class="btn" data-iun="${i}">還原原圖</button><button class="btn" data-icl="${i}">🧹 清殘影</button>`:`<button class="btn" data-ibg="${i}">✂️ 去背</button>`}<button class="btn" data-icr="${i}">✂ 裁切</button><button class="btn" data-izm="${i}">🔍 放大主體</button><button class="btn" data-ipst="${i}">📋 貼上去背圖</button><button class="btn" data-irm="${i}">移除圖片</button></div>`:''}</div>`).join('')}
     <input type="file" id="itf" accept="image/*" hidden>
@@ -517,7 +517,7 @@ function drawEd(){
   <div class="cd">${chkWarn(cur)}${sel('幣別','cur',Object.keys(CUR).map(c=>[c,CURN[c]+' '+CUR[c]]))}${fr('運費／折扣（折扣填負數）','ship','text','0')}
     <div class="fr"><span>總金額</span><b id="tot"></b></div>${`<div class="fr"><span>只知道總額？直接填實際付款總額（${CURN[cur.cur]||cur.cur}）</span><input data-f="_paid" type="number" inputmode="decimal" placeholder="例如 60"></div><div class="hint">填了之後：有品項沒填價格的，差額平均分給那些品項；每個品項都有價格的，差額算進運費。</div>`}</div>
   ${true?`<div class="cd"><h3>${cur.cur==='TWD'?'付款方式／刷卡手續費':'換匯／刷卡（算成台幣用）'}</h3>${seg('pm',cur.cur==='TWD'?[['cash','現金／一般'],['card','刷卡（國外手續費）']]:[['cash','現金換匯'],['card','刷卡']].concat(cur.cur==='CNY'?[['ali','支付寶／微信']]:[]).concat([['other','其他']]))}${cur.cur==='TWD'?'':fr('實際匯率（1 '+CURN[cur.cur]+' = 台幣）','rate','number',String(S.rates[cur.cur]||''))}${cur.pm==='ali'?fr('支付寶／微信手續費 %（沒有就留空）','fee','number','0'):''}${cur.pm==='card'?fr('國外手續費 %','fee','number','預設 '+(+S.cardFee||0)+'（可改）'):''}${fr('實際扣款（台幣，選填）','twPaid','number','刷卡帳單的金額')}${+cur.twPaid>0?`<div class="seg">${[['','帳單已含手續費'],['1','手續費後來才入帳']].map(([v,n])=>`<button data-k="feeLater" data-v="${v}" class="${(cur.feeLater||'')===v?'on':''}">${n}</button>`).join('')}</div>${cur.feeLater==='1'?fr('手續費金額（台幣，選填）','feeAmt','number','沒填就用上面的 % 算'):''}`:''}<div class="hint" id="fxh"></div></div>`:''}
-  <div class="cd"><h3>退稅</h3>${seg('taxf',[['','沒有退稅'],['can','可退稅・還沒領'],['done','已退稅']])}${cur.taxf?`<div class="msg">${cur.taxf==='done'?'已退稅：每個品項填的退稅金額，會從成本和總投入扣掉。':'可退稅：只是提醒，還沒領到，不影響成本。領到後改成「已退稅」。'}請在上面每個品項下面填退稅金額。</div>`:''}</div>
+  <div class="cd"><h3>退稅</h3>${seg('taxf',[['','沒有退稅'],['can','可退稅・還沒領'],['done','已退稅']])}${cur.taxf?fr('退稅總金額（'+(CURN[cur.cur]||cur.cur)+'）','taxT','number','收據上的退稅總額')+`<div class="msg">${cur.taxf==='done'?'已退稅：只要填總額，會依各品項金額比例分攤，從成本和總投入扣掉。':'可退稅：只是提醒，還沒領到，不影響成本。領到後改成「已退稅」。'}要精準指定某個品項，可以在上面該品項下面另外填；只要有填任何一個品項，就以品項填的為準。</div>`:''}</div>
   <div class="cd"><h3>付款狀態</h3>${seg('pay',Object.keys(PAY).map(p=>[p,PAY[p]]))}
     ${cur.pay==='deposit'?fr('已付訂金','deposit','number','0'):''}
     <div class="fr"><span>待付金額</span><b id="bal"></b></div></div>
