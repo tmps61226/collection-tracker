@@ -1,0 +1,26 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>鍵盤測試</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f0e8;font:16px -apple-system,sans-serif;color:#2a2622}
+.hd{position:sticky;top:0;z-index:3;background:#f3f0e8;display:flex;justify-content:space-between;padding:12px;padding-top:calc(12px + env(safe-area-inset-top,0px))}
+.hd button{border:0;border-radius:20px;padding:10px 18px;font:inherit;background:#fff}.hd .s{background:#2a2622;color:#fff}
+.c{background:#faf9f6;border-radius:22px;margin:0 12px 12px;padding:8px 16px}
+.f{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e5e1d6}
+input{border:0;background:#fff;border-radius:12px;padding:10px 12px;width:60%;font:inherit}
+.m{margin:12px;padding:12px;background:#fff;border-radius:14px;font-size:14px}
+/* A：目前 app 的做法 */
+body.A #w{position:fixed;inset:0;overflow:auto;padding-bottom:55vh;background:#f3f0e8}
+/* B：容器貼著「看得到的區域」，鍵盤顯示時跟著縮 */
+body.B #w{position:fixed;left:0;right:0;top:0;height:100%;overflow:auto;background:#f3f0e8}
+/* C：不用固定容器，整頁就是一般頁面往下長 */
+body.C #w{padding-bottom:55vh}
+</style></head><body>
+<div class="m" id="mm"></div>
+<div id="w"><div class="hd"><button>取消</button><button class="s">儲存</button></div>
+<div id="b"></div></div>
+<script>
+const m=(new URLSearchParams(location.search).get('m')||'A').toUpperCase();document.body.className=m;
+document.getElementById('mm').innerHTML='目前是 <b>'+m+'</b> 版。　<a href="?m=A">A</a>　<a href="?m=B">B</a>　<a href="?m=C">C</a><br>請點最下面的輸入欄，用注音打幾個字，再長按選字。看：①上面「取消／儲存」有沒有還在 ②選取把手有沒有和文字對齊 ③畫面有沒有亂跳';
+let h='';for(let i=1;i<=14;i++)h+='<div class="c"><div class="f"><span>欄位 '+i+'</span><input placeholder="打字測試"></div><div class="f"><span>備註</span><input placeholder="備註"></div></div>';
+document.getElementById('b').innerHTML=h;
+if(m==='B'&&window.visualViewport){const w=document.getElementById('w'),v=visualViewport;const f=()=>{w.style.top=v.offsetTop+'px';w.style.height=v.height+'px'};v.addEventListener('resize',f);v.addEventListener('scroll',f);f()}
+</script></body></html>
