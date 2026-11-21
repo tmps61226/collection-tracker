@@ -457,7 +457,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v207</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v208</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1448,7 +1448,10 @@ function doMerge(){
 }
 $('mg').addEventListener('click',e=>{const t=e.target;if(mgMode==='dup'){const dr=t.closest('[data-dk]'),ds=t.closest('[data-ds]');if(dr){const [i,id]=dr.dataset.dk.split('|');dupKeep[i]=id;drawMg();return}if(ds){dupSkip[ds.dataset.ds]=!dupSkip[ds.dataset.ds];drawMg();return}}if(t.id==='dupm'){mgMode='dupm';mgSel=[];mgQ='';drawMg();return}if(t.id==='dupmgo'){const g=mgSel.map(id=>items.find(o=>o.id===id)).filter(Boolean);if(g.length<2)return;dupG=[g];dupSkip={};dupKeep={0:g.slice().sort((a,b)=>dscore(b)-dscore(a))[0].id};mgMode='dup';drawMg();return}if(t.id==='mgx'){$('mg').classList.remove('show')}else if(t.id==='mgo')doMerge();else if(t.id==='mgdel')doDel();else if(t.id==='dupgo')doDup();else if(t.id==='mgall'){const q=mgQ.trim().toLowerCase(),ids=items.filter(o=>(!q||(mgSum(o)+(o.seller||'')+o.items.map(i=>i.name).join(' ')).toLowerCase().includes(q))&&(!mgNoImg||!hasImg(o))).map(o=>o.id);const all=ids.length&&ids.every(i=>mgSel.includes(i));mgSel=all?mgSel.filter(i=>!ids.includes(i)):[...new Set([...mgSel,...ids])];drawMg()}});
 $('mg').addEventListener('change',e=>{const t=e.target;if(t.dataset.mg){const i=mgSel.indexOf(t.dataset.mg);i>=0?mgSel.splice(i,1):mgSel.push(t.dataset.mg);drawMg()}else if(t.id==='mgev')mgEven=t.checked;else if(t.id==='mgni'){mgNoImg=t.checked;drawMg()}else if(t.id==='dupimg')dupAddImg=t.checked});
-$('mg').addEventListener('input',e=>{if(e.target.id==='mgq'){mgQ=e.target.value;drawMg()}});
+$('mg').addEventListener('input',e=>{if(e.target.id==='mgq'){mgQ=e.target.value;if(e.isComposing||mgComp)return;drawMg()}});
+let mgComp=false;
+$('mg').addEventListener('compositionstart',e=>{if(e.target.id==='mgq')mgComp=true});
+$('mg').addEventListener('compositionend',e=>{if(e.target.id==='mgq'){mgComp=false;mgQ=e.target.value;setTimeout(drawMg,0)}});
 
 /* ===== 朋友的商品清單 ===== */
 window.flRet=false;
