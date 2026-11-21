@@ -219,7 +219,7 @@ html,body{touch-action:manipulation}#dv{z-index:5;max-width:100vw;overflow-x:hid
 const SRC=['LINE社群','蝦皮','露天拍賣','FB','團購','噗浪','書店','電商','賣貨便','日本代購','門市／實體店','日本現場','朋友幫買','其他'];
 const CUR={TWD:'NT$',JPY:'¥',CNY:'CN¥',KRW:'₩',USD:'US$',HKD:'HK$'},CURN={TWD:'台幣',JPY:'日幣',CNY:'人民幣',KRW:'韓圜',USD:'美金',HKD:'港幣'};
 const PAY={unpaid:'未付款',deposit:'已付訂金',paid:'已付款',cod:'貨到付款'},ST={wish:'想買',pre:'預購中',have:'已到貨',sold:'已售出'};
-let itT=0,items=[],S={cats:['漢頓','玩具','衣服','隱形眼鏡','化妝品'],cardFee:1.5,rates:{TWD:1,JPY:.21,CNY:4.5,KRW:.023,USD:31,HKD:4}},view='shelf',cur=null;
+let fMode=false,flTab='all',itT=0,items=[],S={cats:['漢頓','玩具','衣服','隱形眼鏡','化妝品'],cardFee:1.5,rates:{TWD:1,JPY:.21,CNY:4.5,KRW:.023,USD:31,HKD:4}},view='shelf',cur=null;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const iso=d=>{const z=new Date(d);return z.getFullYear()+'-'+String(z.getMonth()+1).padStart(2,'0')+'-'+String(z.getDate()).padStart(2,'0')};
@@ -278,6 +278,9 @@ const tw=(o,n)=>n*effRate(o);
 const EYE=['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.6 5.7A10 10 0 0112 5.5c6.4 0 10 6.5 10 6.5a17 17 0 01-3.2 4M6.5 7.2C3.7 9 2 12 2 12s3.6 6.5 10 6.5c1.6 0 3-.4 4.3-1M9.9 9.9a3 3 0 004.2 4.2"/></svg>'];
 const HID='＊＊＊';
 const ic=(o,it)=>(it&&it.cat)||o.cat||'';
+const fnameOf=c=>{const it=fitOf(c);return it?(it.fn||((c.o.src==='朋友幫買'&&c.o.seller)?c.o.seller:'朋友')):'朋友'};
+function fTop(){const L=flList(),T=[['all','全部'],['unpaid','未付款'],['paid','已付款'],['notgiven','未交貨'],['given','已交貨']],cnt=k=>L.filter(FLF[k]).length,owe=L.filter(FLF.unpaid).reduce((a,x)=>a+x.nt,0),hold=L.filter(x=>x.st==='tohand').length;
+  return `<div class="fsm" style="margin:10px 12px"><div><small>還沒收到的錢</small><b>NT$${owe.toLocaleString()}</b></div><div><small>待交給朋友</small><b>${hold} 件</b></div></div><div class="flt" style="margin:0 12px 6px">${T.map(([k,n])=>`<button data-ft="${k}" class="${flTab===k?'on':''}">${n} ${cnt(k)}</button>`).join('')}</div>`}
 const fitOf=c=>{const o=c.o;return c.ix>=0?o.items[c.ix]:(o.items.length===1?o.items[0]:null)};
 function fchips(c){const it=fitOf(c);if(!it||ip(c.o,it)!=='1')return '';const k=c.o.id+'|'+(c.ix>=0?c.ix:0),pd=fpdOf(c.o,it)!=='0',gt=got(c.o,it);
   return `<div class="fch">${it.fn?`<i class="fn">${esc(it.fn)}</i>`:''}${gt?'':'<i class="fs pre">預購中</i>'}<button data-fq="${k}" class="${pd?'on':'off'}">${pd?'已付款':'未付款'}</button>${gt?`<button data-fr="${k}" class="${it.giv?'on':'off'}">${it.giv?'已交貨':'未交貨'}</button>`:''}</div>`}
@@ -306,7 +309,7 @@ const friendNet=o=>{ // 朋友付的 − 朋友品項應分攤的成本 (正=多
   const sb=a=>a.reduce((x,i)=>x+(+i.qty||0)*(+i.price||0),0),fs=sb(fr),all=sb(o.items),fair=fs+(all?(+o.ship||0)*fs/all:0);return{fp,fair,net:fp-fair,mineSub:sb(mine)}};
 const got=(o,it)=>o.status==='have'||o.status==='sold'||(o.status==='pre'&&!!it.got);
 let kindF='';const KD=()=>S.kinds||['娃娃','扭蛋','公仔','小物','徽章'];
-const vis=(o,it,fc)=>{if(it.hide&&!$('hh').checked)return false;if($('hsl').checked&&!(it.sell&&sq(it)<(+it.qty||1)))return false;if(kindF&&(it.kind||'')!==kindF)return false;const m=$('hp').value,p=ip(o,it)==='1';const owe=p&&fpdOf(o,it)==='0'&&got(o,it);if(p&&S.ahp!==false&&got(o,it)&&!owe&&!$('hh').checked)return false;if(m==='hide'&&p&&!owe)return false;if(m==='only')return p&&(fc==='all'||ic(o,it)===fc);if(fc==='all'&&(S.hid||[]).includes(ic(o,it)))return false;return fc==='all'||ic(o,it)===fc};
+const vis=(o,it,fc)=>{if(fMode)return ip(o,it)==='1'&&FLF[flTab]({o,it});if(it.hide&&!$('hh').checked)return false;if($('hsl').checked&&!(it.sell&&sq(it)<(+it.qty||1)))return false;if(kindF&&(it.kind||'')!==kindF)return false;const m=$('hp').value,p=ip(o,it)==='1';const owe=p&&fpdOf(o,it)==='0'&&got(o,it);if(p&&S.ahp!==false&&got(o,it)&&!owe&&!$('hh').checked)return false;if(m==='hide'&&p&&!owe)return false;if(m==='only')return p&&(fc==='all'||ic(o,it)===fc);if(fc==='all'&&(S.hid||[]).includes(ic(o,it)))return false;return fc==='all'||ic(o,it)===fc};
 function scoped(fc){
   const out=[];items.forEach(o=>{const f=o.items.filter(i=>vis(o,i,fc));if(!f.length)return;if(f.length===o.items.length){out.push(o);return}
     const r=sub(o)?f.reduce((a,i)=>a+(+i.qty||0)*(+i.price||0),0)/sub(o):0;
@@ -359,19 +362,21 @@ function render(){
   {const G={},out=[];cells.forEach(c=>{if(!c.q||!c.base){out.push(c);return}const k=[c.cat,c.base.trim().toLowerCase(),c.tag||'',c.st||c.o.status].join('|');if(G[k]){G[k].push(c)}else{G[k]=[c];out.push(G[k])}});
    cells.length=0;out.forEach(x=>{if(!Array.isArray(x)){cells.push(x);return}if(x.length===1){cells.push(x[0]);return}const f=x[0],sq_=x.reduce((a,c)=>a+c.q,0);cells.push({...f,grp:x,name:f.base+' ×'+sq_,price:x.reduce((a,c)=>a+c.price,0),hid:x.every(c=>c.hid),bdh:(()=>{const seen=new Set();return x.map(c=>c.tag?`<span class="bd sold">${c.tag}</span>`:bd(c.o,c.st)).join('').match(/<span[^>]*>.*?<\/span>/g)?.filter(h=>{const t=h.replace(/<[^>]*>/g,'');if(seen.has(t))return false;seen.add(t);return true}).join('')||''})()})});
    window.GRP=cells.filter(c=>c.grp)}
-  if(S.preTop!==false){const isP=c=>c.o.status==='pre'&&c.st!=='have'&&!c.tag;cells.splice(0,cells.length,...cells.filter(isP),...cells.filter(c=>!isP(c)))}
+  if(fMode){const RK={unpaid:0,tohand:1,pre:2,given:3},fo=c=>{const it=fitOf(c);return it?(it.fn||'朋友'):'朋友'},so2=c=>{const it=fitOf(c);return it?RK[flSt(c.o,it)]:9};cells.sort((a,b)=>fo(a).localeCompare(fo(b),'zh-Hant')||so2(a)-so2(b))}
+  else if(S.preTop!==false){const isP=c=>c.o.status==='pre'&&c.st!=='have'&&!c.tag;cells.splice(0,cells.length,...cells.filter(isP),...cells.filter(c=>!isP(c)))}
   if(imgQ){const sc=new Map(cells.map(c=>[c,imScore(c)]));cells.sort((a,b)=>sc.get(b)-sc.get(a));const k=cells.filter(c=>sc.get(c)>=.2).length;cells.splice(Math.min(12,Math.max(3,k)))}
   window.NAV=cells;
   $('dt').textContent+=' · 共 '+cells.length+' 件';
   const im=c=>c.img?`<img src="${c.img}" alt="">`:'<span style="font:12px var(--mono);color:var(--mu)">無圖片</span>';
-  if(view==='shelf'){
+  const vw=fMode?'list':view;
+  if(vw==='shelf'){
     const rows=[];for(let i=0;i<cells.length;i+=4)rows.push(cells.slice(i,i+4));
     const last=rows[rows.length-1];const fill=4-last.length;
     $('main').innerHTML=`<div class="cab g1">${rows.map((r,ri)=>`<div class="shf"><div class="shr">${r.map(c=>`<div class="sc${c.hid?' hid':''}" data-id="${c.o.id}" data-ix="${c.ix}"${c.grp?` data-grp="${GRP.indexOf(c)}"`:''}>${c.grp?'':HB(c)}<div class="bds">${cb(c)}</div><div class="si">${c.img?`<img src="${c.img}" alt="">`:'<span style="font-size:11px;color:var(--mu)">無圖</span>'}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price)}</div></div>`).join('')}${ri===rows.length-1?Array.from({length:fill},(_,k)=>`<div class="sc em" ${k===0?'data-add="1"':''}>${k===0?'＋':''}</div>`).join(''):''}</div></div>`).join('')}${last.length===4?'<div class="shf"><div class="shr"><div class="sc em" data-add="1">＋</div></div></div>':''}</div>`;
     return}
-  $('main').innerHTML=view==='grid'
+  $('main').innerHTML=vw==='grid'
    ?`<div class="cab g4 stk"><div class="shf"><div class="shr">${cells.map(c=>`<div class="sc${c.hid?' hid':''}" data-id="${c.o.id}" data-ix="${c.ix}"${c.grp?` data-grp="${GRP.indexOf(c)}"`:''}>${c.grp?'':HB(c)}<div class="bds">${cb(c)}</div><div class="si">${c.img?`<img src="${c.img}" alt="">`:'<span style="font-size:11px;color:var(--mu)">無圖</span>'}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price)}</div></div>`).join('')}</div></div></div>`
-   :`<div class="list">${cells.map(c=>{const o=c.o;return `<div class="row${c.hid?' hid':''}" data-id="${o.id}" data-ix="${c.ix}"${c.grp?` data-grp="${GRP.indexOf(c)}"`:''}><div class="im">${im(c)}</div><div class="mt"><div class="nm">${esc(c.name)}</div><small><span class="bds">${cb(c)}</span>${esc(o.seller||o.src||'')}${o.buyDate?' · '+fmt(o.buyDate):''}</small>${fchips(c)}</div><div class="pr">${o.cur==='TWD'?money(o,c.price):pp(o,c.price)}</div>${c.grp?'':HB(c)}</div>`}).join('')}</div>`;
+   :`${fMode?fTop():''}<div class="list">${cells.map((c,ci)=>{const o=c.o;const fh=fMode&&(ci===0||fnameOf(cells[ci-1])!==fnameOf(c))?`<div class="flh">${esc(fnameOf(c))}</div>`:'';return fh+`<div class="row${c.hid?' hid':''}" data-id="${o.id}" data-ix="${c.ix}"${c.grp?` data-grp="${GRP.indexOf(c)}"`:''}><div class="im">${im(c)}</div><div class="mt"><div class="nm">${esc(c.name)}</div><small><span class="bds">${cb(c)}</span>${esc(o.seller||o.src||'')}${o.buyDate?' · '+fmt(o.buyDate):''}</small>${fchips(c)}</div><div class="pr">${o.cur==='TWD'?money(o,c.price):pp(o,c.price)}</div>${c.grp?'':HB(c)}</div>`}).join('')}</div>`;
 }
 
 /* editor */
@@ -450,7 +455,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v201</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v202</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1249,7 +1254,7 @@ function selExit(){selMode=false;selSet.clear();markSel()}
     putPrev().then(()=>{const by={};selSet.forEach(k=>{const i=k.lastIndexOf('|'),id=k.slice(0,i),ix=+k.slice(i+1);(by[id]=by[id]||[]).push(ix)});
       const n=selSet.size;items=items.filter(o=>{const l=by[o.id];if(!l)return true;if(l.some(x=>x<0)||o.items.length<=new Set(l).size)return false;[...new Set(l)].sort((a,b)=>b-a).forEach(x=>o.items.splice(x,1));return true});
       selExit();save();renderCats();render();toast('已刪除 '+n+' 件')})}})();
-$('main').addEventListener('click',e=>{const b=e.target.closest('[data-fq],[data-fr]');if(!b)return;e.stopImmediatePropagation();e.preventDefault();const dq=b.dataset.fq!==undefined,[id,ix]=(b.dataset.fq||b.dataset.fr).split('|'),o=items.find(x=>x.id===id),it=o&&o.items[+ix];if(!it)return;
+$('main').addEventListener('click',e=>{const ft=e.target.closest('[data-ft]');if(ft){e.stopImmediatePropagation();flTab=ft.dataset.ft;render();return}const b=e.target.closest('[data-fq],[data-fr]');if(!b)return;e.stopImmediatePropagation();e.preventDefault();const dq=b.dataset.fq!==undefined,[id,ix]=(b.dataset.fq||b.dataset.fr).split('|'),o=items.find(x=>x.id===id),it=o&&o.items[+ix];if(!it)return;
   if(dq)it.fpd=fpdOf(o,it)==='0'?'1':'0';else it.giv=it.giv?'':today();save();render()},true);
 ['q','fs','fc','so','hs','hsl','hw','hp','hh'].forEach(i=>$(i).addEventListener('input',render));
 /* ---- 以圖搜尋（輕量版：顏色＋形狀特徵） ---- */
@@ -1283,9 +1288,9 @@ $('q').addEventListener('input',()=>{if(imgQ&&$('q').value){imgQ=null;render()}}
 $('hp').addEventListener('input',()=>{try{localStorage.setItem('hp2',$('hp').value)}catch(e){}});
 $('fc').addEventListener('input',()=>setFc($('fc').value));
 const VB={grid:'vg',list:'vl',shelf:'vs'};
-function setView(v){view=v;try{localStorage.setItem('view',v)}catch(e){}Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===v));render()}
+function setView(v){fMode=false;$('vf').classList.remove('on');view=v;try{localStorage.setItem('view',v)}catch(e){}Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===v));render()}
 $('vg').onclick=()=>setView('grid');$('vl').onclick=()=>setView('list');$('vs').onclick=()=>setView('shelf');
-$('vf').onclick=()=>{flTab='all';drawFl();$('fl').classList.add('show')};
+$('vf').onclick=()=>{fMode=!fMode;flTab='all';Object.values(VB).forEach(id=>$(id).classList.toggle('on',!fMode&&VB[view]===id));$('vf').classList.toggle('on',fMode);render();window.scrollTo(0,0)};
 $('add').onclick=()=>$('sheet').classList.add('show');
 $('sheet').addEventListener('click',e=>{
   const b=e.target.closest('[data-n]');
@@ -1407,7 +1412,7 @@ $('mg').addEventListener('change',e=>{const t=e.target;if(t.dataset.mg){const i=
 $('mg').addEventListener('input',e=>{if(e.target.id==='mgq'){mgQ=e.target.value;drawMg()}});
 
 /* ===== 朋友的商品清單 ===== */
-let flTab='all';window.flRet=false;
+window.flRet=false;
 const flSt=(o,it)=>!got(o,it)?'pre':(fpdOf(o,it)==='0'?'unpaid':(it.giv?'given':'tohand'));
 const FLF={all:()=>true,unpaid:x=>fpdOf(x.o,x.it)==='0',paid:x=>fpdOf(x.o,x.it)!=='0',notgiven:x=>!x.it.giv,given:x=>!!x.it.giv};
 const FLN={pre:'預購中',unpaid:'還沒付錢',tohand:'待交給',given:'已交給'};
