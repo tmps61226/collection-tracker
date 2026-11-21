@@ -457,7 +457,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v209</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v210</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -732,7 +732,7 @@ async function testKey(){
 const SHOT_SCHEMA=()=>({type:'OBJECT',properties:{
   sourceType:{type:'STRING',enum:SRC},seller:{type:'STRING'},link:{type:'STRING'},buyDate:{type:'STRING'},recvDate:{type:'STRING'},
   status:{type:'STRING',enum:['wish','pre','have','']},currency:{type:'STRING',enum:['TWD','JPY','CNY','KRW','USD','HKD']},ship:{type:'NUMBER'},total:{type:'NUMBER'},
-  pay:{type:'STRING',enum:['unpaid','deposit','paid','cod']},deposit:{type:'NUMBER'},twTotal:{type:'NUMBER'},eta:{type:'STRING'},category:{type:'STRING'},orig:{type:'STRING'},
+  pay:{type:'STRING',enum:['unpaid','deposit','paid','cod']},deposit:{type:'NUMBER'},twTotal:{type:'NUMBER'},rate:{type:'NUMBER'},payMethod:{type:'STRING',enum:['cash','card','']},feeAmt:{type:'NUMBER'},eta:{type:'STRING'},category:{type:'STRING'},orig:{type:'STRING'},
   items:{type:'ARRAY',items:{type:'OBJECT',properties:{name:{type:'STRING'},category:{type:'STRING'},qty:{type:'NUMBER'},price:{type:'NUMBER'},img:{type:'INTEGER'},box:{type:'ARRAY',items:{type:'NUMBER'}}},required:['name','qty','price']}}
 },required:['items']});
 function shotPrompt(n){return `你是繁體中文訂單辨識器。以下 ${n} 份內容（圖片、PDF 或文字檔）屬於同一筆預購或訂單，請整合成一筆，依指定格式回傳 JSON。
@@ -741,7 +741,7 @@ function shotPrompt(n){return `你是繁體中文訂單辨識器。以下 ${n} �
 【品項（最重要）】
 1. 若其中有一張是清單或明細表（有品項、數量、外幣金額、台幣金額、合計），品項、數量、金額一律以它為準；商品頁截圖拿來取得商品照片與完整品名。
 2. items 每個品項一筆，絕對不要漏掉。name 整理成台灣常用的完整繁體中文（角色、系列、款式、商品類型都要寫），看不清楚不要亂猜；qty 是數量；price 是「單價」。
-3. 外幣訂單：currency 填外幣（JPY／KRW／CNY／USD／HKD），price 填外幣單價；若圖上有使用者已換算好的台幣總額，填在 twTotal。台幣訂單 currency 填 TWD。
+3. 幣別（很重要）：只要收據、明細表或刷卡單上出現外幣的消費金額（日圓 JPY、韓元 KRW、人民幣 CNY、美金 USD、港幣 HKD），currency 就一定填那個外幣，price 填外幣單價，絕對不要把外幣換算成台幣再填進 price，也不要因為圖上同時有台幣就把 currency 填成 TWD。台幣金額另外填：twTotal 填「實際從信用卡／帳戶扣的台幣總額」（刷卡簡訊、刷卡帳單、換匯水單上的台幣金額）；rate 填圖上看得到的匯率（1 單位外幣＝多少台幣，例如日圓 0.2、韓元 0.023），看不到就填 0，不要自己猜；payMethod 看得到是信用卡刷卡就填 card，現金或換匯填 cash，看不出來填空字串；feeAmt 填圖上明確標示的「海外手續費／國外交易手續費」台幣金額，看不到填 0。台幣訂單 currency 才填 TWD。
 4. 不要把商品頁上的原價、劃線價、廣告價當成單價，除非那就是實際購買價。同一筆訂單有多個品項就列多筆。看不出來的欄位用空字串或 0。
 
 【商品照片】
@@ -879,6 +879,7 @@ async function doShot(files,re,O,quiet){
     if(good.length)O.items=good.map(i=>{const o={name:String(i.name||''),qty:+i.qty||1,price:+i.price||''};if(i.category&&S.cats.includes(i.category)&&i.category!==O.cat)o.cat=i.category;return o});
     {const sum=(good.length?good:O.items).reduce((x,i)=>x+(+i.qty||0)*(+i.price||0),0);let sh=+d.ship||0;if(+d.total>0&&good.length){const df=Math.round((+d.total-sum)*100)/100;if(Math.abs(df)>=1&&Math.abs(df)<=Math.max(500,sum*.5))sh=df}if(sh)O.ship=sh;if(+d.total>0)O.tot=+d.total}
     if(O.cur!=='TWD'&&+d.twTotal>0&&good.length)O.twPaid=+d.twTotal;
+    if(O.cur!=='TWD'){if(+d.rate>0)O.rate=+d.rate;if(d.payMethod==='card')O.pm='card';else if(d.payMethod==='cash')O.pm='cash';if(+d.twTotal>0&&+d.feeAmt>0){O.feeLater='1';O.feeAmt=+d.feeAmt}}
     if(d.eta){O.eta=d.eta;O.start=O.buyDate||O.start;O.status='pre'}else if(['pre','wish','have'].includes(d.status))O.status=d.status;
     if(/^\d{4}-\d{2}-\d{2}$/.test(d.recvDate||'')){O.recvDate=d.recvDate;if(!d.eta)O.status='have'}
     if(/^\d{4}-\d{2}-\d{2}$/.test(d.recvDate||'')&&!/^\d{4}-\d{2}-\d{2}$/.test(d.buyDate||''))O.buyDate=d.recvDate;
