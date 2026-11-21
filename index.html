@@ -121,6 +121,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .note .nb{display:flex;gap:8px;margin-top:10px}.note .nb button{border:0;border-radius:18px;padding:9px 16px;font-size:14px;font-weight:600;background:var(--chip);color:var(--tx)}.note .nb button.pri{background:#26221e;color:#fff}
 .ar{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--ln);cursor:pointer}.ar:first-of-type{border-top:0}.ar span.t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;font-weight:600}.ar em{font-style:normal;font-size:12px;padding:2px 9px;border-radius:10px;background:var(--chip);color:var(--mu);flex:none}.ar em.late{background:#f6d9d3;color:#b05545}.ar em.soon{background:#26406b;color:#fff}
 html,body{touch-action:manipulation}#dv{z-index:5;max-width:100vw;overflow-x:hidden;overscroll-behavior-x:none;touch-action:pan-y}.dvb{min-width:0;max-width:100%}.go .gl .tw{margin-left:8px}.go .gl span:last-child{text-align:right}.fch{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center}.fch button{border:0;border-radius:14px;padding:5px 12px;font:inherit;font-size:13px;font-weight:700}.fch button.off{background:#b05545;color:#fff}.fch button.on{background:#ece8dc;color:#6b6358}.fch .fn{font-style:normal;font-size:13px;font-weight:700;color:#2c6a58;background:#a9ddcf80;border-radius:14px;padding:5px 10px}
+.dupg{background:#fffffff2;border-radius:18px;padding:10px;margin-bottom:12px;box-shadow:0 2px 10px #3a2e1a0f}.dupg.skip{opacity:.45}.duph{font-weight:700;margin:2px 4px 8px}.dupr{display:flex;align-items:center;gap:10px;padding:8px;border-radius:14px;border:2px solid transparent;background:#f3f0e8;margin-bottom:6px}.dupr.on{border-color:#6fc2a8;background:#6fc2a81f}.dupi{width:52px;height:52px;border-radius:10px;background:#fff;flex:none;overflow:hidden}.dupi img{width:100%;height:100%;object-fit:contain}.dupk{font-style:normal;font-weight:700;font-size:13px;border-radius:12px;padding:4px 10px;background:#b05545;color:#fff;flex:none}.dupr.on .dupk{background:#6fc2a8}
 #selbar{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:8;display:none;align-items:center;justify-content:space-between;gap:10px;background:#fffffff7;border-radius:26px;padding:10px 12px;box-shadow:0 6px 24px #3a2e1a33}#selbar.show{display:flex}#selbar button{border:0;border-radius:18px;padding:11px 20px;font:inherit;font-weight:700;background:#f3f0e8}#selbar #seldel{background:#b05545;color:#fff}#selbar #seldel:disabled{opacity:.35}#selmsg{font-weight:700}.sc,.row{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}.sc.sel,.row.sel{outline:3px solid #6fc2a8;outline-offset:-3px;border-radius:14px;background-color:#6fc2a826;position:relative}.sc.sel::before,.row.sel::before{content:'✓';position:absolute;top:6px;left:6px;z-index:6;width:24px;height:24px;border-radius:50%;background:#6fc2a8;color:#fff;font-weight:700;text-align:center;line-height:24px}
 #mo{z-index:6}#dv:has(~ #mo.show){visibility:hidden}/* 編輯頁蓋在詳細頁上時，把底下那層藏起來，避免 iOS 點輸入欄時去推到底下那層 */
 .dgot{border:1.5px solid #2a2622;background:#fff;color:#2a2622;border-radius:14px;padding:4px 13px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer}.dvp{position:relative;background:#fff;border-radius:14px;margin:36px 74px 6px;padding:26px 10px 10px;transform:rotate(-1.5deg);box-shadow:0 4px 14px #3a2e1a14;text-align:center}.dvp .dvi{height:176px;padding:0;align-items:center}.dvp .dvi img{width:100%;height:100%}.dvp .tp{display:none}
@@ -212,7 +213,7 @@ html,body{touch-action:manipulation}#dv{z-index:5;max-width:100vw;overflow-x:hid
 </div>
 <div class="nav"><div class="pill"><button id="vs" aria-label="櫃子"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M4 9.2h16M4 14.8h16"/></svg></button><button id="vg" aria-label="格狀"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg></button><button id="vl" aria-label="列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button><button id="vf" aria-label="朋友的商品"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.4-3.4 2.7-5.2 5.5-5.2s5.1 1.8 5.5 5.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M16.5 14.2c2.4 0 3.8 1.6 4.1 4"/></svg></button></div><button class="plus" id="add" aria-label="新增"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
 <div id="toast"></div>
-<div class="sheet" id="sheet"><div class="box"><button data-n="have"><b>已買到了</b><small>門市、日本現場、自己去買的</small></button><button data-n="pre"><b>預購／喊單</b><small>還沒到貨，等收貨</small></button><button data-n="wish"><b>想買</b><small>先記起來，之後再決定</small></button><button data-n="file"><b>📄 匯入檔案新增商品</b><small>Excel、CSV、JSON、PDF、Word、文字都可以</small></button><button data-n="merge"><b>🔗 合併現有訂單</b><small>好幾筆合成一筆，運費、手續費平均分給每件</small></button><button data-n="del"><b>🗑 批次刪除訂單</b><small>一次勾選很多筆刪掉，刪前會先自動備份</small></button></div></div><div class="mo" id="mg" style="z-index:7"></div><div class="mo" id="fl" style="z-index:4"></div><input type="file" id="bulkf" accept=".json,.csv,.tsv,.xlsx,.xlsm,.xls,.ods,.docx,.pdf,.txt,.md,.html,.htm,.eml,application/pdf,text/*,image/*" multiple hidden>
+<div class="sheet" id="sheet"><div class="box"><button data-n="have"><b>已買到了</b><small>門市、日本現場、自己去買的</small></button><button data-n="pre"><b>預購／喊單</b><small>還沒到貨，等收貨</small></button><button data-n="wish"><b>想買</b><small>先記起來，之後再決定</small></button><button data-n="file"><b>📄 匯入檔案新增商品</b><small>Excel、CSV、JSON、PDF、Word、文字都可以</small></button><button data-n="merge"><b>🔗 合併現有訂單</b><small>好幾筆合成一筆，運費、手續費平均分給每件</small></button><button data-n="dup"><b>🔍 找重複的商品</b><small>名稱相同的，讓你確認要保留哪一筆再覆蓋</small></button><button data-n="del"><b>🗑 批次刪除訂單</b><small>一次勾選很多筆刪掉，刪前會先自動備份</small></button></div></div><div class="mo" id="mg" style="z-index:7"></div><div class="mo" id="fl" style="z-index:4"></div><input type="file" id="bulkf" accept=".json,.csv,.tsv,.xlsx,.xlsm,.xls,.ods,.docx,.pdf,.txt,.md,.html,.htm,.eml,application/pdf,text/*,image/*" multiple hidden>
 <div id="selbar"><button id="selx">取消</button><span id="selmsg"></span><button id="seldel">刪除</button></div><div class="mo" id="dv"></div><div class="mo" id="mo"></div><div class="mo" id="so2"></div>
 
 <script>
@@ -455,7 +456,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v202</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v203</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1297,6 +1298,7 @@ $('sheet').addEventListener('click',e=>{
   if(!b){if(e.target.id==='sheet')$('sheet').classList.remove('show');return}
   $('sheet').classList.remove('show');
   if(b.dataset.n==='file'){$('bulkf').click();return}
+  if(b.dataset.n==='dup'){mgMode='dup';dupInit();drawMg();$('mg').classList.add('show');return}
   if(b.dataset.n==='del'){mgMode='del';mgSel=[];mgQ='';mgNoImg=false;drawMg();$('mg').classList.add('show');return}
   if(b.dataset.n==='merge'){mgMode='';mgSel=[];mgQ='';drawMg();$('mg').classList.add('show');return}
   openEd();
@@ -1369,10 +1371,33 @@ function drawDel(){
   ${list.map(o=>{const on=mgSel.includes(o.id);return `<label class="mgr${on?' on':''}"><input type="checkbox" data-mg="${o.id}" ${on?'checked':''}><span class="mgt"><b>${esc(mgSum(o))}</b><small>${esc(ST[o.status])} · ${esc(o.seller||o.src||'')} · ${units(o)} 件${hasImg(o)?'':' · 無圖'}</small></span><span class="mgp">${money(o,total(o))}</span></label>`}).join('')||'<div class="empty">沒有符合的訂單</div>'}</div>
   <div class="mgb"><div class="msg">${mgSel.length?'已選 '+mgSel.length+' 筆':'還沒選'}</div><button class="btn mgg" id="mgdel" style="color:#b05545" ${mgSel.length?'':'disabled'}>刪除所選的 ${mgSel.length} 筆</button></div>`;
   const qi=$('mgq');if(qi&&mgQ){qi.focus();const l=qi.value.length;qi.setSelectionRange(l,l)}}
+
+/* ===== 找重複、確認後覆蓋 ===== */
+let dupG=[],dupKeep={},dupSkip={},dupAddImg=true;
+const dnorm=t=>String(t||'').normalize('NFKC').toLowerCase().replace(/[\s\-_－—・·、，,。.！!？?（）()\[\]【】「」『』~～:：;；'"“”‘’×x*]/g,'');
+const dkey=o=>{const n=o.items.map(i=>dnorm(i.name)).filter(Boolean).sort();return n.join('|')};
+const dscore=o=>(o.seller?1:0)+(o.cat?1:0)+(o.items.some(i=>+i.price>0)?2:0)+(o.cur&&o.cur!=='TWD'?1:0)+(o.imgs&&o.imgs.length?1:0)+(o.buyDate?1:0);
+function dupInit(){const m={};items.forEach(o=>{if(o.status==='wish')return;const k=dkey(o);if(k.length<3)return;(m[k]=m[k]||[]).push(o)});
+  const keys=Object.keys(m);
+  // 單品名稱互相包含（至少 5 個字）也視為相似
+  const single=keys.filter(k=>!k.includes('|')&&k.length>=5);
+  single.forEach(a=>single.forEach(b=>{if(a!==b&&m[a]&&m[b]&&b.includes(a)){m[b]=m[b].concat(m[a]);delete m[a]}}));
+  dupG=Object.values(m).filter(g=>g.length>1&&new Set(g.map(o=>o.id)).size>1).map(g=>[...new Set(g)]);
+  dupKeep={};dupSkip={};dupG.forEach((g,i)=>{dupKeep[i]=g.slice().sort((a,b)=>dscore(b)-dscore(a))[0].id})}
+function drawDup(){
+  const act=dupG.map((g,i)=>dupSkip[i]?0:g.length-1).reduce((a,b)=>a+b,0),ng=dupG.filter((g,i)=>!dupSkip[i]).length;
+  $('mg').innerHTML=`<div class="mh"><button id="mgx">取消</button><b>找重複的商品</b><span style="width:48px"></span></div>
+  <div style="padding:0 16px 170px"><div class="msg" style="margin:6px 0 10px">${dupG.length?'找到 '+dupG.length+' 組名稱相同或很像的。每組點選要「保留」的那一筆，其他會被刪除。如果不是重複，按「這組不是重複」。':'沒有找到名稱重複的商品。'}</div>
+  ${dupG.map((g,i)=>`<div class="dupg${dupSkip[i]?' skip':''}"><div class="duph">${esc(mgSum(g[0]))}</div>${g.map(o=>{const on=dupKeep[i]===o.id;return `<div class="dupr${on?' on':''}" data-dk="${i}|${o.id}"><div class="dupi">${cover(o)?`<img src="${cover(o)}" alt="">`:''}</div><span class="mgt"><b>${esc(mgSum(o))}</b><small>${esc(ST[o.status])} · ${esc(o.seller||o.src||'')}${o.buyDate?' · '+fmt(o.buyDate):''} · ${(o.imgs||[]).length} 張圖</small></span><span class="mgp">${money(o,total(o))}</span><i class="dupk">${on?'保留':'刪除'}</i></div>`}).join('')}<button class="btn" data-ds="${i}" style="margin-top:6px">${dupSkip[i]?'↩ 還是要處理這組':'這組不是重複'}</button></div>`).join('')}</div>
+  <div class="mgb"><label class="mgv"><input type="checkbox" id="dupimg" ${dupAddImg?'checked':''}> 被刪除那筆的圖片，也加進保留的那筆</label><div class="msg">${ng?'將處理 '+ng+' 組，刪除 '+act+' 筆':'沒有要處理的'}</div><button class="btn mgg" id="dupgo" ${ng?'':'disabled'}>確認，保留所選並覆蓋</button></div>`}
+function doDup(){const g=dupG.map((x,i)=>[x,i]).filter(([x,i])=>!dupSkip[i]);if(!g.length)return;const del=g.reduce((a,[x])=>a+x.length-1,0);if(!confirm('要處理 '+g.length+' 組，刪除 '+del+' 筆嗎？\n（刪除前會先自動備份，可在設定裡「還原」）'))return;
+  putPrev().then(()=>{const rm=new Set();g.forEach(([x,i])=>{const keep=items.find(o=>o.id===dupKeep[i]);x.forEach(o=>{if(o.id===dupKeep[i])return;if(dupAddImg&&keep){keep.imgs=(keep.imgs||[]).concat(o.imgs||[])}else if(keep&&!(keep.imgs||[]).length){keep.imgs=(o.imgs||[]).slice()}rm.add(o.id)})});
+    items=items.filter(o=>!rm.has(o.id));save();$('mg').classList.remove('show');renderCats();render();toast('已刪除 '+rm.size+' 筆重複')})}
 function doDel(){if(!mgSel.length)return;if(!confirm('要刪除 '+mgSel.length+' 筆訂單嗎？\n（刪除前會先自動備份，可在設定裡「還原」）'))return;putPrev().then(()=>{const n=mgSel.length;items=items.filter(o=>!mgSel.includes(o.id));mgSel=[];save();$('mg').classList.remove('show');renderCats();render();toast('已刪除 '+n+' 筆')})}
 const mgSum=o=>{const n=o.items.filter(i=>i.name).map(i=>i.name);return (n[0]||'（未命名）')+(o.items.length>1?' 等'+o.items.length+'項':'')};
 function drawMg(){
   if(mgMode==='del'){drawDel();return}
+  if(mgMode==='dup'){drawDup();return}
   const first=items.find(o=>o.id===mgSel[0]),q=mgQ.trim().toLowerCase();
   const ok=o=>!first||(o.status===first.status&&o.cur===first.cur);
   const list=items.filter(o=>!q||(mgSum(o)+(o.seller||'')+o.items.map(i=>i.name).join(' ')).toLowerCase().includes(q)).filter(o=>mgSel.includes(o.id)||o.status!=='sold');
@@ -1407,8 +1432,8 @@ function doMerge(){
   putPrev();const at=items.indexOf(f);items=items.filter(o=>!mgSel.includes(o.id));items.splice(Math.min(at,items.length),0,m);
   save();render();$('mg').classList.remove('show');toast('✓ 已合併成一筆（'+m.items.length+' 個品項）',3500);
 }
-$('mg').addEventListener('click',e=>{const t=e.target;if(t.id==='mgx'){$('mg').classList.remove('show')}else if(t.id==='mgo')doMerge();else if(t.id==='mgdel')doDel();else if(t.id==='mgall'){const q=mgQ.trim().toLowerCase(),ids=items.filter(o=>(!q||(mgSum(o)+(o.seller||'')+o.items.map(i=>i.name).join(' ')).toLowerCase().includes(q))&&(!mgNoImg||!hasImg(o))).map(o=>o.id);const all=ids.length&&ids.every(i=>mgSel.includes(i));mgSel=all?mgSel.filter(i=>!ids.includes(i)):[...new Set([...mgSel,...ids])];drawMg()}});
-$('mg').addEventListener('change',e=>{const t=e.target;if(t.dataset.mg){const i=mgSel.indexOf(t.dataset.mg);i>=0?mgSel.splice(i,1):mgSel.push(t.dataset.mg);drawMg()}else if(t.id==='mgev')mgEven=t.checked;else if(t.id==='mgni'){mgNoImg=t.checked;drawMg()}});
+$('mg').addEventListener('click',e=>{const t=e.target;if(mgMode==='dup'){const dr=t.closest('[data-dk]'),ds=t.closest('[data-ds]');if(dr){const [i,id]=dr.dataset.dk.split('|');dupKeep[i]=id;drawMg();return}if(ds){dupSkip[ds.dataset.ds]=!dupSkip[ds.dataset.ds];drawMg();return}}if(t.id==='mgx'){$('mg').classList.remove('show')}else if(t.id==='mgo')doMerge();else if(t.id==='mgdel')doDel();else if(t.id==='dupgo')doDup();else if(t.id==='mgall'){const q=mgQ.trim().toLowerCase(),ids=items.filter(o=>(!q||(mgSum(o)+(o.seller||'')+o.items.map(i=>i.name).join(' ')).toLowerCase().includes(q))&&(!mgNoImg||!hasImg(o))).map(o=>o.id);const all=ids.length&&ids.every(i=>mgSel.includes(i));mgSel=all?mgSel.filter(i=>!ids.includes(i)):[...new Set([...mgSel,...ids])];drawMg()}});
+$('mg').addEventListener('change',e=>{const t=e.target;if(t.dataset.mg){const i=mgSel.indexOf(t.dataset.mg);i>=0?mgSel.splice(i,1):mgSel.push(t.dataset.mg);drawMg()}else if(t.id==='mgev')mgEven=t.checked;else if(t.id==='mgni'){mgNoImg=t.checked;drawMg()}else if(t.id==='dupimg')dupAddImg=t.checked});
 $('mg').addEventListener('input',e=>{if(e.target.id==='mgq'){mgQ=e.target.value;drawMg()}});
 
 /* ===== 朋友的商品清單 ===== */
