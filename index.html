@@ -264,7 +264,7 @@ const lv=(o,it)=>it&&it.love!=null&&it.love!==''?+it.love:(+o.love||0);
 const sub=o=>o.items.reduce((a,i)=>a+(+i.qty||0)*(+i.price||0),0);
 const total=o=>sub(o)+(+o.ship||0);
 function fixPaid(){const l=items.filter(o=>(o.status==='have'||o.status==='sold')&&o.pay!=='paid');if(!l.length)return 0;return putPrev().then(()=>{l.forEach(o=>{o.pay='paid';o.deposit=0});save();return l.length})}
-const paidAmt=o=>o.pay==='paid'?total(o):o.pay==='deposit'?Math.min(+o.deposit||0,total(o)):0;
+const paidAmt=o=>(o.status==='have'||o.status==='sold'||o.pay==='paid')?total(o):o.pay==='deposit'?Math.min(+o.deposit||0,total(o)):0;
 const bal=o=>total(o)-paidAmt(o);
 const feeOf=o=>(o.fee===''||o.fee==null)?(+S.cardFee||0):(+o.fee||0);
 function effRate(o){
@@ -446,7 +446,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v199</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v200</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
