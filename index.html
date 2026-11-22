@@ -491,7 +491,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v229</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v230</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1075,7 +1075,7 @@ function drawSet(){
     <div class="fr"><span>自動同步（開啟時檢查、修改後自動上傳）</span><input id="autosync" type="checkbox" ${lsGet('autoSync')!=='0'?'checked':''} style="flex:none;width:auto"></div>
     <button class="btn" id="syup">⬆ 上傳到雲端</button><button class="btn" id="sydn">⬇ 從雲端下載</button>${lsGet('prevAt')?'<button class="btn" id="syrs">↩ 還原下載前的資料</button>':''}
     <div class="msg">換手機或資料不見時，貼上同一把金鑰再按「下載」就能還原。開啟自動同步後，改完資料幾秒會自動上傳，打開 app 時會自動拿雲端最新的。如果兩支手機都有沒同步的修改，會停下來讓你選，不會自己蓋掉。金鑰只存在這支手機。</div></div>
-  <div class="cd"><h3>備份</h3><div class="msg" style="margin:0 0 8px">${lastBk()?'上次備份：'+Math.floor((Date.now()-lastBk())/864e5)+' 天前':'還沒備份過'}（超過 7 天首頁會提醒）</div><button class="btn" id="ex">匯出備份</button><button class="btn" id="im">匯入備份</button><input type="file" id="imf" accept=".json" hidden>
+  <div class="cd"><h3>備份</h3><div class="msg" style="margin:0 0 8px">${lastBk()?'上次備份：'+Math.floor((Date.now()-lastBk())/864e5)+' 天前':'還沒備份過'}（超過 7 天首頁會提醒）</div><button class="btn" id="ex">匯出備份</button><button class="btn" id="im">匯入備份</button><button class="btn" id="exl">匯出文字版（不含圖片，給 Claude 看用）</button><input type="file" id="imf" accept=".json" hidden>
     <div class="msg">資料只存在這支手機。匯出時選「儲存到檔案」→ iCloud Drive，換手機或資料不見時用「匯入備份」就能還原。</div></div>`;
 }
 $('eye').onclick=()=>{S.hide=!S.hide;save();render()};
@@ -1116,6 +1116,7 @@ SO.addEventListener('click',e=>{
   if(b.id==='addcat'){const v=$('newcat').value.trim();if(v&&!S.cats.includes(v)){S.cats.push(v);save();drawSet()}}
   if(b.id==='im')$('imf').click();
   if(b.id==='ex')doBackup();
+  if(b.id==='exl')doLite();
   if(b.id==='bgall')bgAll();
   if(b.id==='addsrc'){const v=$('newsrc').value.trim();if(v&&!(SRC.includes(v)&&!(S.srcHide||[]).includes(v))&&!(S.srcX||[]).includes(v)){if(SRC.includes(v)){S.srcHide=S.srcHide.filter(x=>x!==v)}else S.srcX=(S.srcX||[]).concat(v);save()}drawSet();return}
   if(b.dataset.bd!==undefined){S.srcHide=(S.srcHide||[]).concat(b.dataset.bd);save();drawSet();return}
@@ -1224,6 +1225,10 @@ async function syncDown(auto){
 /* backup */
 const BK_DAYS=7;
 function lastBk(){return Math.max(+lsGet('lastBackup')||0,lastSync())}
+async function doLite(){
+  const name='collection-lite-'+today()+'.json',blob=new Blob([JSON.stringify({items,settings:S},(k,v)=>(k==='img'||k==='imgs'||k==='o'||(typeof v==='string'&&v.startsWith('data:')))?undefined:v)],{type:'application/json'});
+  try{const f=new File([blob],name,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'收藏櫃文字版'});return}}catch(e){if(e&&e.name==='AbortError')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();toast('已匯出文字版（'+Math.round(blob.size/1024)+' KB）',3500)}
 async function doBackup(){
   const name='collection-backup-'+today()+'.json',blob=new Blob([JSON.stringify({items,settings:S},(k,v)=>k==='o'&&typeof v==='string'&&v.startsWith('data:')?undefined:v)],{type:'application/json'});
   try{const f=new File([blob],name,{type:'application/json'});
