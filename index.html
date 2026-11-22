@@ -496,16 +496,17 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v251</div></div>`;
+  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v252</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
+function reopenKeep(id,ix){const had=dvNav>=0;if(had&&window.NAV){const j=NAV.findIndex(c=>c.o&&c.o.id===id&&c.ix===ix);if(j>=0)dvNav=j}dvKeep=had?1:0;try{openDetail(id,ix)}finally{dvKeep=0}}
 function backDetail(){if(dvState&&items.find(x=>x.id===dvState.id)){const id=dvState.id,ix=dvState.ix,had=dvNav>=0;if(had&&window.NAV){const j=NAV.findIndex(c=>c.o&&c.o.id===id&&c.ix===ix);if(j>=0)dvNav=j}dvKeep=had?1:0;try{openDetail(id,ix)}finally{dvKeep=0}}else dvState=null}
 {let sx=0,sy=0,st=0;DV.addEventListener('touchstart',e=>{const t=e.touches[0];sx=t.clientX;sy=t.clientY;st=Date.now()},{passive:true});
 DV.addEventListener('touchend',e=>{if(dvNav<0||!window.NAV)return;const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;if(Date.now()-st>700||Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.5)return;const j=dvNav+(dx<0?1:-1);if(j<0||j>=NAV.length)return;openNav(j);DV.scrollTop=0;try{DV.animate([{transform:`translateX(${dx<0?40:-40}px)`,opacity:.2},{transform:'none',opacity:1}],{duration:220,easing:'ease-out'})}catch(_){}},{passive:true})}
 DV.addEventListener('change',e=>{const t=e.target;if(t.id!=='dcat'||!dvState)return;const o=items.find(x=>x.id===dvState.id);if(!o)return;const v=t.value,ix=dvState.ix,single=ix>=0&&o.items.length>0;
   if(ix>=0&&o.items[ix]){const it=o.items[ix];if(v===(o.cat||'')||!v)delete it.cat;else it.cat=v}else{o.cat=v;o.items.forEach(i=>{delete i.cat})}
-  save();render();openDetail(dvState.id,ix);toast('分類已改成「'+(v||'未分類')+'」')});
+  const id0=dvState.id;save();render();reopenKeep(id0,ix);toast('分類已改成「'+(v||'未分類')+'」')});
 DV.addEventListener('click',e=>{const h=e.target.closest('[data-dh]');if(h&&dvState){const o=items.find(x=>x.id===dvState.id);if(o){const k=+h.dataset.dh,ix=dvState.ix,it=ix>=0?o.items[ix]:(o.items.length===1?o.items[0]:null),cu=it?lv(o,it):(+o.love||0),nv=cu===k?k-1:k;const sc=DV.scrollTop;dvKeep=1;if(dvState.g){dvState.g.forEach(([i2,x2])=>{const oo=items.find(z=>z.id===i2);if(oo&&oo.items[x2])oo.items[x2].love=nv});const gg=dvState.g;save();render();openGD(gg)}else{if(it)it.love=nv;else o.love=nv;save();render();openDetail(o.id,ix)}dvKeep=0;DV.scrollTop=sc}return}
   const go=e.target.closest('[data-oid]');if(go){openDetail(go.dataset.oid,+go.dataset.oix);return}
   const b=e.target.closest('button');if(!b)return;
@@ -520,7 +521,7 @@ DV.addEventListener('click',e=>{const h=e.target.closest('[data-dh]');if(h&&dvSt
   if(b.id==='dav'){const o=items.find(x=>x.id===dvState.id),it=o&&o.items[dvState.ix>=0?dvState.ix:0];if(!it||!it.name)return;const k=nkey(it.name),on=!it.avg,L=[];items.forEach(x=>{if(x.status==='wish')return;x.items.forEach(i=>{if(nkey(i.name)===k)L.push(i)})});
     if(L.length<2){toast('只有這 1 筆叫這個名字，沒有可以分攤的');return}
     if(!confirm(on?'把全部 '+L.length+' 筆「'+it.name+'」的成本，改成平均值計算？\n（每筆原本的價格不會被改掉，隨時可以取消）':'取消「'+it.name+'」的均價，每筆改回自己的原價？'))return;
-    putPrev().then(()=>{L.forEach(i=>{if(on)i.avg=1;else delete i.avg});save();render();openDetail(dvState.id,dvState.ix);toast(on?'已分攤均價':'已取消均價')});return}
+    putPrev().then(()=>{L.forEach(i=>{if(on)i.avg=1;else delete i.avg});const id1=dvState.id,ix1=dvState.ix;save();render();reopenKeep(id1,ix1);toast(on?'已分攤均價':'已取消均價')});return}
   if(b.id==='ded'){DV.classList.remove('show');openEd(dvState.id)}
   if(b.id==='ddl'&&confirm('確定要刪除這筆訂單？')){items=items.filter(x=>x.id!==dvState.id);dvState=null;save();render();DV.classList.remove('show')}});
 function openEd(id){if(!id)dvState=null;cur=id?JSON.parse(JSON.stringify(items.find(o=>o.id===id))):newOrder();cur._new=!id;drawEd();$('mo').classList.add('show');$('mo').scrollTop=0}
