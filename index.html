@@ -102,7 +102,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .sc img{width:100%;height:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 1px 0 #fff) drop-shadow(0 -1px 0 #fff) drop-shadow(0 2px 2px #0002)}
 .sc:active{transform:scale(.96)}
 .sc.em{border:1.5px dashed #c9ced6;border-radius:14px;aspect-ratio:.8;margin:2px 4px 8px;display:flex;align-items:center;justify-content:center;color:#b3b9c2;font-size:22px}
-.nav{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;gap:10px;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:#fffffff2;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:28px 28px 0 0;box-shadow:0 -6px 22px #3a2e1a14;z-index:4}
+.nav{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;gap:10px;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:#fffffffa;border-radius:28px 28px 0 0;box-shadow:0 -6px 22px #3a2e1a14;z-index:4}
 .pill{pointer-events:auto;display:flex;flex:1;gap:8px;background:none;border:0;border-radius:0;padding:0;box-shadow:none}
 .pill button{flex:1;height:50px;border:0;border-radius:25px;background:#f3f0e8;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:1;color:#9a9284}
 .pill button.on{background:#d9f0e8;color:#2f7a66;box-shadow:inset 0 0 0 2px #b4e0d2}
@@ -340,7 +340,7 @@ function render(){
   $('eye').innerHTML=EYE[S.hide?1:0];
   $('dt').textContent=new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
   $('chips').innerHTML=[['all','全部'],['pre','預購中'],['have','已到貨'],['wish','想買'],['sold','已售出']].map(c=>`<button class="chip ${$('fs').value===c[0]?'on':''}" data-s="${c[0]}">${c[1]}</button>`).join('');
-  $('isb').innerHTML=imgQ?`<div class="isb"><img src="${imgQ.src}" alt=""><span>以圖搜尋：最像的排最前面</span><button type="button">取消</button></div>`:'';
+  $('isb').innerHTML=imgQ?`<div class="isb"><img loading="lazy" decoding="async" src="${imgQ.src}" alt=""><span>以圖搜尋：最像的排最前面</span><button type="button">取消</button></div>`:'';
   const W=view==='grid'&&!fMode;$('chips').style.display=W?'none':'';
   const q=$('q').value.trim().toLowerCase(),fs=W?'wish':$('fs').value,fc=$('fc').value,so=$('so').value;
   let l=items.filter(o=>{
@@ -376,16 +376,16 @@ function render(){
   if(imgQ){const sc=new Map(cells.map(c=>[c,imScore(c)]));cells.sort((a,b)=>sc.get(b)-sc.get(a));const k=cells.filter(c=>sc.get(c)>=.2).length;cells.splice(Math.min(12,Math.max(3,k)))}
   window.NAV=cells;
   $('dt').textContent+=' · 共 '+cells.length+' 件';
-  const im=c=>c.img?`<img src="${c.img}" alt="">`:'<span style="font:12px var(--mono);color:var(--mu)">無圖片</span>';
+  const im=c=>c.img?`<img loading="lazy" decoding="async" src="${c.img}" alt="">`:'<span style="font:12px var(--mono);color:var(--mu)">無圖片</span>';
   if(fMode){$('main').innerHTML=flBody();return}
   const vw=view;
   if(vw==='shelf'){
     const rows=[];for(let i=0;i<cells.length;i+=4)rows.push(cells.slice(i,i+4));
     const last=rows[rows.length-1];const fill=4-last.length;
-    $('main').innerHTML=`<div class="cab g1">${rows.map((r,ri)=>`<div class="shf"><div class="shr">${r.map(c=>`<div class="sc${c.hid?' hid':''}" data-id="${c.o.id}" data-ix="${c.ix}"${c.grp?` data-grp="${GRP.indexOf(c)}"`:''}>${c.grp?'':HB(c)}<div class="bds">${cb(c)}</div><div class="si">${c.img?`<img src="${c.img}" alt="">`:'<span style="font-size:11px;color:var(--mu)">無圖</span>'}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price,cTx(c))}</div></div>`).join('')}${ri===rows.length-1?Array.from({length:fill},(_,k)=>`<div class="sc em" ${k===0?'data-add="1"':''}>${k===0?'＋':''}</div>`).join(''):''}</div></div>`).join('')}${last.length===4?'<div class="shf"><div class="shr"><div class="sc em" data-add="1">＋</div></div></div>':''}</div>`;
+    $('main').innerHTML=`<div class="cab g1">${rows.map((r,ri)=>`<div class="shf"><div class="shr">${r.map(c=>`<div class="sc${c.hid?' hid':''}" data-id="${c.o.id}" data-ix="${c.ix}"${c.grp?` data-grp="${GRP.indexOf(c)}"`:''}>${c.grp?'':HB(c)}<div class="bds">${cb(c)}</div><div class="si">${c.img?`<img loading="lazy" decoding="async" src="${c.img}" alt="">`:'<span style="font-size:11px;color:var(--mu)">無圖</span>'}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price,cTx(c))}</div></div>`).join('')}${ri===rows.length-1?Array.from({length:fill},(_,k)=>`<div class="sc em" ${k===0?'data-add="1"':''}>${k===0?'＋':''}</div>`).join(''):''}</div></div>`).join('')}${last.length===4?'<div class="shf"><div class="shr"><div class="sc em" data-add="1">＋</div></div></div>':''}</div>`;
     return}
   $('main').innerHTML=vw==='grid'
-   ?`<div class="cab g4 stk"><div class="shf"><div class="shr">${cells.map(c=>`<div class="sc${c.hid?' hid':''}" data-id="${c.o.id}" data-ix="${c.ix}"${c.grp?` data-grp="${GRP.indexOf(c)}"`:''}>${c.grp?'':HB(c)}<div class="bds">${cb(c)}</div><div class="si">${c.img?`<img src="${c.img}" alt="">`:'<span style="font-size:11px;color:var(--mu)">無圖</span>'}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price,cTx(c))}</div></div>`).join('')}</div></div></div>`
+   ?`<div class="cab g4 stk"><div class="shf"><div class="shr">${cells.map(c=>`<div class="sc${c.hid?' hid':''}" data-id="${c.o.id}" data-ix="${c.ix}"${c.grp?` data-grp="${GRP.indexOf(c)}"`:''}>${c.grp?'':HB(c)}<div class="bds">${cb(c)}</div><div class="si">${c.img?`<img loading="lazy" decoding="async" src="${c.img}" alt="">`:'<span style="font-size:11px;color:var(--mu)">無圖</span>'}</div><div class="nm">${esc(c.name)}</div><div class="pr">${pp(c.o,c.price,cTx(c))}</div></div>`).join('')}</div></div></div>`
    :`${fMode?fTop():''}<div class="list">${cells.map((c,ci)=>{const o=c.o;const fd=fMode&&(()=>{const it=fitOf(c);return it&&flSt(c.o,it)==='given'})();return `<div class="row${c.hid?' hid':''}${fd?' fdone':''}" data-id="${o.id}" data-ix="${c.ix}"${c.grp?` data-grp="${GRP.indexOf(c)}"`:''}><div class="im">${im(c)}</div><div class="mt"><div class="nm">${esc(c.name)}</div><small><span class="bds">${fMode?'':cb(c)}</span>${esc(o.seller||o.src||'')}${o.buyDate?' · '+fmt(o.buyDate):''}</small>${fchips(c)}</div><div class="pr">${o.cur==='TWD'&&!(cTx(c)>0)?money(o,c.price):pp(o,c.price,cTx(c))}</div>${c.grp?'':HB(c)}</div>`}).join('')}</div>`;
 }
 
@@ -427,7 +427,7 @@ function openGD(ids){
     const pay=bal(o)>0?'<span class="np">'+(PAY[o.pay]||'未付款')+'</span>':'<span class="okp">'+(PAY[o.pay]||'已付款')+'</span>';
     return `<div class="dcd go" data-oid="${o.id}" data-oix="${x.ix}"><div class="g1"><b>${esc(o.seller||o.src||'未填來源')}</b><span class="gp">NT$${ntp.toLocaleString()}</span></div><div class="g2"><span>${esc(fmt(o.buyDate)||'')} 下單</span><span>${qq} 件</span>${o.status!=='pre'?'<span>'+(ST[o.status]||'')+'</span>':(o.eta?'<span>預計 '+fmt(o.eta)+'</span>':'')}${late?'<span class="lp">已逾期</span>':''}${pay}${o.cur!=='TWD'?'<span>'+money(o,p)+'</span>':''}</div></div>`}).join('');
   DV.innerHTML=`<div class="mh">${dvNb()}<button id="dcx" aria-label="關閉"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 3l12 12M15 3L3 15"/></svg></button></div>
-  <div class="dvp"><i class="tp"></i><span class="dch"><span>${ST[f.o.status]||''}</span></span><div class="dvi">${im?`<img src="${im}" alt="">`:''}</div></div>
+  <div class="dvp"><i class="tp"></i><span class="dch"><span>${ST[f.o.status]||''}</span></span><div class="dvi">${im?`<img loading="lazy" decoding="async" src="${im}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(base)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   <div class="dst"><div class="m"><b>${q} 件</b>數量</div><div class="p"><b>${esc(ic(f.o,f.it)||'未分類')}</b>分類</div><div class="y">${gpt}<b>NT$${nt.toLocaleString()}</b><span>單件成本</span></div></div>${gprog}${cards}</div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
@@ -463,10 +463,10 @@ function openDetail(id,ix){
   const srcT=(o.seller&&o.seller!==o.src?(o.src||'')+' · '+o.seller:(o.src||o.seller||'')),grid=`<div class="dcd dgr">${gi('來源',o.seller&&o.seller!==o.src?(o.src?`<span class="nb">${esc(o.src)} ·</span> `:'')+`<span class="nb">${esc(o.seller)}</span>`:`<span class="nb">${esc(o.src||o.seller||'')}</span>`)}${gi('購買日',fmt(o.buyDate))}</div>`;
   const hv=single?lv(o,it):(o.love||0);
   DV.innerHTML=`<div class="mh">${dvNb()}<button id="dcx" aria-label="關閉"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 3l12 12M15 3L3 15"/></svg></button></div>
-  <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img src="${img}" alt="">`:''}</div></div>
+  <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v217</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v218</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -492,7 +492,7 @@ function drawEd(){
     <div class="fr"><span>Gemini Key</span><input id="gk" type="password" placeholder="貼上免費金鑰" value="${esc(k)}"></div>
     <div><button class="btn pri" id="shot">上傳訂單截圖</button>${cur.imgs.length?'<button class="btn" id="reshot">🔄 重新偵測</button>':''}<button class="btn" id="tk">測試金鑰</button><button class="btn" id="doc">📄 上傳檔案（PDF／Excel／Word／CSV／文字）</button><input type="file" id="docf" accept="application/pdf,.pdf,.txt,.md,.csv,.tsv,.json,.html,.htm,.eml,.xlsx,.xlsm,.xls,.ods,.docx,text/*,image/*" multiple hidden><input type="file" id="shotf" accept="image/*" multiple hidden><div class="msg" id="msg">辨識完成後請檢查內容，錯的可以直接改</div><div class="msg" id="gu"></div></div></div>
   <div class="cd"><h3>商品圖片（點一下設為封面）</h3>
-    <div class="thumbs">${cur.imgs.map((m,i)=>`<div class="th ${i===cur.cover?'cv':''}" data-c="${i}"><img src="${m.s}">${i===cur.cover?'<b>封面</b>':''}<i data-rm="${i}">×</i></div>`).join('')}</div>
+    <div class="thumbs">${cur.imgs.map((m,i)=>`<div class="th ${i===cur.cover?'cv':''}" data-c="${i}"><img loading="lazy" decoding="async" src="${m.s}">${i===cur.cover?'<b>封面</b>':''}<i data-rm="${i}">×</i></div>`).join('')}</div>
     <button class="btn" id="addimg">＋ 新增圖片</button><input type="file" id="imgf" accept="image/*" multiple hidden>
     ${cover(cur)?(cur.imgs[cur.cover]&&cur.imgs[cur.cover].o?'<button class="btn" id="undo">還原封面原圖</button><button class="btn" id="cclc">🧹 清殘影</button>':'<button class="btn" id="bg">✂️ 封面去背</button>')+'<button class="btn" id="crc">✂ 封面裁切</button><button class="btn" id="zm">🔍 封面放大主體</button><button class="btn" id="pstc">📋 貼上去背圖</button>':''}
     <div class="msg" id="msg2"></div></div>
@@ -502,7 +502,7 @@ function drawEd(){
   <div class="cd"><h3>來源</h3>${sel('類型','src',srcOpts())}${storeRow()}${fr('連結','link','url','https://')}${fr('購買日期','buyDate','date')}${fr('發售日','rel','date')}</div>
   <div class="cd"><h3>品項</h3>
     ${cur.items.map((it,i)=>`<div class="it"><button class="x" data-del="${i}">刪除</button>
-      <div class="ir"><div class="ith" data-ip="${i}">${it.img?`<img src="${it.img.s}">`:'📷'}</div><input data-i="${i}" data-k="name" placeholder="品名" value="${esc(it.name)}"></div> 
+      <div class="ir"><div class="ith" data-ip="${i}">${it.img?`<img loading="lazy" decoding="async" src="${it.img.s}">`:'📷'}</div><input data-i="${i}" data-k="name" placeholder="品名" value="${esc(it.name)}"></div> 
       ${cur.status==='pre'?`<label class="gotl"><input type="checkbox" data-got="${i}" ${it.got?'checked':''}> 這個品項已到貨</label>`:''}
       <input data-i="${i}" data-k="note" placeholder="這個品項的備註（選填）" value="${esc(it.note||'')}" style="width:100%;margin:2px 0 6px">
       <div class="fr" style="padding:6px 0"><span>歸屬</span><select data-i="${i}" data-k="proxy"><option value="" ${!it.proxy?'selected':''}>同訂單（${(cur.proxy||'0')==='1'?'朋友的':'我的'}）</option><option value="0" ${it.proxy==='0'?'selected':''}>我的</option><option value="1" ${it.proxy==='1'?'selected':''}>幫朋友買（不算我的）</option></select></div>
@@ -1409,7 +1409,7 @@ function dupInit(){
 let dmSel=[],dmG=[],dmKeep='';
 const dmKey=(o,i)=>o.id+'|'+i;
 const dmThumb=(o,it)=>it.img||cover(o);
-const dmRow=(o,it,i)=>{const t=dmThumb(o,it),q=+it.qty||1;return `<span class="dupi">${t?`<img src="${t}" alt="">`:''}</span><span class="mgt"><b>${esc(it.name||'（未命名）')}${q>1?' ×'+q:''}</b><small>${esc(ST[o.status])} · ${esc(o.seller||o.src||'')}${o.buyDate?' · '+fmt(o.buyDate):''}${o.items.length>1?' · 同單共 '+o.items.length+' 項':''}</small></span><span class="mgp">${money(o,(+it.price||0)*q)}</span>`};
+const dmRow=(o,it,i)=>{const t=dmThumb(o,it),q=+it.qty||1;return `<span class="dupi">${t?`<img loading="lazy" decoding="async" src="${t}" alt="">`:''}</span><span class="mgt"><b>${esc(it.name||'（未命名）')}${q>1?' ×'+q:''}</b><small>${esc(ST[o.status])} · ${esc(o.seller||o.src||'')}${o.buyDate?' · '+fmt(o.buyDate):''}${o.items.length>1?' · 同單共 '+o.items.length+' 項':''}</small></span><span class="mgp">${money(o,(+it.price||0)*q)}</span>`};
 let bgL=[],bgSel=[];
 function bgInit(){bgL=items.filter(o=>o.status!=='wish'&&o.items.length>1&&o.items.some(i=>!isBag(i.name)&&!i.ap)&&o.items.some(i=>isBag(i.name)&&!i.ap));bgSel=bgL.map(o=>o.id)}
 function drawBag(){
@@ -1448,7 +1448,7 @@ function drawDup(){
   const act=dupG.map((g,i)=>dupSkip[i]?0:g.length-1).reduce((a,b)=>a+b,0),ng=dupG.filter((g,i)=>!dupSkip[i]).length;
   $('mg').innerHTML=`<div class="mh"><button id="mgx">取消</button><b>找重複的商品</b><span style="width:48px"></span></div>
   <div style="padding:0 16px 170px"><div class="msg" style="margin:6px 0 10px">${dupG.length-dupG.filter((g,i)=>dupSkip[i]).length?'還有 '+(dupG.length-dupG.filter((g,i)=>dupSkip[i]).length)+' 組「名稱和賣家都完全相同」的。每組點選要「保留」的那一筆，其他會被刪除。如果不是重複，按「這組不是重複」。':'沒有找到名稱和賣家都完全相同的商品。'}</div><button class="btn" id="dupm" style="margin-bottom:12px">自己挑：搜尋商品，勾選哪幾個是重複</button>
-  ${dupG.map((g,i)=>dupSkip[i]?'':`<div class="dupg"><div class="duph">${esc(mgSum(g[0]))}</div>${g.map(o=>{const on=dupKeep[i]===o.id;return `<div class="dupr${on?' on':''}" data-dk="${i}|${o.id}"><div class="dupi">${cover(o)?`<img src="${cover(o)}" alt="">`:''}</div><span class="mgt"><b>${esc(mgSum(o))}</b><small>${esc(ST[o.status])} · ${esc(o.seller||o.src||'')}${o.buyDate?' · '+fmt(o.buyDate):''} · ${(o.imgs||[]).length} 張圖</small></span><span class="mgp">${money(o,total(o))}</span><i class="dupk">${on?'保留':'刪除'}</i></div>`}).join('')}<button class="btn" data-ds="${i}" style="margin-top:6px">這組不是重複</button></div>`).join('')}</div>
+  ${dupG.map((g,i)=>dupSkip[i]?'':`<div class="dupg"><div class="duph">${esc(mgSum(g[0]))}</div>${g.map(o=>{const on=dupKeep[i]===o.id;return `<div class="dupr${on?' on':''}" data-dk="${i}|${o.id}"><div class="dupi">${cover(o)?`<img loading="lazy" decoding="async" src="${cover(o)}" alt="">`:''}</div><span class="mgt"><b>${esc(mgSum(o))}</b><small>${esc(ST[o.status])} · ${esc(o.seller||o.src||'')}${o.buyDate?' · '+fmt(o.buyDate):''} · ${(o.imgs||[]).length} 張圖</small></span><span class="mgp">${money(o,total(o))}</span><i class="dupk">${on?'保留':'刪除'}</i></div>`}).join('')}<button class="btn" data-ds="${i}" style="margin-top:6px">這組不是重複</button></div>`).join('')}</div>
   <div class="mgb"><label class="mgv"><input type="checkbox" id="dupimg" ${dupAddImg?'checked':''}> 被刪除那筆的圖片，也加進保留的那筆</label><div class="msg">${ng?'將處理 '+ng+' 組，刪除 '+act+' 筆':'沒有要處理的'}</div><button class="btn mgg" id="dupgo" ${ng?'':'disabled'}>確認，保留所選並覆蓋</button></div>`}
 function doDup(){const g=dupG.map((x,i)=>[x,i]).filter(([x,i])=>!dupSkip[i]);if(!g.length)return;const del=g.reduce((a,[x])=>a+x.length-1,0);if(!confirm('要處理 '+g.length+' 組，刪除 '+del+' 筆嗎？\n（刪除前會先自動備份，可在設定裡「還原」）'))return;
   putPrev().then(()=>{const rm=new Set();g.forEach(([x,i])=>{const keep=items.find(o=>o.id===dupKeep[i]);x.forEach(o=>{if(o.id===dupKeep[i])return;if(dupAddImg&&keep){keep.imgs=(keep.imgs||[]).concat(o.imgs||[])}else if(keep&&!(keep.imgs||[]).length){keep.imgs=(o.imgs||[]).slice()}rm.add(o.id)})});
@@ -1514,7 +1514,7 @@ function flBody(){
   const RK={pre:0,unpaid:1,tohand:1,given:2},dt=x=>x.o.eta||x.o.recvDate||x.o.buyDate||'';sh.sort((a,b)=>RK[a.st]-RK[b.st]||(RK[a.st]===0?dt(a).localeCompare(dt(b)):dt(b).localeCompare(dt(a))));const g={};sh.forEach(x=>(g[x.fr]=g[x.fr]||[]).push(x));
   return `<div style="padding:0 6px 40px"><div class="fsm"><div><small>還沒收到的錢</small><b>NT$${owe.toLocaleString()}</b></div><div><small>待交給朋友</small><b>${hold} 件</b></div></div>
   <div class="flt">${T.map(([k,n])=>`<button data-ft="${k}" class="${flTab===k?'on':''}">${n} ${cnt(k)}</button>`).join('')}</div>
-  ${Object.keys(g).sort((x,y)=>Math.min(...g[x].map(z=>RK[z.st]))-Math.min(...g[y].map(z=>RK[z.st]))).map(f=>`<div class="flg"><h4>${esc(f)}</h4>${g[f].map(x=>{const im=(x.it.img&&x.it.img.s)||(x.o.imgs&&x.o.imgs[0]&&x.o.imgs[0].s)||'';return `<div class="flr${x.st==='given'?' done':''}" data-fo="${x.o.id}|${x.ix}"><div class="fli">${im?`<img src="${im}" alt="">`:''}</div><div class="flb"><b>${esc(x.it.name||'（未命名）')}${(+x.it.qty||1)>1?' ×'+(+x.it.qty):''}</b><small>${x.o.status==='pre'&&x.o.eta&&!got(x.o,x.it)?'預計 '+fmt(x.o.eta)+' · ':''}NT$${x.nt.toLocaleString()}</small>
+  ${Object.keys(g).sort((x,y)=>Math.min(...g[x].map(z=>RK[z.st]))-Math.min(...g[y].map(z=>RK[z.st]))).map(f=>`<div class="flg"><h4>${esc(f)}</h4>${g[f].map(x=>{const im=(x.it.img&&x.it.img.s)||(x.o.imgs&&x.o.imgs[0]&&x.o.imgs[0].s)||'';return `<div class="flr${x.st==='given'?' done':''}" data-fo="${x.o.id}|${x.ix}"><div class="fli">${im?`<img loading="lazy" decoding="async" src="${im}" alt="">`:''}</div><div class="flb"><b>${esc(x.it.name||'（未命名）')}${(+x.it.qty||1)>1?' ×'+(+x.it.qty):''}</b><small>${x.o.status==='pre'&&x.o.eta&&!got(x.o,x.it)?'預計 '+fmt(x.o.eta)+' · ':''}NT$${x.nt.toLocaleString()}</small>
    <div class="flc">${!got(x.o,x.it)?'<i class="fs pre">預購中</i>':''}<span class="sg"><button data-fp="${x.o.id}|${x.ix}" data-v="0" class="u${fpdOf(x.o,x.it)==='0'?' on':''}">未付款</button><button data-fp="${x.o.id}|${x.ix}" data-v="1" class="${fpdOf(x.o,x.it)==='0'?'':'on'}">已付款</button></span>${got(x.o,x.it)?`<span class="sg"><button data-fg="${x.o.id}|${x.ix}" data-v="0" class="u${x.it.giv?'':' on'}">未交貨</button><button data-fg="${x.o.id}|${x.ix}" data-v="1" class="${x.it.giv?' on':''}">已交貨</button></span>`:''}</div></div></div>`}).join('')}</div>`).join('')||'<div class="empty">沒有符合的商品<br><small>把品項的歸屬設為「幫朋友買」就會出現在這裡</small></div>'}</div>`}
 function drawFl(){$('fl').innerHTML=`<div class="mh"><button id="flx">完成</button><b>朋友的商品</b><span style="width:48px"></span></div>`+flBody()}
 $('fl').addEventListener('click',e=>{const t=e.target.closest('button');if(!t){const r=e.target.closest('[data-fo]');if(r){const [id,ix]=r.dataset.fo.split('|');flRet=true;$('fl').classList.remove('show');openDetail(id,+ix)}return}
