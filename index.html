@@ -491,7 +491,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v228</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v229</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1393,14 +1393,15 @@ function rowsToOrders(rows){
     if(o.status==='have')o.recvDate=o.buyDate||today();
     out.push(o);if(gk)grp[gk]=o}
   return out}
-function applyRules(rules){let n=0;(rules||[]).forEach(R=>{const hits=[];items.forEach(o=>{if(R.seller&&!new RegExp(R.seller).test(o.seller||''))return;o.items.forEach((it,ix)=>{if((it.name||'')!==R.name)return;if(R.qty&&(+it.qty||1)!==R.qty)return;hits.push([o,ix])})});
+function applyRules(rules){let n=0;(rules||[]).forEach(R=>{const hits=[];items.forEach(o=>{if(R.seller&&!new RegExp(R.seller).test(o.seller||''))return;o.items.forEach((it,ix)=>{if((it.name||'')!==R.name)return;if(R.qty&&(+it.qty||1)!==R.qty)return;if(R.ch&&it.ch!==R.ch)return;hits.push([o,ix])})});
   hits.forEach(([o,ix])=>{const it=o.items[ix];if(!it)return;const parts=(R.parts||[]).map(P=>{const c=JSON.parse(JSON.stringify(it));c.name=R.to||c.name;c.qty=P.qty||1;if(P.ch!=null){c.ch=P.ch;c.note=P.ch}Object.assign(c,P.set||{});return c});
-    if(parts.length){o.items.splice(ix,1,...parts);n+=parts.length}if(R.ocat)o.cat=R.ocat})});return n}
+    if(parts.length){o.items.splice(ix,1,...parts);n+=parts.length}if(R.ocat)o.cat=R.ocat;if(R.oset)Object.assign(o,R.oset)})});return n}
+function delByNote(L){let n=0;(L||[]).forEach(k=>{items.forEach(o=>{if(!(o.note||'').includes(k.note))return;const b=o.items.length;o.items=o.items.filter(i=>(i.name||'')!==k.name);n+=b-o.items.length});items=items.filter(o=>o.items.length>0)});return n}
 function patchImport(d){
-  if(d.rules){const m=[];d.rules.forEach(R=>items.forEach(o=>o.items.forEach(i=>{if((i.name||'')===R.name&&(!R.qty||(+i.qty||1)===R.qty)&&(!R.seller||new RegExp(R.seller).test(o.seller||'')))m.push(i)})));
+  if(d.rules){const m=[];d.rules.forEach(R=>items.forEach(o=>o.items.forEach(i=>{if((i.name||'')===R.name&&(!R.qty||(+i.qty||1)===R.qty)&&(!R.ch||i.ch===R.ch)&&(!R.seller||new RegExp(R.seller).test(o.seller||'')))m.push(i)})));(d.del||[]).forEach(k=>items.forEach(o=>{if((o.note||'').includes(k.note))o.items.forEach(i=>{if((i.name||'')===k.name)m.push(i)})}));
     if(!m.length){alert('這個檔案要修的品項，app 裡都找不到（可能已經修過了）');return}
     if(!confirm('要修正 '+m.length+' 個品項（拆成各自的角色、改名、標記打算賣／已售出）嗎？\n（金額、圖片不會動；修正前請先到設定匯出備份）'))return;
-    putPrev().then(()=>{const n=applyRules(d.rules);if(d.chars)S.chars=[...new Set([...(S.chars||[]),...d.chars])];save();renderCats();render();try{drawSet()}catch(e){}toast('已修正，現在共 '+n+' 個品項',4000)});return}
+    putPrev().then(()=>{const n=applyRules(d.rules),dl=delByNote(d.del);if(d.chars)S.chars=[...new Set([...(S.chars||[]),...d.chars])];save();renderCats();render();try{drawSet()}catch(e){}toast('已修正'+(dl?'，移除 '+dl+' 筆重複的售出紀錄':''),4000)});return}
   const its=(d.items||[]).filter(x=>x&&items.some(y=>y.id===x.id)),fl=d.fledger||{};
   const nf=Object.keys(fl).length,n=its.reduce((a,x)=>a+(x.its||[]).length,0);
   if(!its.length&&!nf){alert('這個檔案裡的訂單，app 裡都找不到，所以沒有東西可以更新');return}
