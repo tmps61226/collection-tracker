@@ -492,7 +492,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v242</div></div>`;
+  <a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v243</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -505,6 +505,11 @@ DV.addEventListener('click',e=>{const h=e.target.closest('[data-dh]');if(h&&dvSt
   if(b.id==='dcx'){DV.classList.remove('show');dvState=null;if(window.flRet){flRet=false;drawFl();$('fl').classList.add('show')}}
   if(b.id==='dgot'&&dvState){const o=items.find(x=>x.id===dvState.id);if(o&&o.status==='pre'&&confirm('標記為已到貨？')){const ix=dvState.ix;if(o.items.length>1&&ix>=0){o.items[ix].got=true;if(o.items.every(i=>i.got)){o.status='have';o.recvDate=o.recvDate||today();o.items.forEach(i=>delete i.got)}}else{o.status='have';o.recvDate=o.recvDate||today();o.items.forEach(i=>delete i.got)}save();render();toast('已標記到貨');backDetail()}return}
   if(b.dataset.wok&&dvState){const o=items.find(x=>x.id===dvState.id);if(o){delete o.tot;save();openDetail(dvState.id,dvState.ix)}return}
+  if(b.id==='dfs'){const o=items.find(x=>x.id===dvState.id),it=o&&o.items[dvState.ix>=0?dvState.ix:0],src=(it&&it.img&&it.img.s)||(o&&cover(o))||'';
+    if(!src){window.open('https://lens.google.com/','_blank');toast('這個商品還沒有照片，先開 Google Lens，請從相簿選照片');return}
+    fetch(src).then(r=>r.blob()).then(bl=>{const f=new File([bl],'search.jpg',{type:bl.type||'image/jpeg'});
+      if(navigator.canShare&&navigator.canShare({files:[f]}))return navigator.share({files:[f]}).catch(e=>{if(e&&e.name!=='AbortError')throw e});
+      window.open('https://lens.google.com/','_blank');toast('已開 Google Lens，請從相簿選這張照片')}).catch(()=>{window.open('https://lens.google.com/','_blank');toast('已開 Google Lens，請從相簿選照片')});return}
   if(b.id==='ded'){DV.classList.remove('show');openEd(dvState.id)}
   if(b.id==='ddl'&&confirm('確定要刪除這筆訂單？')){items=items.filter(x=>x.id!==dvState.id);dvState=null;save();render();DV.classList.remove('show')}});
 function openEd(id){if(!id)dvState=null;cur=id?JSON.parse(JSON.stringify(items.find(o=>o.id===id))):newOrder();cur._new=!id;drawEd();$('mo').classList.add('show');$('mo').scrollTop=0}
