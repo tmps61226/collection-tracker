@@ -491,7 +491,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v226</div></div>`;
+  <button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v227</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -573,7 +573,7 @@ function upd(){
 const MO=$('mo');
 function onField(ev){
   const e=ev.target;
-  if(e.dataset.i!==undefined){const it=cur.items[+e.dataset.i];if(it){if(e.dataset.k==='ch'&&e.value==='__new'){const v=(prompt('新增角色名稱（例如 美樂蒂）')||'').trim();if(v){if(!CH().includes(v))S.chars=[...CH(),v];it.ch=v;save()}drawEd();return}it[e.dataset.k]=e.value;if(e.dataset.k==='proxy'){if(e.value==='1'&&cur.fpd==null)cur.fpd='0';drawEd();return}if(e.dataset.k==='price'&&cur.even){cur.even='';delete cur.tw0;delete cur._s0;cur.items.forEach(x=>delete x.p0)}upd()}return}
+  if(e.dataset.i!==undefined){const it=cur.items[+e.dataset.i];if(it){if(e.dataset.k==='ch'&&e.value==='__new'){const v=(prompt('新增角色名稱（例如 美樂蒂）')||'').trim();if(v){if(!CH().includes(v))S.chars=[...CH(),v];it.ch=v;save()}drawEd();return}it[e.dataset.k]=e.value;if(e.dataset.k==='price'&&e.value!==''&&+e.value>=0)delete it.cu;if(e.dataset.k==='proxy'){if(e.value==='1'&&cur.fpd==null)cur.fpd='0';drawEd();return}if(e.dataset.k==='price'&&cur.even){cur.even='';delete cur.tw0;delete cur._s0;cur.items.forEach(x=>delete x.p0)}upd()}return}
   const f=e.dataset.f;if(!f)return;
   if(f==='src'&&e.value==='__new'){const v=(prompt('新的購買來源名稱（例如：Yahoo拍賣、朋友A）')||'').trim();if(v){if(!SRC.includes(v)&&!(S.srcX||[]).includes(v)){S.srcX=(S.srcX||[]).concat(v);save()}cur.src=v}drawEd();return}
   if(f==='_paid'){const n=parseFloat(e.value);if(n>=0){if(cur._s0===undefined)cur._s0=+cur.ship||0;cur.items.forEach(i=>{if(i.p0===undefined)i.p0=i.price});
