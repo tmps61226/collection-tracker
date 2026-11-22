@@ -254,7 +254,7 @@ async function loadItems(){
   if(Array.isArray(ids)){sharded=true;const out=[];for(const id of ids){const o=await kvGet('o:'+id);if(o){out.push(o);FP.set(o.id,fpOf(o))}}window.LOADMISS=ids.length-out.length;return out}
   return (await kvGet('items'))||[];
 }
-async function save(){try{localStorage.setItem('dirty','1');localStorage.setItem('lastSave',String(Date.now()))}catch(e){}schedAuto();
+async function save(){AVC=null;try{localStorage.setItem('dirty','1');localStorage.setItem('lastSave',String(Date.now()))}catch(e){}schedAuto();
   try{await idbPut();saveFail=0}catch(e){console.error(e);try{await new Promise(r=>setTimeout(r,800));await idbPut();saveFail=0}catch(e2){console.error(e2);if(!saveFail++||saveFail%5===0)toast('⚠ 這次沒存進手機！資料只在目前畫面，關掉 app 會消失。請先到設定按「上傳」或「備份」。（'+((e2&&e2.name)||'錯誤')+'）',12000)}}}
 
 /* partial sales: items carry sq (units sold) and sp (TWD revenue) */
@@ -309,7 +309,7 @@ function fchips(c){const it=fitOf(c);if(!it||ip(c.o,it)!=='1')return '';const k=
   return `<div class="fch"><i class="fn">${esc(fnameOf(c))}</i>${gt?'':'<i class="fs pre">預購中</i>'}<button data-fq="${k}" class="${pd?'on':'off'}">${fp==='g'?'🎁 送禮':pd?'已付款':'未付款'}</button>${gt?`<button data-fr="${k}" class="${it.giv?'on':'off'}">${it.giv?'已交貨':'未交貨'}</button>`:''}</div>`}
 const HB=c=>`<button class="hb" data-hide="${c.o.id}|${c.ix}" aria-label="${c.hid?'取消隱藏':'隱藏'}">${c.hid?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/><path d="M4 20L20 4"/></svg>'}</button>`;
 const pp=(o,n,d=0)=>money(o,n)+(o.cur!=='TWD'||effRate(o)!==1||d>0?`<span class="tw"><i class="nt">NT$</i>${Math.round(tw(o,n-d)).toLocaleString()}</span>`:'');
-const cp=c=>c.cu?`<span class="tw" style="color:var(--mu)">賣出 NT$${Math.round(c.sp).toLocaleString()}</span>`:pp(c.o,c.price,cTx(c));
+const cp=c=>c.avgNT!=null&&!c.cu?money(c.o,c.price)+`<span class="tw"><i class="nt">NT$</i>${Math.round(c.avgNT).toLocaleString()}<i style="font-style:normal;font-size:10px;margin-left:2px">均</i></span>`:c.cu?`<span class="tw" style="color:var(--mu)">賣出 NT$${Math.round(c.sp).toLocaleString()}</span>`:pp(c.o,c.price,cTx(c));
 const cTx=c=>{const o=c.o;if(c.ix>=0){const it=o.items[c.ix];return txI(o,it)*(c.q/(+it.qty||1))}return txO(o)};
 const money=(o,n)=>(CUR[o.cur]||'')+Math.round(n).toLocaleString();
 const sq=i=>Math.max(0,Math.min(+i.sq||0,+i.qty||1));
@@ -322,7 +322,10 @@ const BAGRE=/^(.{0,6})?(紙袋|購物袋|塑膠袋|塑膠提袋|手提袋|提袋
 const isBag=n=>BAGRE.test(String(n||'').normalize('NFKC').replace(/\s+/g,'').toLowerCase());
 const bagOn=o=>o.items.some(i=>i.ap)&&o.items.some(i=>!i.ap);
 const bagLine=(o,i)=>{if(!bagOn(o))return 0;const q=+i.qty||0,ln=q*(+i.price||0);if(i.ap)return -ln;const T=o.items.filter(x=>x.ap).reduce((a,x)=>a+(+x.qty||0)*(+x.price||0),0),rest=o.items.filter(x=>!x.ap),rs=rest.reduce((a,x)=>a+(+x.qty||0)*(+x.price||0),0),ru=rest.reduce((a,x)=>a+(+x.qty||1),0);return o.shipBy==='p'&&rs>0?T*ln/rs:(ru>0?T*(q||1)/ru:0)};
-const unitCost=(o,i)=>Math.max(0,tw(o,+i.price||0)+tw(o,bagLine(o,i))/(+i.qty||1)-tw(o,txI(o,i))/(+i.qty||1))+(o.shipBy==='p'&&sub(o)>0?tw(o,+o.ship||0)*(+i.price||0)/sub(o):tw(o,+o.ship||0)/(units(o)||1));
+let AVC=null;const nkey=x=>String(x||'').trim().toLowerCase();
+const avgMap=()=>{if(AVC)return AVC;const T=new Map();items.forEach(o=>{if(o.status==='wish')return;o.items.forEach(i=>{if(!i.avg||!i.name)return;const q=+i.qty||1,k=nkey(i.name),t=T.get(k)||[0,0];t[0]+=rawUnit(o,i)*q;t[1]+=q;T.set(k,t)})});AVC=new Map([...T].map(([k,t])=>[k,t[0]/(t[1]||1)]));return AVC};
+const unitCost=(o,i)=>{if(i.avg&&i.name){const a=avgMap().get(nkey(i.name));if(a!=null)return a}return rawUnit(o,i)};
+const rawUnit=(o,i)=>Math.max(0,tw(o,+i.price||0)+tw(o,bagLine(o,i))/(+i.qty||1)-tw(o,txI(o,i))/(+i.qty||1))+(o.shipBy==='p'&&sub(o)>0?tw(o,+o.ship||0)*(+i.price||0)/sub(o):tw(o,+o.ship||0)/(units(o)||1));
 const soldCost=o=>o.items.reduce((a,i)=>a+sq(i)*unitCost(o,i),0);
 const profitTW=o=>soldRev(o)-soldCost(o);
 function derive(o){if(o.status!=='have'&&o.status!=='sold')return;o.status=soldUnits(o)>=units(o)?'sold':'have';if(soldUnits(o)>0&&!o.soldDate)o.soldDate=today()}
@@ -348,7 +351,7 @@ function scoped(fc){
     out.push(Object.assign({},o,{items:f,ship:(+o.ship||0)*r-adj,deposit:(+o.deposit||0)*r,twPaid:o.twPaid?+o.twPaid*r:o.twPaid,feeAmt:o.feeAmt?+o.feeAmt*r:o.feeAmt}))});
   return out}
 function render(){
-  mig79();const st=scoped($('fc').value);renderBk();renderAr(st);
+  AVC=null;mig79();const st=scoped($('fc').value);renderBk();renderAr(st);
   const act=st.filter(o=>o.status!=='wish');
   const inv=act.reduce((a,o)=>a+tw(o,paidAmt(o))-tw(o,txO(o)),0);
   const pend=st.filter(o=>o.status==='pre'||o.status==='have').reduce((a,o)=>a+tw(o,bal(o)),0);
@@ -390,12 +393,12 @@ function render(){
       const shu=(+o.ship||0)/(o.items.length||1);
       const gt=o.status==='pre'&&!!it.got;if(o.status==='pre'&&((fs==='have'&&!gt)||(fs==='pre'&&gt)))return;
       if(!vis(o,it,fc))return;if(fs==='have'&&r<=0)return;if(fs==='sold'&&n<=0)return;if($('hs').checked&&r<=0)return;
-      cells.push({o,ix:o.items.indexOf(it),q:(n>0&&r>0?r:q),base:it.name||'未命名',hid:!!it.hide,cat:ic(o,it),name:(it.sell&&r>0?'💰 ':'')+(it.name||'未命名')+(n>0&&r>0?' ×'+r:q>1&&n===0?' ×'+q:''),img:it.img?it.img.s:cover(o),price:(+it.price||0)*(n>0&&r>0?r:q)+shu+bagLine(o,it)*((n>0&&r>0?r:q)/q),tag:n>=q?'已售出':n>0?'已售 '+n+'/'+q:'',cu:!!it.cu,sp:+it.sp||0,st:gt?'have':undefined,ch:it.ch||''});
+      cells.push({o,ix:o.items.indexOf(it),q:(n>0&&r>0?r:q),base:it.name||'未命名',hid:!!it.hide,cat:ic(o,it),name:(it.sell&&r>0?'💰 ':'')+(it.name||'未命名')+(n>0&&r>0?' ×'+r:q>1&&n===0?' ×'+q:''),img:it.img?it.img.s:cover(o),price:(+it.price||0)*(n>0&&r>0?r:q)+shu+bagLine(o,it)*((n>0&&r>0?r:q)/q),tag:n>=q?'已售出':n>0?'已售 '+n+'/'+q:'',cu:!!it.cu,sp:+it.sp||0,st:gt?'have':undefined,ch:it.ch||'',avgNT:it.avg?unitCost(o,it)*(n>0&&r>0?r:q):null});
     });
-    else cells.push({o,ix:-1,q:o.items.length===1?(+o.items[0].qty||1):0,base:o.items.length===1?(o.items[0].name||''):'',hid:o.items.every(i=>i.hide),cat:ic(o,o.items[0]),name:(o.items.some(i=>i.sell&&sq(i)<(+i.qty||1))?'💰 ':'')+title(o),img:(o.items.length===1&&o.items[0].img)?o.items[0].img.s:cover(o),price:total(o),ch:o.items.length===1?(o.items[0].ch||''):''});
+    else cells.push({o,ix:-1,q:o.items.length===1?(+o.items[0].qty||1):0,base:o.items.length===1?(o.items[0].name||''):'',hid:o.items.every(i=>i.hide),cat:ic(o,o.items[0]),name:(o.items.some(i=>i.sell&&sq(i)<(+i.qty||1))?'💰 ':'')+title(o),img:(o.items.length===1&&o.items[0].img)?o.items[0].img.s:cover(o),price:total(o),ch:o.items.length===1?(o.items[0].ch||''):'',avgNT:(o.items.length===1&&o.items[0].avg)?unitCost(o,o.items[0])*(+o.items[0].qty||1):null});
   });
   {const G={},out=[];cells.forEach(c=>{if(!c.q||!c.base){out.push(c);return}const k=[c.cat,c.base.trim().toLowerCase(),c.tag||'',c.ch||''].join('|');if(G[k]){G[k].push(c)}else{G[k]=[c];out.push(G[k])}});
-   cells.length=0;out.forEach(x=>{if(!Array.isArray(x)){cells.push(x);return}if(x.length===1){cells.push(x[0]);return}const f=x[0],sq_=x.reduce((a,c)=>a+c.q,0);cells.push({...f,grp:x,name:f.base+' ×'+sq_,price:x.reduce((a,c)=>a+c.price,0),hid:x.every(c=>c.hid),bdh:(()=>{const seen=new Set();return x.map(c=>c.tag?`<span class="bd sold">${c.tag}</span>`:bd(c.o,c.st)).join('').match(/<span[^>]*>.*?<\/span>/g)?.filter(h=>{const t=h.replace(/<[^>]*>/g,'');if(seen.has(t))return false;seen.add(t);return true}).join('')||''})()})});
+   cells.length=0;out.forEach(x=>{if(!Array.isArray(x)){cells.push(x);return}if(x.length===1){cells.push(x[0]);return}const f=x[0],sq_=x.reduce((a,c)=>a+c.q,0);cells.push({...f,grp:x,name:f.base+' ×'+sq_,price:x.reduce((a,c)=>a+c.price,0),avgNT:x.every(c=>c.avgNT!=null)?x.reduce((a,c)=>a+c.avgNT,0):null,hid:x.every(c=>c.hid),bdh:(()=>{const seen=new Set();return x.map(c=>c.tag?`<span class="bd sold">${c.tag}</span>`:bd(c.o,c.st)).join('').match(/<span[^>]*>.*?<\/span>/g)?.filter(h=>{const t=h.replace(/<[^>]*>/g,'');if(seen.has(t))return false;seen.add(t);return true}).join('')||''})()})});
    cells.forEach(c=>{if(c.ch&&!String(c.name).includes(c.ch))c.name=c.ch+'・'+c.name});
    window.GRP=cells.filter(c=>c.grp)}
   if(fMode){const RK={pre:0,unpaid:1,tohand:1,given:2},st=c=>{const it=fitOf(c);return it?RK[flSt(c.o,it)]:1},dt=c=>c.o.eta||c.o.recvDate||c.o.buyDate||'';cells.sort((a,b)=>st(a)-st(b)||(st(a)===0?dt(a).localeCompare(dt(b)):dt(b).localeCompare(dt(a))))}
@@ -493,7 +496,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v247</div></div>`;
+  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v248</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -511,6 +514,10 @@ DV.addEventListener('click',e=>{const h=e.target.closest('[data-dh]');if(h&&dvSt
     fetch(src).then(r=>r.blob()).then(bl=>{const f=new File([bl],'search.jpg',{type:bl.type||'image/jpeg'});
       if(navigator.canShare&&navigator.canShare({files:[f]}))return navigator.share({files:[f]}).catch(e=>{if(e&&e.name!=='AbortError')throw e});
       window.open('https://lens.google.com/','_blank');toast('已開 Google Lens，請從相簿選這張照片')}).catch(()=>{window.open('https://lens.google.com/','_blank');toast('已開 Google Lens，請從相簿選照片')});return}
+  if(b.id==='dav'){const o=items.find(x=>x.id===dvState.id),it=o&&o.items[dvState.ix>=0?dvState.ix:0];if(!it||!it.name)return;const k=nkey(it.name),on=!it.avg,L=[];items.forEach(x=>{if(x.status==='wish')return;x.items.forEach(i=>{if(nkey(i.name)===k)L.push(i)})});
+    if(L.length<2){toast('只有這 1 筆叫這個名字，沒有可以分攤的');return}
+    if(!confirm(on?'把全部 '+L.length+' 筆「'+it.name+'」的成本，改成平均值計算？\n（每筆原本的價格不會被改掉，隨時可以取消）':'取消「'+it.name+'」的均價，每筆改回自己的原價？'))return;
+    putPrev().then(()=>{L.forEach(i=>{if(on)i.avg=1;else delete i.avg});save();render();openDetail(dvState.id,dvState.ix);toast(on?'已分攤均價':'已取消均價')});return}
   if(b.id==='ded'){DV.classList.remove('show');openEd(dvState.id)}
   if(b.id==='ddl'&&confirm('確定要刪除這筆訂單？')){items=items.filter(x=>x.id!==dvState.id);dvState=null;save();render();DV.classList.remove('show')}});
 function openEd(id){if(!id)dvState=null;cur=id?JSON.parse(JSON.stringify(items.find(o=>o.id===id))):newOrder();cur._new=!id;drawEd();$('mo').classList.add('show');$('mo').scrollTop=0}
