@@ -492,7 +492,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v245</div></div>`;
+  <a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v246</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1607,7 +1607,8 @@ const flSt=(o,it)=>!got(o,it)?'pre':(fpdOf(o,it)==='0'?'unpaid':(it.giv?'given':
 const FLF={all:()=>true,unpaid:x=>fpdOf(x.o,x.it)==='0',paid:x=>fpdOf(x.o,x.it)!=='0',notgiven:x=>!x.it.giv,given:x=>!!x.it.giv};
 const FLN={pre:'預購中',unpaid:'還沒付錢',tohand:'待交給',given:'已交給'};
 function flList(){const L=[];items.forEach(o=>{if(o.status==='wish')return;o.items.forEach((it,ix)=>{if(ip(o,it)!=='1')return;L.push({o,it,ix,st:flSt(o,it),nt:Math.round(unitCost(o,it)*(+it.qty||1)),fr:it.fn||((o.src==='朋友幫買'&&o.seller)?o.seller:'朋友')})})});return L}
-const fled=(f,G)=>{const L=(S.fledger||{})[f];if(!L||(!L.head&&!(L.entries||[]).length))return '';const nt=v=>v==null||v===''?'':'NT$'+Math.round(+v).toLocaleString();
+const fnorm=x=>String(x||'').toLowerCase().replace(/[^\p{L}\p{N}]/gu,''),fkey=f=>{const D=S.fledger||{};if(D[f])return f;const n=fnorm(f);return n?Object.keys(D).find(k=>fnorm(k)===n):undefined};
+const fled=(f,G)=>{const L=(S.fledger||{})[fkey(f)];if(!L||(!L.head&&!(L.entries||[]).length))return '';const nt=v=>v==null||v===''?'':'NT$'+Math.round(+v).toLocaleString();
   let hd=L.head||'';const sm=L.sum||{};if(G>0&&sm.due!=null&&sm.paid!=null){const n=Math.round(sm.due-sm.paid-G);hd=(n>0?'少收 '+nt(n):n<0?'多收 '+nt(-n):'已結清')+'（應收 '+nt(sm.due)+'，已收 '+nt(sm.paid)+'，送禮扣 '+nt(G)+'）'}
   return `<details class="fled"><summary>結算紀錄・${esc(hd)}</summary>${(L.entries||[]).map(e=>`<div>${esc(fmt(e.d))} 結算：應收 ${nt(e.due)}，已收 ${nt(e.paid)}${e.txt?'（'+esc(e.txt)+'）':''}</div>`).join('')}</details>`};
 function flBody(){
