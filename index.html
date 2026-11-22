@@ -492,7 +492,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v243</div></div>`;
+  <a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v244</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -641,7 +641,10 @@ MO.addEventListener('click',ev=>{
     const names=[...new Set(v.split(/[、,，;；\/\n]+/).map(x=>x.trim()).filter(Boolean))];if(!names.length)return;
     const q=+it.qty||1;const mk=nm=>{const n={name:it.name,qty:1,price:it.price,note:nm,ch:nm};['cat','kind','sell','proxy','fn','giv','fpd'].forEach(k=>{if(it[k]!=null&&it[k]!=='')n[k]=it[k]});if(it.got)n.got=it.got;return n};
     const add=names.map(mk);const rest=q-names.length;
-    if(rest>0){it.qty=rest;if(+it.sq>it.qty)it.sq=it.qty;cur.items.splice(i+1,0,...add)}else cur.items.splice(i,1,...add);
+    const sold=sq(it),spT=+it.sp||0,full=sold>0&&sold>=q&&rest>=0;
+    if(full){const per=Math.round(spT/q);add.forEach(n=>{n.sq=1;if(spT)n.sp=per});if(rest>0&&spT)it.sp=spT-per*names.length}
+    if(rest>0){it.qty=rest;if(+it.sq>it.qty)it.sq=it.qty;if(full)it.sq=rest;cur.items.splice(i+1,0,...add)}else cur.items.splice(i,1,...add);
+    if(rest>0&&sold>0&&!full){const m=Math.min(sold,rest);if(m<sold)it.sp=''}
     names.forEach(n=>{if(!CH().includes(n))S.chars=[...CH(),n]});save();drawEd();toast('已拆成 '+names.length+' 個角色品項',3500);return}
   if(b.dataset.del!==undefined){cur.items.splice(+b.dataset.del,1);if(!cur.items.length)cur.items.push({name:'',qty:1,price:''});drawEd();return}
   if(id==='fil'){const r0=effRate(cur),def=Math.round(+cur.twPaid>0?+cur.twPaid:tw(cur,total(cur))),v=prompt('這筆訂單實際總共付了多少台幣？\n（已填價格的品項照原價，剩下的金額平均分給沒填價格的品項）',def);if(v===null)return;const T=parseFloat(v);if(!(T>0)){toast('請輸入台幣金額');return}const er=fillZero(cur,T);if(er){toast(er,4000);return}drawEd();toast('已把剩餘金額平均分給沒填價格的品項',3500);return}
