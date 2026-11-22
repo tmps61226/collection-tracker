@@ -322,6 +322,7 @@ const BAGRE=/^(.{0,6})?(紙袋|購物袋|塑膠袋|塑膠提袋|手提袋|提袋
 const isBag=n=>BAGRE.test(String(n||'').normalize('NFKC').replace(/\s+/g,'').toLowerCase());
 const bagOn=o=>o.items.some(i=>i.ap)&&o.items.some(i=>!i.ap);
 const bagLine=(o,i)=>{if(!bagOn(o))return 0;const q=+i.qty||0,ln=q*(+i.price||0);if(i.ap)return -ln;const T=o.items.filter(x=>x.ap).reduce((a,x)=>a+(+x.qty||0)*(+x.price||0),0),rest=o.items.filter(x=>!x.ap),rs=rest.reduce((a,x)=>a+(+x.qty||0)*(+x.price||0),0),ru=rest.reduce((a,x)=>a+(+x.qty||1),0);return o.shipBy==='p'&&rs>0?T*ln/rs:(ru>0?T*(q||1)/ru:0)};
+const STAL=[[/yodobashi|ヨドバシ/,['友都巴西','友都八喜','優都巴西','yodobashi']],[/biccamera|ビックカメラ/,['必酷','bic camera','biccamera']],[/edion|エディオン/,['愛電王','edion']],[/don quijote|ドン・キホーテ|ドンキ/,['唐吉訶德','驚安殿堂','donki']],[/daiso|ダイソー/,['大創','daiso']],[/uniqlo|ユニクロ/,['優衣庫','uniqlo']],[/sanrio|サンリオ/,['三麗鷗','sanrio']]];
 let AVC=null;const nkey=x=>String(x||'').trim().toLowerCase();
 const avgMap=()=>{if(AVC)return AVC;const T=new Map();items.forEach(o=>{if(o.status==='wish')return;o.items.forEach(i=>{if(!i.avg||!i.name)return;const q=+i.qty||1,k=nkey(i.name),t=T.get(k)||[0,0];t[0]+=rawUnit(o,i)*q;t[1]+=q;T.set(k,t)})});AVC=new Map([...T].map(([k,t])=>[k,t[0]/(t[1]||1)]));return AVC};
 const unitCost=(o,i)=>{if(i.avg&&i.name){const a=avgMap().get(nkey(i.name));if(a!=null)return a}return rawUnit(o,i)};
@@ -376,7 +377,7 @@ function render(){
     if(fs!=='all'&&!(fs==='sold'?(o.status==='sold'||soldUnits(o)>0):fs==='have'?(o.status==='have'||(o.status==='pre'&&o.items.some(i=>i.got))):o.status===fs))return false;if(!o.items.some(i=>vis(o,i,fc)))return false;
     if($('hs').checked&&o.status==='sold')return false;if(!W&&$('hw').checked&&o.status==='wish')return false;
     if(!q)return true;
-    return [o.items.map(i=>i.name+' '+(i.cat||'')).join(' '),o.seller,o.src,o.cat,o.note].join(' ').toLowerCase().includes(q)});
+    const h=[o.items.map(i=>i.name+' '+(i.cat||'')+' '+(i.note||'')).join(' '),o.seller,o.src,o.cat,o.note].join(' ').toLowerCase();return h.includes(q)||STAL.some(([re,al])=>re.test(h)&&al.some(w=>w.includes(q)))});
   const RK={pre:0,have:1,wish:2,sold:3},dk=o=>o.status==='have'||o.status==='sold'?(o.recvDate||o.buyDate||''):(o.buyDate||'');
   l.sort((a,b)=>so==='price'?tw(b,total(b))-tw(a,total(a)):so==='eta'?(!a.eta&&!b.eta?0:!a.eta?1:!b.eta?-1:b.eta.localeCompare(a.eta)):((RK[a.status]??9)-(RK[b.status]??9))||(a.status==='pre'?(!a.eta&&!b.eta?(b.buyDate||'').localeCompare(a.buyDate||''):!a.eta?1:!b.eta?-1:b.eta.localeCompare(a.eta)):dk(b).localeCompare(dk(a))));
   
@@ -496,7 +497,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v252</div></div>`;
+  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v253</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
