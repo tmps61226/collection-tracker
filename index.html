@@ -473,11 +473,7 @@ function openDetail(id,ix){
   rows+=R('發售日',fmt(o.rel));
   if(o.status!=='pre'&&o.status!=='wish')rows+=R('收貨日期',fmt(o.recvDate));
   if(n>0){rows+=R('出售日期',fmt(o.soldDate))+R('賣出金額',+it.sp?'NT$'+Math.round(+it.sp).toLocaleString():'');if(single&&it.cu)rows+=R('成本','不明（不計入盈虧）');else if(single&&+it.sp){const p=(+it.sp||0)-unitCost(o,it)*n;rows+=R('淨賺／虧損',(p>=0?'+':'')+'NT$'+Math.round(p).toLocaleString())}}
-<<<<<<< HEAD
-  if(ip(o,single?it:null)==='1')rows+=R('歸屬',fpdOf(o,single?it:null)==='g'?'幫朋友買・🎁送禮':'幫朋友買（不算我的）'+(fpdOf(o,single?it:null)==='0'?'・朋友還沒付錢':''));
-=======
-  if(ip(o,single?it:null)==='1')rows+=R('歸屬','幫朋友買・'+(fpdOf(o,single?it:null)==='0'?'未付款':'已付款'));
->>>>>>> main
+  if(ip(o,single?it:null)==='1')rows+=R('歸屬','幫朋友買・'+(fpdOf(o,single?it:null)==='g'?'🎁送禮':fpdOf(o,single?it:null)==='0'?'未付款':'已付款'));
   if(o.link)rows+=R('連結',`<a href="${esc(o.link)}" target="_blank" rel="noopener">開啟</a>`);
   rows+=R('備註',esc(o.note||'').replace(/\n/g,'<br>'));
   const cnt=single?q:o.items.reduce((a,i)=>a+(+i.qty||1),0);
