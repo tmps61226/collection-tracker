@@ -439,7 +439,7 @@ function render(){
   {const fc=$('fc').value,cc={};items.forEach(o=>{if(o.status==='wish')return;o.items.forEach(it=>{if(!it.ch)return;const c=ic(o,it);if(ip(o,it)==='1')return;if(fc==='all'?(S.hid||[]).includes(c):c!==fc)return;if(kindF&&(it.kind||'')!==kindF)return;if(!got(o,it)&&o.status!=='pre')return;cc[it.ch]=(cc[it.ch]||0)+(+it.qty||1)});});
    const cs=Object.keys(cc).sort((a,b)=>cc[b]-cc[a]);if(charF&&!cs.includes(charF))cs.push(charF);
    CH_H=cs.length?`<div class="kchips cchips">${cs.map(k=>`<button class="kc${charF===k?' on':''}" data-cf="${esc(k)}">${esc(k)} <b>${cc[k]||0}</b></button>`).join('')}</div>`:'';
-   if(KH||CH_H){const act=[kindF,charF].filter(Boolean).join('・');$('stats').insertAdjacentHTML('beforeend',`<button type="button" class="ktog${act?' on':''}" data-kt="1">標籤・角色${act?' · '+esc(act):''} <span>${KO?'▴':'▾'}</span></button>${KO?KH+CH_H:''}`)}}
+   if(KH||CH_H){const act=[kindF,charF].filter(Boolean).join('・');$('stats').insertAdjacentHTML('beforeend',`<button type="button" class="ktog${act?' on':''}" data-ktog="1">標籤・角色${act?' · '+esc(act):''} <span>${KO?'▴':'▾'}</span></button>${KO?KH+CH_H:''}`)}}
   $('eye').innerHTML=EYE[S.hide?1:0];$('ttl').textContent=S.title||'收藏櫃';document.title=S.title||'收藏櫃';
   {const n=['hs','hsl','hw','hh'].filter(i=>$(i).checked).length+($('hp').value!=='hide'?1:0);$('fcnt').textContent=n?' · '+n:'';$('fmore').classList.toggle('on',n>0)}
   $('dt').textContent=new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
@@ -575,7 +575,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v273</div></div>`;
+  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v274</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1201,7 +1201,7 @@ function drawSet(){
     <div class="msg">資料只存在這支手機。匯出時選「儲存到檔案」→ iCloud Drive，換手機或資料不見時用「匯入備份」就能還原。</div></div>`;
 }
 $('eye').onclick=()=>{S.hide=!S.hide;save();render()};
-document.addEventListener('click',e=>{const kt=e.target.closest('[data-kt]');if(kt&&$('stats').contains(kt)){KO=!KO;try{localStorage.setItem('kopen',KO?'1':'0')}catch(x){}render();return}const c=e.target.closest('[data-cf]');if(c&&($('stats').contains(c)||$('fpn').contains(c))){const v=c.dataset.cf;charF=(charF===v?'':v);render();return}const k=e.target.closest('[data-kf]');if(k&&$('stats').contains(k)){const v=k.dataset.kf;kindF=(kindF===v?'':v);render()}});
+document.addEventListener('click',e=>{const kt=e.target.closest('[data-ktog]');if(kt&&$('stats').contains(kt)){KO=!KO;try{localStorage.setItem('kopen',KO?'1':'0')}catch(x){}render();return}const c=e.target.closest('[data-cf]');if(c&&($('stats').contains(c)||$('fpn').contains(c))){const v=c.dataset.cf;charF=(charF===v?'':v);render();return}const k=e.target.closest('[data-kf]');if(k&&$('stats').contains(k)){const v=k.dataset.kf;kindF=(kindF===v?'':v);render()}});
 {const SOP=()=>{try{return JSON.parse(lsGet('setOpen')||'{}')}catch(e){return{}}};
 const foldSet=()=>{const o=SOP();SO.querySelectorAll('.cd').forEach(c=>{const h=c.querySelector('h3');if(!h)return;const t=h.textContent.trim();const open=t in o?o[t]:/同步|備份|雲端/.test(t);c.classList.toggle('fold',!open)})};
 const ds0=drawSet;drawSet=function(){ds0();foldSet()};
