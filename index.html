@@ -502,7 +502,7 @@ function render(){
    cells.forEach(c=>{if(c.ch&&!String(c.name).includes(c.ch))c.name=c.name+'・'+c.ch});
    window.GRP=cells.filter(c=>c.grp)}
   if(fMode){const RK={pre:0,unpaid:1,tohand:1,given:2},st=c=>{const it=fitOf(c);return it?RK[flSt(c.o,it)]:1},dt=c=>c.o.eta||c.o.recvDate||c.o.buyDate||'';cells.sort((a,b)=>st(a)-st(b)||(st(a)===0?dt(a).localeCompare(dt(b)):dt(b).localeCompare(dt(a))))}
-  else if(S.preTop===true){const isP=c=>c.o.status==='pre'&&c.st!=='have'&&!c.tag;cells.splice(0,cells.length,...cells.filter(isP),...cells.filter(c=>!isP(c)))}
+  else if(S.preTop!==false){const isP=c=>c.o.status==='pre'&&c.st!=='have'&&!c.tag;cells.splice(0,cells.length,...cells.filter(isP),...cells.filter(c=>!isP(c)))}
   if(imgQ){const sc=new Map(cells.map(c=>[c,imScore(c)]));cells.sort((a,b)=>sc.get(b)-sc.get(a));const k=cells.filter(c=>sc.get(c)>=.2).length;cells.splice(Math.min(12,Math.max(3,k)))}
   window.NAV=cells;
   $('dt').textContent+=' · 共 '+cells.length+' 件';
