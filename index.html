@@ -6,7 +6,7 @@
 <style>
 @font-face{font-family:GenSen;font-weight:100 500;src:url(fonts/gsr-R.woff) format('woff');font-display:swap}
 @font-face{font-family:GenSen;font-weight:501 900;src:url(fonts/gsr-B.woff) format('woff');font-display:swap}
-:root{--bg:#f3f0e8;--card:#fbfaf7;--tx:#2a2622;--mu:#9a938a;--ln:#e7e2d8;--chip:#ebe6da;--tile:#ece8de;--rd:#b05545;--gr:#5f7a4a;--heart:#d98a7a;--ff:"Hoefler Text","Baskerville",GenSen;--num:"Hoefler Text","Baskerville",Georgia,serif;--mono:ui-monospace,"SF Mono",Menlo,"Courier New",monospace;color-scheme:light}
+:root{--sb:#fbdde0;--sd:#efa9b3;--st:#a3485a;--bg:#f3f0e8;--card:#fbfaf7;--tx:#2a2622;--mu:#9a938a;--ln:#e7e2d8;--chip:#ebe6da;--tile:#ece8de;--rd:#b05545;--gr:#5f7a4a;--heart:#d98a7a;--ff:"Hoefler Text","Baskerville",GenSen;--num:"Hoefler Text","Baskerville",Georgia,serif;--mono:ui-monospace,"SF Mono",Menlo,"Courier New",monospace;color-scheme:light}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1b1916;--card:#262320;--tx:#f1ede4;--mu:#8f887d;--ln:#35312c;--chip:#302c27;--tile:#2d2924;color-scheme:dark}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;background-color:var(--bg);background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45 0 0 0 0 .4 0 0 0 0 .33 0 0 0 .09 0'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>");color:var(--tx);font:15px/1.45 var(--ff),-apple-system,"PingFang TC","Noto Sans TC",sans-serif;padding-bottom:110px;padding-top:env(safe-area-inset-top,0px)}
@@ -204,21 +204,21 @@ html,body{touch-action:manipulation}#dv{z-index:5;max-width:100vw;overflow-x:hid
 .pkr{flex-direction:column;align-items:stretch!important;gap:8px!important}.pkr>span:first-child{font-size:13px;color:var(--mu)}
 .pk{display:flex;flex-wrap:wrap;gap:7px}
 .pkb{border:1.5px solid transparent;background:var(--chip);border-radius:999px;padding:7px 14px;font-size:14px;cursor:pointer;line-height:1.2;transition:transform .1s}
-button[data-ct],button[data-kt],button[data-cht]{color:#2b6e5b!important}
+button[data-ct],button[data-kt],button[data-cht]{color:var(--st)!important}
 .pkb:active{transform:scale(.93)}.it .pkb:not(.on):not(.more):not(.inh){background:var(--card)}
-.pkb.on{background:#d9f0e8;border-color:#8fcfb8;color:#2b6e5b;font-weight:600}
+.pkb.on{background:var(--sb);border-color:var(--sd);color:var(--st);font-weight:600}
 .pkb.on::before{content:'✓ '}
-.pkb.inh:not(.on){background:#d9f0e8;border-color:#8fcfb8;color:#2b6e5b;font-weight:600}.pkb.inh:not(.on)::before{content:'✓ '}
+.pkb.inh:not(.on){background:var(--sb);border-color:var(--sd);color:var(--st);font-weight:600}.pkb.inh:not(.on)::before{content:'✓ '}
 .pkb.add{background:var(--chip);color:var(--mu)}
 .pkb.more{background:transparent;color:var(--mu);padding:7px 8px}
 .seg{background:var(--chip);border-radius:999px;padding:4px;gap:2px}
 .seg button{border-radius:999px;font-size:14px;padding:9px 2px}
-.seg button.on{background:#d9f0e8;color:#2b6e5b;box-shadow:0 1px 3px #3a2e1a14}
+.seg button.on{background:var(--sb);color:var(--st);box-shadow:0 1px 3px #3a2e1a14}
 .btn{border-radius:999px;padding:9px 18px;font-size:14px}
 .it .gotl{display:inline-flex;width:auto;margin:2px 6px 8px 0;padding:8px 14px;border-radius:999px;background:var(--card);font-size:14px;gap:6px;cursor:pointer;transition:transform .1s}
 .it .gotl input{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
 .it .gotl:active{transform:scale(.94)}
-.it .gotl:has(input:checked){background:#d9f0e8;color:#2b6e5b;font-weight:600}
+.it .gotl:has(input:checked){background:var(--sb);color:var(--st);font-weight:600}
 .it .gotl:has(input:checked)::before{content:'✓';order:-1}
 </style></head><body>
 <div class="w">
@@ -522,7 +522,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v264</div></div>`;
+  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v265</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
