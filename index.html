@@ -598,7 +598,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v332</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v333</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1623,7 +1623,7 @@ function calLay(D,first,days,pre){
 function calRender(){
   $('chips').style.display='none';
   const pad=n=>String(n).padStart(2,'0'),y=calY,mo=calMo,pre=y+'-'+pad(mo+1)+'-',D={};let cntAll=0;
-  items.forEach(o=>{if(!(o.status==='have'||o.status==='sold')||!o.recvDate)return;o.items.forEach((it,ix)=>{if(ip(o,it)==='1')return;if(it.sell&&sq(it)<(+it.qty||1))return;if(!/漢頓|ハンギョドン|hangyodon/i.test([ic(o,it),it.ch,it.name,it.note,it.kind].join(' ')))return;if(it.hide&&!$('hh').checked)return;if((o.recvDate||'').startsWith(pre))cntAll+=+it.qty||1;const cut=!!(it.img&&it.img.o&&it.img.s);if(!cut)return;const src=it.img.s;(D[o.recvDate]=D[o.recvDate]||[]).push({o,ix,q:+it.qty||1,name:it.name||'未命名',img:src,pol:!cut})})});
+  items.forEach(o=>{const od=o.buyDate||o.recvDate;if(!(o.status==='have'||o.status==='sold')||!od)return;o.items.forEach((it,ix)=>{if(ip(o,it)==='1')return;if(it.sell&&sq(it)<(+it.qty||1))return;if(!/漢頓|ハンギョドン|hangyodon/i.test([ic(o,it),it.ch,it.name,it.note,it.kind].join(' ')))return;if(it.hide&&!$('hh').checked)return;if(od.startsWith(pre))cntAll+=+it.qty||1;const cut=!!(it.img&&it.img.o&&it.img.s);if(!cut)return;const src=it.img.s;(D[od]=D[od]||[]).push({o,ix,q:+it.qty||1,name:it.name||'未命名',img:src,pol:!cut})})});
   const first=new Date(y,mo,1).getDay(),days=new Date(y,mo+1,0).getDate(),td=today(),mon=[];
   let g='';for(let i=0;i<first;i++)g+='<div class="cd0"></div>';
   for(let d=1;d<=days;d++){const k=pre+pad(d);(D[k]||[]).forEach(x=>mon.push(x));g+=`<div class="cdy${k===td?' td':''}"><i>${d}</i></div>`}
@@ -1632,7 +1632,7 @@ function calRender(){
   const st=new Map();mon.forEach(x=>{const k=x.name.trim().toLowerCase();if(!st.has(k))st.set(k,{...x,n:0});st.get(k).n+=x.q});
   $('main').innerHTML=`<div class="cal"><div class="calw ct${mo}"><div class="cch"><span>${CALT[mo]} ${y} 年 ${mo+1} 月</span><button data-cm="0">今天</button><button data-cm="-1">‹</button><button data-cm="1">›</button></div>
   <div class="cwk">${'日一二三四五六'.split('').map(x=>`<div>${x}</div>`).join('')}</div><div class="cgr">${g}</div>
-  <div class="csm">${cntAll?'這個月收到 '+cntAll+' 件・已貼 '+tot+' 張':'這個月沒有收到商品'}</div></div>
+  <div class="csm">${cntAll?'這個月買了 '+cntAll+' 件・已貼 '+tot+' 張':'這個月沒有買商品'}</div></div>
   ${st.size?`<div class="cpk"><h4>這個月的貼紙</h4><div class="pile" style="height:${Math.ceil(st.size/4)*96+20}px">${[...st.values()].map((x,i)=>`<${x.pol?'div':'img'} class="${x.pol?'pol':'stk2'}" data-ci="${x.o.id}|${x.ix}" ${x.pol?'':'loading="lazy" src="'+x.img+'" alt=""'} style="${x.pol?'--pi:url(&quot;'+x.img.replace(/"/g,'%22')+'&quot;);':''}left:${Math.round((i%4)*24+rnd(x.o.id,"x")*5)}%;top:${Math.round(Math.floor(i/4)*96+rnd(x.o.id,"y")*12)}px;transform:rotate(${Math.round(rnd(x.o.id,"r")*40-20)}deg);z-index:${1+Math.floor(rnd(x.o.id,"z")*3)}">${x.pol?'</div>':''}`).join('')}</div></div>`:''}</div>`;
   calLay(D,first,days,pre);
   const pl=document.querySelector('.pile');if(pl&&pl.clientWidth)calDeco(pl,[],pl.clientWidth,pl.clientHeight,60,'p'+y+'-'+mo);
