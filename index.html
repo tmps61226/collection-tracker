@@ -597,7 +597,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v317</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v318</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1609,11 +1609,13 @@ function calLay(D,first,days,pre){
   const gr=document.querySelector('.cgr');if(!gr)return;const w=gr.clientWidth;if(!w)return;const cw=w/7,rowsN=Math.ceil((first+days)/7),pad=n=>String(n).padStart(2,'0');
   const cnt=new Array(rowsN).fill(0);for(let d=1;d<=days;d++)cnt[Math.floor((first+d-1)/7)]+=(D[pre+pad(d)]||[]).length;
   const tot=cnt.reduce((x,y)=>x+y,0),S=tot>45?54:tot>28?60:66;
-  const rh=cnt.map(k=>Math.max(82,Math.ceil(k*S*S*.62/w)+16)),top=[];let H=0;rh.forEach(h=>{top.push(H);H+=h});
+  const rowH=Math.max(82,Math.ceil(tot*S*S*.75/(w*rowsN))+14),rh=cnt.map(()=>rowH),top=[];let H=0;rh.forEach(h=>{top.push(H);H+=h});
   gr.style.gridTemplateRows=rh.map(h=>h+'px').join(' ');
-  const P=[];for(let d=1;d<=days;d++){const col=(first+d-1)%7,r=Math.floor((first+d-1)/7);(D[pre+pad(d)]||[]).forEach(x=>{const hx=(col+.5)*cw,hy=top[r]+rh[r]*.56;P.push({x:hx+(rnd(x.o.id,x.ix+'p')-.5)*24,y:hy+(rnd(x.o.id,x.ix+'q')-.5)*24,hx,hy,it:x})})}
+  const P=[],seq=[];for(let d=1;d<=days;d++)(D[pre+pad(d)]||[]).forEach(x=>seq.push(x));
+  const n=seq.length,nc=Math.max(3,Math.min(7,Math.round(Math.sqrt(n*w/H)))),nr=Math.max(1,Math.ceil(n/nc));
+  seq.forEach((x,i)=>{const r=Math.floor(i/nc),c0=i%nc,c=r%2?nc-1-c0:c0,hx=(c+.5)*w/nc+(rnd(x.o.id,x.ix+'p')-.5)*S*.5,hy=(r+.5)*H/nr+(rnd(x.o.id,x.ix+'q')-.5)*S*.5;P.push({x:hx,y:hy,hx,hy,it:x})});
   const mn=S*.8;for(let k=0;k<90;k++){for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++){const A=P[i],B=P[j];let dx=B.x-A.x,dy=B.y-A.y,dd=Math.hypot(dx,dy);if(dd<mn){if(dd<.01){dx=rnd(A.it.o.id,j)-.5;dy=rnd(B.it.o.id,i)-.5;dd=Math.hypot(dx,dy)||1}const f=(mn-dd)/2/dd;A.x-=dx*f;A.y-=dy*f;B.x+=dx*f;B.y+=dy*f}}
-    P.forEach(p=>{p.x+=(p.hx-p.x)*.025;p.y+=(p.hy-p.y)*.025;p.x=Math.min(w-S*.5,Math.max(S*.5,p.x));p.y=Math.min(H-S*.35,Math.max(S*.35,p.y))})}
+    P.forEach(p=>{p.x+=(p.hx-p.x)*.04;p.y+=(p.hy-p.y)*.04;p.x=Math.min(w-S*.5,Math.max(S*.5,p.x));p.y=Math.min(H-S*.35,Math.max(S*.35,p.y))})}
   const L=document.createElement('div');L.className='cstk';L.innerHTML=P.map((p,i)=>`<img class="stk2" data-ci="${p.it.o.id}|${p.it.ix}" src="${p.it.img}" alt="" style="width:${S}px;height:${S}px;left:${Math.round(p.x-S/2)}px;top:${Math.round(p.y-S/2)}px;transform:rotate(${Math.round(rnd(p.it.o.id,p.it.ix+'r')*44-22)}deg);z-index:${1+Math.floor(rnd(p.it.o.id,p.it.ix+'z')*4)}">${p.it.q>1?`<b class="qb" style="left:${Math.round(Math.min(w-34,p.x+S/2-26))}px;top:${Math.round(p.y+S/2-18)}px">×${p.it.q}</b>`:''}`).join('');
   calDeco(L,P,w,H,S,'m'+calY+'-'+calMo);
   gr.appendChild(L)}
