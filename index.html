@@ -474,7 +474,7 @@ function render(){
     if(!q)return true;
     const h=[o.items.map(i=>i.name+' '+(i.cat||'')+' '+(i.note||'')).join(' '),o.seller,o.src,o.cat,o.note].join(' ').toLowerCase();return h.includes(q)||STAL.some(([re,al])=>re.test(h)&&al.some(w=>w.includes(q)))};
   let l=items.filter(okO);
-  const RK={pre:0,have:1,wish:2,sold:3},dk=o=>o.buyDate||'';
+  const RK={pre:0,have:1,wish:2,sold:3},dk=o=>o.buyDate||o.recvDate||'';
   l.sort((a,b)=>so==='price'?tw(b,total(b))-tw(a,total(a)):so==='eta'?(!a.eta&&!b.eta?0:!a.eta?1:!b.eta?-1:b.eta.localeCompare(a.eta)):dk(b).localeCompare(dk(a))||(b.recvDate||b.eta||'').localeCompare(a.recvDate||a.eta||''));
   
   if(!l.length){$('main').innerHTML='<div class="empty">'+(items.length?(W?'還沒有想買的商品<br>按下方 ＋ 新增，選「想買」':'找不到符合的訂單'):'還沒有任何收藏<br>按下方 ＋ 新增第一件')+'</div>';return}
@@ -598,7 +598,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v330</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v331</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
