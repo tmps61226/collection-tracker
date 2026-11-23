@@ -502,7 +502,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v258</div></div>`;
+  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v259</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1154,7 +1154,7 @@ SO.addEventListener('click',e=>{
   if(b.id==='sydn')syncDown();
   if(b.id==='qrcfg'){showCfgQR();return}
   if(b.id==='cpcfg'){const u=cfgUrl();(navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>toast('已複製。只傳給自己的裝置（例如 AirDrop、備忘錄），不要貼到聊天或給別人')).catch(()=>toast('複製失敗，請改用顯示 QR'));return}
-  if(b.id==='apcfg'){const v=($('cfglink')||{}).value||'',i=v.indexOf('#cfg=');if(i<0){toast('這不是設定連結');return}if(applyCfgRaw(v.slice(i+5).trim())){toast('已設定，開始從雲端下載…');setTimeout(()=>syncDown(),300)}return}
+  if(b.id==='apcfg'){const v=($('cfglink')||{}).value||'',i=v.indexOf('#cfg=');if(i<0){toast('這不是設定連結');return}if(applyCfgRaw(v.slice(i+5).trim())){fillCfg();toast('已設定，開始從雲端下載…');setTimeout(()=>syncDown(),300)}return}
   if(b.id==='syrs')restorePrev();
   if(b.id==='cmpimg')cmpImgs();
   if(b.id==='cleanall')cleanAll();
@@ -1195,6 +1195,7 @@ async function repoHead(){
   try{head=(await ghj('/git/ref/heads/'+br)).object.sha}catch(e){if(e.status!==404&&e.status!==409)throw e}
   return{br,head}}
 let syncBusy=false;
+function fillCfg(){const a=$('ghtok'),b=$('ghrepo'),g=GH();if(a)a.value=g.t||'';if(b)b.value=g.r||''}
 function grabCfg(){const a=$('ghtok'),b=$('ghrepo');if(a)lsSet('ghTok',a.value.trim());if(b&&b.value.trim()!==GH().r){lsSet('ghRepo',b.value.trim());try{localStorage.removeItem('syncSha')}catch(e){}}}
 function syncMsg(){return lastSync()?'上次同步：'+new Date(lastSync()).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'還沒同步過'}
 async function putPrev(){try{
@@ -1717,7 +1718,7 @@ async function autoTrimAll(){
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){autoPull();}else if(autoOn()&&isDirty()&&lsGet('syncSha'))syncUp(true)});
 (async()=>{const a=await loadItems(),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);renderCats();if(window.LOADMISS>0)setTimeout(()=>toast('⚠ 有 '+window.LOADMISS+' 筆資料讀不到，請先不要刪除或匯入，並到設定按「還原下載前的資料」或用備份檔救回',15000),1500);try{if(!localStorage.getItem('fixPaid1')){localStorage.setItem('fixPaid1','1');Promise.resolve(fixPaid()).then(n=>{if(n){render();toast('已把 '+n+' 筆已到貨的訂單標為已付清（可在設定還原）')}})}}catch(e){}try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{const h=localStorage.getItem('hp2')||(localStorage.getItem('hp')==='0'?'all':'hide');$('hp').value=h}catch(e){}
-try{const v=localStorage.getItem('view');if(VB[v])view=v;Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===view))}catch(e){}render();setTimeout(()=>autoTrimAll().catch(()=>{}),400);jobs=[];saveJobs();if(applyCfgHash()){toast('已設定，開始從雲端下載…');setTimeout(()=>syncDown(),300)}else setTimeout(autoPull,1500)})();
+try{const v=localStorage.getItem('view');if(VB[v])view=v;Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===view))}catch(e){}render();setTimeout(()=>autoTrimAll().catch(()=>{}),400);jobs=[];saveJobs();if(applyCfgHash()){fillCfg();toast('已設定，開始從雲端下載…');setTimeout(()=>syncDown(),300)}else setTimeout(autoPull,1500)})();
 
 /* shrink every "NT$" next to numerals (Hoefler old-style figures make caps look big) */
 (function(){
