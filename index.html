@@ -275,6 +275,12 @@ details.adv>summary::-webkit-details-marker{display:none}details.adv>summary::af
 .hps button{border:0;background:transparent;border-radius:999px;padding:8px 2px;font-size:13px;color:var(--tx);cursor:pointer}
 .hps button.on{background:var(--sb);color:var(--st);font-weight:600}
 
+
+.note.bkm{display:flex;align-items:center;gap:6px;padding:7px 8px 7px 16px;border-radius:999px;margin:0 0 10px}
+.bkm span{flex:1;font-size:13px;color:var(--mu);min-width:0}
+.bkm button{border:0;border-radius:999px;padding:7px 14px;font-size:13px;cursor:pointer;flex:none}
+.bkm button[data-bk=now]{background:var(--tx);color:var(--bg)}
+.bkm button[data-bk=later]{background:transparent;color:var(--mu);padding:7px 10px}
 </style></head><body>
 <div class="w">
   <div class="top"><button class="circ" id="gear" aria-label="設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg></button><div><div class="ttl" id="ttl">收藏櫃</div><div class="dt" id="dt"></div></div><button class="circ" id="eye" aria-label="隱藏金額"></button></div>
@@ -584,7 +590,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v275</div></div>`;
+  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v276</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1432,7 +1438,7 @@ function renderBk(){renderJobs();
   const el=$('bk');if(!el)return;let sn=0;try{sn=+localStorage.getItem('bkSnooze')||0}catch(e){}
   const l=lastBk(),d=l?Math.floor((Date.now()-l)/864e5):999;
   if(!items.length||d<BK_DAYS||Date.now()<sn){el.innerHTML='';return}
-  el.innerHTML=`<div class="note"><b>該備份了</b><small>${l?'已 '+d+' 天沒備份。':'還沒備份過。'}你的 ${items.length} 筆資料只存在這支手機，清除瀏覽資料或換手機就會消失。</small><div class="nb"><button class="pri" data-bk="now">立即備份</button><button data-bk="later">之後再說</button></div></div>`}
+  el.innerHTML=`<div class="note bkm"><span>${l?'已 '+d+' 天沒備份':'還沒備份過'}，資料只存在這支手機</span><button data-bk="now">備份</button><button data-bk="later" aria-label="之後再說">✕</button></div>`}
 $('bk').addEventListener('click',e=>{const b=e.target.closest('[data-bk]');if(!b)return;if(b.dataset.bk==='now')doBackup();else{try{localStorage.setItem('bkSnooze',String(Date.now()+2*864e5))}catch(x){}renderBk()}});
 /* arrivals */
 function renderAr(st){
