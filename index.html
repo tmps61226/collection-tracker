@@ -250,9 +250,23 @@ details.adv>summary::-webkit-details-marker{display:none}details.adv>summary::af
 #mo .cd .fr.tt{border-top:1px solid var(--ln);margin-top:4px;padding-top:14px}
 #mo .cd .fr.tt b{font-size:22px}
 #mo .cd .fr.pkr{padding:8px 0}
+
+/* home tidy */
+.top{margin:10px 0 22px}.top>div{min-width:0;text-align:center}
+.ttl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25;padding:2px 0}
+.dt{font-size:13px;margin-top:4px}
+.fmore{border:0;background:var(--chip);border-radius:999px;padding:7px 14px;font-size:13px;cursor:pointer;color:var(--tx)}.fmore.on{background:var(--sb);color:var(--st)}.fmore i{font-style:normal}
+.fpn{background:var(--card);border-radius:20px;padding:12px 14px;margin:-4px 0 12px;box-shadow:0 1px 8px #3a2e1a0a}
+.fpl{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;align-items:center}
+.fpn label{border:1.5px solid var(--ln);background:#fffdf9;border-radius:999px;padding:7px 14px;font-size:13px;color:var(--tx);cursor:pointer}
+.fpn label input{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
+.fpn label:has(input:checked){background:var(--sb);border-color:var(--sb);color:var(--st);font-weight:600}
+.fpn select{border:1.5px solid var(--ln);background:#fffdf9;border-radius:999px;padding:7px 12px;font-size:13px;max-width:none}
+.fpt{font-size:12px;color:var(--mu);margin:4px 0 6px}.fpk{display:flex;flex-wrap:wrap;gap:6px}
+.fpk .kc{flex:none}
 </style></head><body>
 <div class="w">
-  <div class="top"><button class="circ" id="gear" aria-label="設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg></button><div><div class="ttl">收藏櫃</div><div class="dt" id="dt"></div></div><button class="circ" id="eye" aria-label="隱藏金額"></button></div>
+  <div class="top"><button class="circ" id="gear" aria-label="設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg></button><div><div class="ttl" id="ttl">收藏櫃</div><div class="dt" id="dt"></div></div><button class="circ" id="eye" aria-label="隱藏金額"></button></div>
   <div id="stats"></div>
   <div class="srw"><input class="sr" id="q" placeholder="搜尋品名、賣家、備註"><button id="isbtn" type="button" aria-label="以圖搜尋"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.3-2h6.4l1.3 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.3"/></svg></button><input type="file" id="isf" accept="image/*" hidden></div><div id="isb"></div>
   <div id="jb"></div><div id="bk"></div><div id="ar"></div>
@@ -261,7 +275,12 @@ details.adv>summary::-webkit-details-marker{display:none}details.adv>summary::af
   <div class="bar">
     <select id="fc"></select>
     <select id="so"><option value="buy">預設（預購在前）</option><option value="eta">預計到貨（晚的在上）</option><option value="price">價格高低</option></select>
-    <label><input type="checkbox" id="hs">隱藏已售</label><label><input type="checkbox" id="hsl">只看打算賣</label><label><input type="checkbox" id="hw">隱藏種草</label><label><input type="checkbox" id="hh">顯示已隱藏</label><select id="hp"><option value="hide">不含代買</option><option value="all">含代買</option><option value="only">只看代買</option></select>
+    <button type="button" id="fmore" class="fmore">篩選<i id="fcnt"></i> <span>▾</span></button>
+  </div>
+  <div id="fpn" class="fpn" hidden>
+    <div class="fpl"><label><input type="checkbox" id="hs">隱藏已售</label><label><input type="checkbox" id="hsl">只看打算賣</label><label><input type="checkbox" id="hw">隱藏種草</label><label><input type="checkbox" id="hh">顯示已隱藏</label></div>
+    <div class="fpl"><select id="hp"><option value="hide">不含代買</option><option value="all">含代買</option><option value="only">只看代買</option></select></div>
+    <div id="fpc"></div>
   </div>
   <div id="main"></div>
 </div>
@@ -417,8 +436,9 @@ function render(){
    if(ks.length||nk||nkp)$('stats').insertAdjacentHTML('beforeend',`<div class="kchips">${ks.map(k=>chip(k,tot[k]||0,pre[k]||0)).join('')}${nk||nkp?chip('',nk,nkp,'未標籤'):''}</div>`)}
   {const fc=$('fc').value,cc={};items.forEach(o=>{if(o.status==='wish')return;o.items.forEach(it=>{if(!it.ch)return;const c=ic(o,it);if(ip(o,it)==='1')return;if(fc==='all'?(S.hid||[]).includes(c):c!==fc)return;if(kindF&&(it.kind||'')!==kindF)return;if(!got(o,it)&&o.status!=='pre')return;cc[it.ch]=(cc[it.ch]||0)+(+it.qty||1)});});
    const cs=Object.keys(cc).sort((a,b)=>cc[b]-cc[a]);if(charF&&!cs.includes(charF))cs.push(charF);
-   if(cs.length)$('stats').insertAdjacentHTML('beforeend',`<div class="kchips cchips">${cs.map(k=>`<button class="kc${charF===k?' on':''}" data-cf="${esc(k)}">${esc(k)} <b>${cc[k]||0}</b></button>`).join('')}</div>`)}
-  $('eye').innerHTML=EYE[S.hide?1:0];
+   $('fpc').innerHTML=cs.length?`<div class="fpt">角色</div><div class="fpk">${cs.map(k=>`<button class="kc${charF===k?' on':''}" data-cf="${esc(k)}">${esc(k)} <b>${cc[k]||0}</b></button>`).join('')}</div>`:''}
+  $('eye').innerHTML=EYE[S.hide?1:0];$('ttl').textContent=S.title||'收藏櫃';document.title=S.title||'收藏櫃';
+  {const n=['hs','hsl','hw','hh'].filter(i=>$(i).checked).length+($('hp').value!=='hide'?1:0)+(charF?1:0);$('fcnt').textContent=n?' · '+n:'';$('fmore').classList.toggle('on',n>0)}
   $('dt').textContent=new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
   $('chips').innerHTML=[['all','全部'],['pre','預購中'],['have','已到貨'],['wish','想買'],['sold','已售出']].map(c=>`<button class="chip ${$('fs').value===c[0]?'on':''}" data-s="${c[0]}">${c[1]}</button>`).join('');
   $('isb').innerHTML=imgQ?`<div class="isb"><img loading="lazy" decoding="async" src="${imgQ.src}" alt=""><span>以圖搜尋：最像的排最前面</span><button type="button">取消</button></div>`:'';
@@ -552,7 +572,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v271</div></div>`;
+  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v272</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1154,6 +1174,7 @@ function openCrop(m){
 const SO=$('so2');
 function drawSet(){
   SO.innerHTML=`<div class="mh"><button id="sx">完成</button><span></span></div>
+  <div class="cd"><h3>收藏櫃名稱</h3><div class="fr"><span>顯示在首頁最上面</span><input id="ttlin" maxlength="14" placeholder="收藏櫃" value="${esc(S.title||'')}"></div></div>
   <div class="cd"><h3>自訂分類</h3>${S.cats.map((c,i)=>`<div class="cr"><input data-ci="${i}" value="${esc(c)}">${i?`<button data-ct="${i}">置頂</button>`:''}<button data-cd="${i}">刪除</button></div>`).join('')}
     <div class="cr"><input id="newcat" placeholder="新增分類名稱"><button id="addcat" style="color:var(--ac)">新增</button></div></div>
   <div class="cd"><h3>標籤（娃娃、扭蛋、公仔、小物…）</h3>${KD().map((k,i)=>`<div class="cr"><input data-ki="${i}" value="${esc(k)}">${i?`<button data-kt="${i}">置頂</button>`:''}<button data-kd="${i}">刪除</button></div>`).join('')}<div class="cr"><input id="newkind" placeholder="新增標籤"><button id="addkind">新增</button></div><div class="msg">每個品項可以在編輯頁選標籤，首頁會顯示目前分類（例如漢頓）裡各標籤的總數，點數字卡可以只看那個標籤。<button id="autokind" class="chip">依品名自動貼標籤</button></div></div>
@@ -1177,7 +1198,7 @@ function drawSet(){
     <div class="msg">資料只存在這支手機。匯出時選「儲存到檔案」→ iCloud Drive，換手機或資料不見時用「匯入備份」就能還原。</div></div>`;
 }
 $('eye').onclick=()=>{S.hide=!S.hide;save();render()};
-document.addEventListener('click',e=>{const c=e.target.closest('[data-cf]');if(c&&$('stats').contains(c)){const v=c.dataset.cf;charF=(charF===v?'':v);render();return}const k=e.target.closest('[data-kf]');if(k&&$('stats').contains(k)){const v=k.dataset.kf;kindF=(kindF===v?'':v);render()}});
+document.addEventListener('click',e=>{const c=e.target.closest('[data-cf]');if(c&&($('stats').contains(c)||$('fpn').contains(c))){const v=c.dataset.cf;charF=(charF===v?'':v);render();return}const k=e.target.closest('[data-kf]');if(k&&$('stats').contains(k)){const v=k.dataset.kf;kindF=(kindF===v?'':v);render()}});
 {const SOP=()=>{try{return JSON.parse(lsGet('setOpen')||'{}')}catch(e){return{}}};
 const foldSet=()=>{const o=SOP();SO.querySelectorAll('.cd').forEach(c=>{const h=c.querySelector('h3');if(!h)return;const t=h.textContent.trim();const open=t in o?o[t]:/同步|備份|雲端/.test(t);c.classList.toggle('fold',!open)})};
 const ds0=drawSet;drawSet=function(){ds0();foldSet()};
@@ -1185,6 +1206,7 @@ SO.addEventListener('click',e=>{const h=e.target.closest('.cd>h3');if(!h)return;
 $('gear').onclick=()=>{drawSet();SO.classList.add('show')};
 SO.addEventListener('change',e=>{
   const t=e.target;
+  if(t.id==='ttlin'){S.title=t.value.trim();save();render();return}
   if(t.dataset.ci!==undefined){const i=+t.dataset.ci,old=S.cats[i],v=t.value.trim();if(v&&v!==old){S.cats[i]=v;S.hid=(S.hid||[]).map(x=>x===old?v:x);items.forEach(o=>{if(o.cat===old)o.cat=v;o.items.forEach(i=>{if(i.cat===old)i.cat=v})});save();renderCats();render()}else t.value=old}
   if(t.dataset.chi!==undefined){const i=+t.dataset.chi,old=CH()[i],v=t.value.trim();if(v&&v!==old){S.chars=[...CH()];S.chars[i]=v;items.forEach(o=>o.items.forEach(it=>{if(it.ch===old)it.ch=v}));save();render()}return}
   if(t.dataset.ki!==undefined){const i=+t.dataset.ki,old=KD()[i],v=t.value.trim();if(v&&v!==old){S.kinds=[...KD()];S.kinds[i]=v;items.forEach(o=>o.items.forEach(it=>{if(it.kind===old)it.kind=v}));save();render()}return}
@@ -1484,6 +1506,7 @@ $('main').addEventListener('click',e=>{if(fMode){const fd=e.target.closest('[dat
   if(t){e.stopImmediatePropagation();e.preventDefault();if(t.dataset.ft){flTab=t.dataset.ft;render();return}const k=t.dataset.fp||t.dataset.fg,[id,ix]=k.split('|'),o=items.find(x=>x.id===id),it=o&&o.items[+ix];if(it){if(t.dataset.fp)it.fpd=t.dataset.v;else it.giv=t.dataset.v==='1'?(it.giv||today()):'';save();render()}return}
   if(r){e.stopImmediatePropagation();const [id,ix]=r.dataset.fo.split('|');openDetail(id,+ix);return}}const b=e.target.closest('[data-fq],[data-fr]');if(!b)return;e.stopImmediatePropagation();e.preventDefault();const dq=b.dataset.fq!==undefined,[id,ix]=(b.dataset.fq||b.dataset.fr).split('|'),o=items.find(x=>x.id===id),it=o&&o.items[+ix];if(!it)return;
   if(dq){const f=fpdOf(o,it);it.fpd=f==='0'?'1':f==='g'?'0':'g'}else it.giv=it.giv?'':today();save();render()},true);
+$('fmore').addEventListener('click',()=>{const p=$('fpn');p.hidden=!p.hidden;$('fmore').querySelector('span').textContent=p.hidden?'▾':'▴'});
 ['q','fs','fc','so','hs','hsl','hw','hp','hh'].forEach(i=>$(i).addEventListener('input',render));
 /* ---- 以圖搜尋（輕量版：顏色＋形狀特徵） ---- */
 const IF=new Map();let imgQ=null;
