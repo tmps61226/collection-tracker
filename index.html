@@ -269,11 +269,8 @@ details.adv>summary::-webkit-details-marker{display:none}details.adv>summary::af
 #stats .kchips{margin-top:2px}
 
 .fpn{padding:10px;margin:-4px 0 10px}
-.fpl.g4{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+.fpl.g4{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:8px}
 .fpl.g4 label{padding:8px 2px;font-size:12.5px;text-align:center;white-space:nowrap}
-.hps{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--chip);border-radius:999px;padding:3px}
-.hps button{border:0;background:transparent;border-radius:999px;padding:8px 2px;font-size:13px;color:var(--tx);cursor:pointer}
-.hps button.on{background:var(--sb);color:var(--st);font-weight:600}
 
 
 .note.bkm{display:flex;align-items:center;gap:6px;padding:7px 8px 7px 16px;border-radius:999px;margin:0 0 10px}
@@ -295,9 +292,8 @@ details.adv>summary::-webkit-details-marker{display:none}details.adv>summary::af
     <button type="button" id="fmore" class="fmore">篩選<i id="fcnt"></i> <span>▾</span></button>
   </div>
   <div id="fpn" class="fpn" hidden>
-    <div class="fpl g4"><label><input type="checkbox" id="hs">隱藏已售</label><label><input type="checkbox" id="hsl">只看打算賣</label><label><input type="checkbox" id="hh">顯示已隱藏</label></div>
-    <div class="hps" id="hps"><button type="button" data-v="hide">不含代買</button><button type="button" data-v="all">含代買</button><button type="button" data-v="only">只看代買</button></div>
-    <select id="hp" hidden><option value="hide">不含代買</option><option value="all">含代買</option><option value="only">只看代買</option></select>
+    <div class="fpl g4"><label><input type="checkbox" id="hs">隱藏已售</label><label><input type="checkbox" id="hsl">只看打算賣</label><label><input type="checkbox" id="hh">顯示已隱藏</label><label><input type="checkbox" id="hpx">含代買</label></div>
+    <select id="hp" hidden><option value="hide">不含代買</option><option value="all">含代買</option></select>
   </div>
   <div id="main"></div>
 </div>
@@ -456,7 +452,7 @@ function render(){
    CH_H=cs.length?`<div class="kchips cchips">${cs.map(k=>`<button class="kc${charF===k?' on':''}" data-cf="${esc(k)}">${esc(k)} <b>${cc[k]||0}</b></button>`).join('')}</div>`:'';
    if(KH||CH_H){const act=[kindF,charF].filter(Boolean).join('・');$('stats').insertAdjacentHTML('beforeend',`<button type="button" class="ktog${act?' on':''}" data-ktog="1">標籤・角色${act?' · '+esc(act):''} <span>${KO?'▴':'▾'}</span></button>${KO?KH+CH_H:''}`)}}
   $('eye').innerHTML=EYE[S.hide?1:0];$('ttl').textContent=S.title||'收藏櫃';document.title=S.title||'收藏櫃';
-  {const n=['hs','hsl','hh'].filter(i=>$(i).checked).length+($('hp').value!=='hide'?1:0);document.querySelectorAll('#hps button').forEach(b=>b.classList.toggle('on',b.dataset.v===$('hp').value));$('fcnt').textContent=n?' · '+n:'';$('fmore').classList.toggle('on',n>0)}
+  {const n=['hs','hsl','hh'].filter(i=>$(i).checked).length+($('hp').value!=='hide'?1:0);$('hpx').checked=$('hp').value==='all';$('fcnt').textContent=n?' · '+n:'';$('fmore').classList.toggle('on',n>0)}
   $('dt').textContent=new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
   $('chips').innerHTML=[['all','全部'],['pre','預購中'],['have','已到貨'],['wish','想買'],['sold','已售出']].map(c=>`<button class="chip ${$('fs').value===c[0]?'on':''}" data-s="${c[0]}">${c[1]}</button>`).join('');
   $('isb').innerHTML=imgQ?`<div class="isb"><img loading="lazy" decoding="async" src="${imgQ.src}" alt=""><span>以圖搜尋：最像的排最前面</span><button type="button">取消</button></div>`:'';
@@ -590,7 +586,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v280</div></div>`;
+  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v281</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1524,7 +1520,7 @@ $('main').addEventListener('click',e=>{if(fMode){const fd=e.target.closest('[dat
   if(t){e.stopImmediatePropagation();e.preventDefault();if(t.dataset.ft){flTab=t.dataset.ft;render();return}const k=t.dataset.fp||t.dataset.fg,[id,ix]=k.split('|'),o=items.find(x=>x.id===id),it=o&&o.items[+ix];if(it){if(t.dataset.fp)it.fpd=t.dataset.v;else it.giv=t.dataset.v==='1'?(it.giv||today()):'';save();render()}return}
   if(r){e.stopImmediatePropagation();const [id,ix]=r.dataset.fo.split('|');openDetail(id,+ix);return}}const b=e.target.closest('[data-fq],[data-fr]');if(!b)return;e.stopImmediatePropagation();e.preventDefault();const dq=b.dataset.fq!==undefined,[id,ix]=(b.dataset.fq||b.dataset.fr).split('|'),o=items.find(x=>x.id===id),it=o&&o.items[+ix];if(!it)return;
   if(dq){const f=fpdOf(o,it);it.fpd=f==='0'?'1':f==='g'?'0':'g'}else it.giv=it.giv?'':today();save();render()},true);
-$('hps').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$('hp').value=b.dataset.v;$('hp').dispatchEvent(new Event('input'))});
+$('hpx').addEventListener('change',()=>{$('hp').value=$('hpx').checked?'all':'hide';$('hp').dispatchEvent(new Event('input'))});
 $('fmore').addEventListener('click',()=>{const p=$('fpn');p.hidden=!p.hidden;$('fmore').querySelector('span').textContent=p.hidden?'▾':'▴'});
 ['q','fs','fc','so','hs','hsl','hp','hh'].forEach(i=>$(i).addEventListener('input',render));
 /* ---- 以圖搜尋（輕量版：顏色＋形狀特徵） ---- */
