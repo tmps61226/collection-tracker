@@ -215,6 +215,11 @@ button[data-ct],button[data-kt],button[data-cht]{color:#2b6e5b!important}
 .seg button{border-radius:999px;font-size:14px;padding:9px 2px}
 .seg button.on{background:#d9f0e8;color:#2b6e5b;box-shadow:0 1px 3px #3a2e1a14}
 .btn{border-radius:999px;padding:9px 18px;font-size:14px}
+.it .gotl{display:inline-flex;width:auto;margin:2px 6px 8px 0;padding:8px 14px;border-radius:999px;background:var(--card);font-size:14px;gap:6px;cursor:pointer;transition:transform .1s}
+.it .gotl input{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
+.it .gotl:active{transform:scale(.94)}
+.it .gotl:has(input:checked){background:#d9f0e8;color:#2b6e5b;font-weight:600}
+.it .gotl:has(input:checked)::before{content:'✓';order:-1}
 </style></head><body>
 <div class="w">
   <div class="top"><button class="circ" id="gear" aria-label="設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg></button><div><div class="ttl">收藏櫃</div><div class="dt" id="dt"></div></div><button class="circ" id="eye" aria-label="隱藏金額"></button></div>
@@ -517,7 +522,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v263</div></div>`;
+  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v264</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
