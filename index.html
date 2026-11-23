@@ -204,9 +204,11 @@ html,body{touch-action:manipulation}#dv{z-index:5;max-width:100vw;overflow-x:hid
 .pkr{flex-direction:column;align-items:stretch!important;gap:8px!important}.pkr>span:first-child{font-size:13px;color:var(--mu)}
 .pk{display:flex;flex-wrap:wrap;gap:7px}
 .pkb{border:1.5px solid transparent;background:var(--chip);border-radius:999px;padding:7px 14px;font-size:14px;cursor:pointer;line-height:1.2;transition:transform .1s}
-.pkb:active{transform:scale(.93)}.it .pkb:not(.on):not(.add):not(.more){background:var(--card)}
+button[data-ct],button[data-kt],button[data-cht]{color:#2b6e5b!important}
+.pkb:active{transform:scale(.93)}.it .pkb:not(.on):not(.add):not(.more):not(.inh){background:var(--card)}
 .pkb.on{background:#d9f0e8;border-color:#8fcfb8;color:#2b6e5b;font-weight:600}
 .pkb.on::before{content:'✓ '}
+.pkb.inh:not(.on){background:transparent;border:1.5px dashed #8fcfb8;color:#2b6e5b}
 .pkb.add{background:transparent;border:1.5px dashed #bfb8a8;color:var(--mu)}
 .pkb.more{background:transparent;color:var(--mu);padding:7px 8px}
 .seg{background:var(--chip);border-radius:999px;padding:4px;gap:2px}
@@ -515,7 +517,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v261</div></div>`;
+  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v262</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -547,14 +549,19 @@ function openEd(id){if(!id)dvState=null;cur=id?JSON.parse(JSON.stringify(items.f
 function chipify(){
   MO.querySelectorAll('select[data-k="cat"],select[data-k="kind"],select[data-k="ch"],select[data-k="proxy"],select[data-f="cat"],select[data-f="src"]').forEach(sl=>{
     const row=sl.closest('.fr');if(!row||row.querySelector('.pk'))return;row.classList.add('pkr');sl.style.display='none';
-    const lim=(sl.dataset.k==='ch'||sl.dataset.f==='src')?9:99,opts=[...sl.options].map(o=>({v:o.value,t:o.textContent.replace(/（(.+)）/,' · $1')}));
+    const lim=6,all=[...sl.options].map(o=>({v:o.value,t:o.textContent})),none=all.find(o=>o.v==='');
+    let inh=null;if(none){const m=none.t.match(/（(.+)）/);if(m){inh=m[1];if(sl.dataset.k==='proxy')inh=inh==='我的'?'0':'1'}}
+    const opts=all.filter(o=>o.v!=='').map(o=>({v:o.v,t:o.t.replace('（不算我的）','')}));
+    const isInh=o=>sl.value===''&&inh!==null&&(sl.dataset.k==='proxy'?o.v===inh:o.v===inh);
     const box=document.createElement('div');box.className='pk';let open=false;
-    const draw=()=>{const sv=sl.value;let list=opts;if(!open&&opts.length>lim+1){const keep=opts.filter(o=>o.v!=='__new');const head=keep.slice(0,lim);const sel=keep.find(o=>o.v===sv);if(sel&&!head.includes(sel))head.push(sel);list=head.concat(opts.filter(o=>o.v==='__new'))}
-      box.innerHTML=list.map(o=>`<button type="button" class="pkb ${o.v===sv?'on':''} ${o.v==='__new'?'add':''}" data-pv="${esc(o.v)}">${esc(o.t.replace(/^[＋+]\s*/,'＋ ').replace('…',''))}</button>`).join('')+(opts.length>lim+1?`<button type="button" class="pkb more" data-pm="1">${open?'收合 ▴':'更多 ▾'}</button>`:'')};
+    const draw=()=>{const sv=sl.value,real=opts.filter(o=>o.v!=='__new'),add=opts.filter(o=>o.v==='__new');let list=real;
+      if(!open&&real.length>lim){const head=real.slice(0,lim);real.forEach(o=>{if((o.v===sv||isInh(o))&&!head.includes(o))head.push(o)});list=head}
+      box.innerHTML=list.map(o=>`<button type="button" class="pkb ${o.v===sv?'on':''} ${isInh(o)?'inh':''}" data-pv="${esc(o.v)}">${esc(o.t)}</button>`).join('')+(real.length>lim?`<button type="button" class="pkb more" data-pm="1">${open?'收起 ▴':'更多 ▾'}</button>`:'')+add.map(o=>`<button type="button" class="pkb add" data-pv="__new">＋ 新增</button>`).join('')};
     draw();
     box.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;e.stopPropagation();
       if(b.dataset.pm){open=!open;draw();return}
-      sl.value=b.dataset.pv;sl.dispatchEvent(new Event('input',{bubbles:true}));if(sl.isConnected)draw()});
+      let v=b.dataset.pv;if(v===sl.value&&v!=='__new'&&none)v='';
+      sl.value=v;sl.dispatchEvent(new Event('input',{bubbles:true}));if(sl.isConnected)draw()});
     row.appendChild(box)})}
 function drawEd(){
   const k=localStorage.getItem('gk')||'';
@@ -1109,10 +1116,10 @@ function openCrop(m){
 const SO=$('so2');
 function drawSet(){
   SO.innerHTML=`<div class="mh"><button id="sx">完成</button><span></span></div>
-  <div class="cd"><h3>自訂分類</h3>${S.cats.map((c,i)=>`<div class="cr"><input data-ci="${i}" value="${esc(c)}"><button data-cd="${i}">刪除</button></div>`).join('')}
+  <div class="cd"><h3>自訂分類</h3>${S.cats.map((c,i)=>`<div class="cr"><input data-ci="${i}" value="${esc(c)}">${i?`<button data-ct="${i}">置頂</button>`:''}<button data-cd="${i}">刪除</button></div>`).join('')}
     <div class="cr"><input id="newcat" placeholder="新增分類名稱"><button id="addcat" style="color:var(--ac)">新增</button></div></div>
-  <div class="cd"><h3>標籤（娃娃、扭蛋、公仔、小物…）</h3>${KD().map((k,i)=>`<div class="cr"><input data-ki="${i}" value="${esc(k)}"><button data-kd="${i}">刪除</button></div>`).join('')}<div class="cr"><input id="newkind" placeholder="新增標籤"><button id="addkind">新增</button></div><div class="msg">每個品項可以在編輯頁選標籤，首頁會顯示目前分類（例如漢頓）裡各標籤的總數，點數字卡可以只看那個標籤。<button id="autokind" class="chip">依品名自動貼標籤</button></div></div>
-  <div class="cd"><h3>角色（美樂蒂、漢頓…）</h3>${CH().map((k,i)=>`<div class="cr"><input data-chi="${i}" value="${esc(k)}"><button data-chd="${i}">刪除</button></div>`).join('')}<div class="cr"><input id="newchar" placeholder="新增角色"><button id="addchar">新增</button></div><div class="msg">品項編輯頁可以選角色，首頁會出現角色數字卡，點一下只看那個角色。</div></div>
+  <div class="cd"><h3>標籤（娃娃、扭蛋、公仔、小物…）</h3>${KD().map((k,i)=>`<div class="cr"><input data-ki="${i}" value="${esc(k)}">${i?`<button data-kt="${i}">置頂</button>`:''}<button data-kd="${i}">刪除</button></div>`).join('')}<div class="cr"><input id="newkind" placeholder="新增標籤"><button id="addkind">新增</button></div><div class="msg">每個品項可以在編輯頁選標籤，首頁會顯示目前分類（例如漢頓）裡各標籤的總數，點數字卡可以只看那個標籤。<button id="autokind" class="chip">依品名自動貼標籤</button></div></div>
+  <div class="cd"><h3>角色（美樂蒂、漢頓…）</h3>${CH().map((k,i)=>`<div class="cr"><input data-chi="${i}" value="${esc(k)}">${i?`<button data-cht="${i}">置頂</button>`:''}<button data-chd="${i}">刪除</button></div>`).join('')}<div class="cr"><input id="newchar" placeholder="新增角色"><button id="addchar">新增</button></div><div class="msg">品項編輯頁可以選角色，首頁會出現角色數字卡，點一下只看那個角色。</div></div>
   <div class="cd"><h3>收藏櫃不顯示的分類</h3>${S.cats.map((c,i)=>`<div class="fr"><span>${esc(c)}</span><input data-hid="${esc(c)}" type="checkbox" ${(S.hid||[]).includes(c)?'checked':''} style="flex:none;width:auto"></div>`).join('')}<div class="msg">勾選的分類平常不會出現在收藏櫃和統計裡；在上面「全部分類」直接選那個分類，還是看得到。</div></div>
   <div class="cd"><h3>購買來源</h3>${SRC.slice(0,-1).filter(x=>!(S.srcHide||[]).includes(x)).map(c=>`<div class="cr"><input value="${esc(c)}" readonly><button data-bd="${esc(c)}">刪除</button></div>`).join('')}${(S.srcX||[]).map((c,i)=>`<div class="cr"><input value="${esc(c)}" readonly><button data-xd="${i}">刪除</button></div>`).join('')}<div class="cr"><input id="newsrc" placeholder="新增來源（例如：Yahoo拍賣）"><button id="addsrc">新增</button></div><div class="msg">刪除後，已經用這個來源的訂單不受影響。${(S.srcHide||[]).length?'<button id="srcreset" class="chip">還原已刪除的內建來源</button>':''}</div></div>
   <div class="cd"><h3>朋友代買</h3><div class="fr"><span>朋友的東西到貨後自動隱藏</span><input id="ahp" type="checkbox" ${S.ahp!==false?'checked':''} style="flex:none;width:auto"></div><div class="msg">開啟後，幫朋友買的品項一旦標為「已到貨」，就不再出現在收藏櫃（含「含代買」「只看代買」），所以「只看代買」會剩下還沒到的。想看時，勾上方的「顯示已隱藏」。</div></div>
@@ -1160,6 +1167,9 @@ SO.addEventListener('click',e=>{
   const gl=e.target.closest('[data-gl]');if(gl){lsSet('glass',gl.dataset.gl);render();drawSet();return}
   const b=e.target.closest('button');if(!b)return;
   if(b.id==='sx'){SO.classList.remove('show');renderCats();render()}
+  if(b.dataset.ct!==undefined){const i=+b.dataset.ct;S.cats.unshift(S.cats.splice(i,1)[0]);save();renderCats&&renderCats();drawSet();return}
+  if(b.dataset.kt!==undefined){const i=+b.dataset.kt,l=[...KD()];l.unshift(l.splice(i,1)[0]);S.kinds=l;save();drawSet();render();return}
+  if(b.dataset.cht!==undefined){const i=+b.dataset.cht,l=[...CH()];l.unshift(l.splice(i,1)[0]);S.chars=l;save();drawSet();render();return}
   if(b.dataset.cd!==undefined){if(confirm('刪除這個分類？（已使用的訂單不會被刪除）')){S.cats.splice(+b.dataset.cd,1);save();drawSet()}}
   if(b.id==='addchar'){const v=$('newchar').value.trim();if(v&&!CH().includes(v)){S.chars=[...CH(),v];save();drawSet()}return}
   if(b.dataset.chd!==undefined){const k=CH()[+b.dataset.chd];if(confirm('刪除角色「'+k+'」？已設定的品項會變成未設定。')){S.chars=CH().filter(x=>x!==k);items.forEach(o=>o.items.forEach(it=>{if(it.ch===k)delete it.ch}));save();drawSet();render()}return}
