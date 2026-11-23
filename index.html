@@ -244,7 +244,7 @@ button[data-ct],button[data-kt],button[data-cht]{color:var(--ac)!important}
 
 details.adv{margin:4px 0}details.adv>summary{cursor:pointer;color:var(--ac);font-size:14px;padding:10px 0;list-style:none;display:flex;justify-content:space-between}
 details.adv>summary::-webkit-details-marker{display:none}details.adv>summary::after{content:'▾';color:var(--mu)}details.adv[open]>summary::after{content:'▴'}
-.shr{display:flex;gap:6px;flex-wrap:nowrap;padding:6px 0}.shr .btn{margin:0;flex:1;white-space:nowrap;padding:10px 6px}
+.shb{display:flex;gap:6px;flex-wrap:nowrap;padding:6px 0}.shb .btn{margin:0;flex:1;white-space:nowrap;padding:10px 6px}
 
 #mo .cd .fr{border-bottom:0;padding:10px 0}
 #mo .cd .fr.tt{border-top:1px solid var(--ln);margin-top:4px;padding-top:14px}
@@ -590,7 +590,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v277</div></div>`;
+  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v278</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -644,7 +644,7 @@ function drawEd(){
   $('mo').innerHTML=`
   <div class="mh"><button id="cx">取消</button><span>${cur._new?'':'<button class="dl" id="dl">刪除</button> '}<button class="sv" id="sv">儲存</button></span></div>
   <div class="cd"><h3>截圖自動填表</h3>
-    <div class="shr"><button class="btn pri" id="shot">📷 上傳截圖</button><button class="btn" id="doc">📄 上傳檔案</button>${cur.imgs.length?'<button class="btn" id="reshot">🔄 重新辨識</button>':''}</div>
+    <div class="shb"><button class="btn pri" id="shot">📷 上傳截圖</button><button class="btn" id="doc">📄 上傳檔案</button>${cur.imgs.length?'<button class="btn" id="reshot">🔄 重新辨識</button>':''}</div>
     <input type="file" id="docf" accept="application/pdf,.pdf,.txt,.md,.csv,.tsv,.json,.html,.htm,.eml,.xlsx,.xlsm,.xls,.ods,.docx,text/*,image/*" multiple hidden><input type="file" id="shotf" accept="image/*" multiple hidden>
     <div class="msg" id="msg"></div><div class="msg" id="gu"></div>
     <details class="adv" data-adv="gk" ${(!k||ADV.gk)?'open':''}><summary>金鑰設定</summary><div class="fr"><span>Gemini Key</span><input id="gk" type="password" placeholder="貼上免費金鑰" value="${esc(k)}"></div><button class="btn" id="tk">測試金鑰</button></details></div>
