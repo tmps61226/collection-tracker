@@ -103,6 +103,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .sc img{width:100%;height:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 1px 0 #fff) drop-shadow(0 -1px 0 #fff) drop-shadow(0 2px 2px #0002)}
 .sc:active{transform:scale(.96)}
 .sc.em{border:1.5px dashed #c9ced6;border-radius:14px;aspect-ratio:.8;margin:2px 4px 8px;display:flex;align-items:center;justify-content:center;color:#b3b9c2;font-size:22px}
+.cal{padding:2px 0 120px}.cch{display:flex;align-items:center;gap:8px;margin:4px 0 10px}.cch span{flex:1;font-size:20px;font-weight:800;font-family:var(--hw)}.cch button{border:0;background:var(--chip);color:var(--tx);border-radius:999px;min-width:38px;height:34px;padding:0 12px;font-size:15px;font-weight:700}.cwk,.cgr{display:grid;grid-template-columns:repeat(7,1fr)}.cwk div{text-align:center;font-size:12px;color:var(--mu);padding:4px 0}.cwk div:first-child{color:#b05545}.cgr{background:var(--card);border-radius:18px;overflow:hidden;box-shadow:0 3px 12px #3a2e1a0d}.cdy,.cd0{height:68px;border-top:1px solid var(--ln);border-left:1px solid var(--ln);position:relative;box-sizing:border-box;overflow:hidden}.cdy:nth-child(7n+1),.cd0:nth-child(7n+1){border-left:0}.cdy i{position:absolute;top:3px;right:5px;font-style:normal;font-size:11.5px;color:var(--mu)}.cdy.has{background:#f0e6df}.cdy.has i{color:#b05545;font-weight:700}.cdy.td i{background:var(--sb);color:var(--st);border-radius:999px;padding:0 5px}.cdy.sel{box-shadow:inset 0 0 0 2px var(--sb)}.cst{position:absolute;inset:14px 4px 3px;display:flex;align-items:center;justify-content:center}.cst img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 1px 2px #0003)}.cdy b{position:absolute;left:4px;top:3px;font-size:11px;color:#c0503f;font-style:italic}.csm{margin:12px 2px 6px;font-size:14px;color:var(--mu)}.cdl{background:var(--card);border-radius:18px;padding:6px 14px;margin-top:10px;box-shadow:0 3px 12px #3a2e1a0d}.cdl div{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--ln)}.cdl div:first-child{border:0}.cdl img{width:40px;height:40px;object-fit:contain}.cdl span{flex:1;font-weight:600;font-size:14px}.cdl small{color:var(--mu);font-size:12px}.cpk{background:var(--card);border-radius:18px;padding:12px 14px 8px;margin-top:12px;box-shadow:0 3px 12px #3a2e1a0d}.cpk h4{margin:0 0 8px;font-size:14px}.cps{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px}.cps>div{flex:0 0 72px;text-align:center;font-size:11.5px}.cps img{width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 1px 2px #0003)}.cps em{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:normal;margin-top:2px}
 .nav{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;gap:10px;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:#fffffffa;border-radius:28px 28px 0 0;box-shadow:0 -6px 22px #3a2e1a14;z-index:4}
 .pill{pointer-events:auto;display:flex;flex:1;gap:8px;background:none;border:0;border-radius:0;padding:0;box-shadow:none}
 .pill button{flex:1;height:50px;border:0;border-radius:25px;background:#f3f0e8;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:1;color:#9a9284}
@@ -300,7 +301,7 @@ details.adv>summary::-webkit-details-marker{display:none}details.adv>summary::af
   </div>
   <div id="main"></div>
 </div>
-<div class="nav"><div class="pill"><button id="vs" aria-label="櫃子"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M4 9.2h16M4 14.8h16"/></svg></button><button id="vg" aria-label="想買"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5S3.5 15 3.5 8.9A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 8.5 1.9C20.5 15 12 20.5 12 20.5z"/></svg></button><button id="vl" aria-label="列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button><button id="vf" aria-label="朋友的商品"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.4-3.4 2.7-5.2 5.5-5.2s5.1 1.8 5.5 5.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M16.5 14.2c2.4 0 3.8 1.6 4.1 4"/></svg></button></div><button class="plus" id="add" aria-label="新增"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
+<div class="nav"><div class="pill"><button id="vs" aria-label="櫃子"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M4 9.2h16M4 14.8h16"/></svg></button><button id="vg" aria-label="想買"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5S3.5 15 3.5 8.9A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 8.5 1.9C20.5 15 12 20.5 12 20.5z"/></svg></button><button id="vl" aria-label="列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button><button id="vc" aria-label="月曆"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16M8.5 3.5v3M15.5 3.5v3"/></svg></button><button id="vf" aria-label="朋友的商品"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.4-3.4 2.7-5.2 5.5-5.2s5.1 1.8 5.5 5.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M16.5 14.2c2.4 0 3.8 1.6 4.1 4"/></svg></button></div><button class="plus" id="add" aria-label="新增"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
 <div id="toast"></div>
 <div class="sheet" id="sheet"><div class="box"><button data-n="have"><b>已買到了</b><small>門市、日本現場、自己去買的</small></button><button data-n="pre"><b>預購／喊單</b><small>還沒到貨，等收貨</small></button><button data-n="wish"><b>想買</b><small>先記起來，之後再決定</small></button><button data-n="file"><b>📄 匯入檔案新增商品</b><small>Excel、CSV、JSON、PDF、Word、文字都可以</small></button><button id="tlt" class="tlt"><b>🧰 整理工具</b><small>合併、找重複、找紙袋、批次刪除 ▾</small></button><div id="tlb" class="tlb" hidden><button data-n="merge"><b>🔗 合併現有訂單</b></button><button data-n="rcpt"><b>🧾 合併同一張收據</b></button><button data-n="bag"><b>🛍 找紙袋／袋子品項</b></button><button data-n="dup"><b>🔍 找重複的商品</b></button><button data-n="del"><b>🗑 批次刪除訂單</b></button></div></div></div><div class="mo" id="mg" style="z-index:7"></div><div class="mo" id="fl" style="z-index:4"></div><input type="file" id="bulkf" accept=".json,.csv,.tsv,.xlsx,.xlsm,.xls,.ods,.docx,.pdf,.txt,.md,.html,.htm,.eml,application/pdf,text/*,image/*" multiple hidden>
 <div id="selbar"><button id="selx">取消</button><span id="selmsg"></span><button id="seldel">刪除</button></div><div class="mo" id="dv"></div><div class="mo" id="mo"></div><div class="mo" id="so2"></div>
@@ -502,6 +503,7 @@ function render(){
   const im=c=>c.img?`<img loading="lazy" decoding="async" src="${c.img}" alt="">`:'<span style="font:12px var(--mono);color:var(--mu)">無圖片</span>';
   if(fMode){$('main').innerHTML=flBody();return}
   const vw=view;
+  if(vw==='cal'){calRender();return}
   if(vw==='shelf'){
     const rows=[];for(let i=0;i<cells.length;i+=4)rows.push(cells.slice(i,i+4));
     const last=rows[rows.length-1];const fill=4-last.length;
@@ -590,7 +592,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v300</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v301</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1561,9 +1563,30 @@ $('q').addEventListener('input',()=>{if(imgQ&&$('q').value){imgQ=null;render()}}
 
 $('hp').addEventListener('input',()=>{try{localStorage.setItem('hp2',$('hp').value)}catch(e){}});
 $('fc').addEventListener('input',()=>setFc($('fc').value));
-const VB={grid:'vg',list:'vl',shelf:'vs'};
+const VB={grid:'vg',list:'vl',shelf:'vs',cal:'vc'};
+let calY=new Date().getFullYear(),calMo=new Date().getMonth(),calD='';
+function calRender(){
+  $('chips').style.display='none';
+  const pad=n=>String(n).padStart(2,'0'),y=calY,mo=calMo,pre=y+'-'+pad(mo+1)+'-',D={};
+  items.forEach(o=>{if(!(o.status==='have'||o.status==='sold')||!o.recvDate)return;o.items.forEach((it,ix)=>{if(it.hide&&!$('hh').checked)return;(D[o.recvDate]=D[o.recvDate]||[]).push({o,ix,q:+it.qty||1,name:it.name||'未命名',img:it.img?it.img.s:cover(o)})})});
+  const first=new Date(y,mo,1).getDay(),days=new Date(y,mo+1,0).getDate(),td=today(),mon=[];
+  let g='';for(let i=0;i<first;i++)g+='<div class="cd0"></div>';
+  for(let d=1;d<=days;d++){const k=pre+pad(d),L=D[k]||[],n=L.reduce((a,x)=>a+x.q,0);L.forEach(x=>mon.push(x));
+    g+=`<div class="cdy${L.length?' has':''}${k===td?' td':''}${k===calD?' sel':''}" data-cd="${k}"><i>${d}</i>${L.length?`<div class="cst">${L[0].img?`<img loading="lazy" src="${L[0].img}" alt="">`:'🎁'}</div>${n>1?`<b>×${n}</b>`:''}`:''}</div>`}
+  const tot=mon.reduce((a,x)=>a+x.q,0),sel=D[calD]||[];
+  const st=new Map();mon.forEach(x=>{const k=x.name.trim().toLowerCase();if(!st.has(k))st.set(k,{...x,n:0});st.get(k).n+=x.q});
+  $('main').innerHTML=`<div class="cal"><div class="cch"><span>${y} 年 ${mo+1} 月</span><button data-cm="0">今天</button><button data-cm="-1">‹</button><button data-cm="1">›</button></div>
+  <div class="cwk">${'日一二三四五六'.split('').map(x=>`<div>${x}</div>`).join('')}</div><div class="cgr">${g}</div>
+  ${sel.length?`<div class="cdl">${sel.map(x=>`<div data-ci="${x.o.id}|${x.ix}">${x.img?`<img src="${x.img}" alt="">`:''}<span>${esc(x.name)}</span><small>${x.q>1?'×'+x.q:''}</small></div>`).join('')}</div>`:''}
+  <div class="csm">${tot?'這個月收到 '+tot+' 件':'這個月沒有收到商品'}</div>
+  ${st.size?`<div class="cpk"><h4>收藏貼紙</h4><div class="cps">${[...st.values()].map(x=>`<div data-ci="${x.o.id}|${x.ix}">${x.img?`<img loading="lazy" src="${x.img}" alt="">`:'<div style="height:64px">🎁</div>'}<em>${esc(x.name)}${x.n>1?' ×'+x.n:''}</em></div>`).join('')}</div></div>`:''}</div>`;
+}
+document.addEventListener('click',e=>{if(view!=='cal')return;const t=e.target.closest('[data-cm],[data-cd],[data-ci]');if(!t||!$('main').contains(t))return;
+  if(t.dataset.cm!==undefined){const v=+t.dataset.cm;if(v===0){const n=new Date();calY=n.getFullYear();calMo=n.getMonth()}else{calMo+=v;if(calMo<0){calMo=11;calY--}if(calMo>11){calMo=0;calY++}}calD='';render();return}
+  if(t.dataset.cd){calD=calD===t.dataset.cd?'':t.dataset.cd;render();return}
+  if(t.dataset.ci){const [id,ix]=t.dataset.ci.split('|');openDetail(id,+ix)}});
 function setView(v){fMode=false;$('vf').classList.remove('on');view=v;try{localStorage.setItem('view',v)}catch(e){}Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===v));render()}
-$('vg').onclick=()=>setView('grid');$('vl').onclick=()=>setView('list');$('vs').onclick=()=>setView('shelf');
+$('vg').onclick=()=>setView('grid');$('vl').onclick=()=>setView('list');$('vs').onclick=()=>setView('shelf');$('vc').onclick=()=>setView('cal');
 $('vf').onclick=()=>{fMode=!fMode;flTab='all';Object.values(VB).forEach(id=>$(id).classList.toggle('on',!fMode&&VB[view]===id));$('vf').classList.toggle('on',fMode);render();window.scrollTo(0,0)};
 $('add').onclick=()=>{$('tlb').hidden=true;$('sheet').classList.add('show')};
 $('sheet').addEventListener('click',e=>{
