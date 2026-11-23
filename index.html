@@ -568,7 +568,7 @@ function openDetail(id,ix){
   if(+o.twPaid>0){let ta=+o.twPaid;if(o.feeLater==='1')ta+=(+o.feeAmt>0?+o.feeAmt:o.twPaid*feeOf(o)/100);rows=rows.replace(/<div class="dr amt"><span>訂單總額<\/span>.*?<\/div>/,'');rows+=R('訂單總額','NT$'+Math.round(ta).toLocaleString())}
   if(o.taxf==='done'&&(single?txI(o,it)>0:txO(o)>0))rows+=R('已退稅','−'+pp(o,single?txI(o,it):txO(o)));else if(o.taxf==='can')rows+=R('退稅','可退稅・還沒領');
   rows+=R('發售日',fmt(o.rel));
-  if(o.status==='pre'&&FS[o.fs])rows+=R('貨況',FS[o.fs]);if(+o.finAmt>0)rows+=R('尾款',pp(o,+o.finAmt));if(+o.supAmt>0)rows+=R('二補',pp(o,+o.supAmt));
+  if(o.status==='pre'&&FS[o.fs])rows+=R('貨況',FS[o.fs]);if(+o.supAmt>0)rows+=R('二補',pp(o,+o.supAmt));
   if(o.status!=='pre'&&o.status!=='wish')rows+=R('收貨日期',fmt(o.recvDate));
   if(n>0){rows+=R('出售日期',fmt(o.soldDate))+R('賣出金額',+it.sp?'NT$'+Math.round(+it.sp).toLocaleString():'');if(single&&it.cu)rows+=R('成本','不明（不計入盈虧）');else if(single&&+it.sp){const p=(+it.sp||0)-unitCost(o,it)*n;rows+=R('淨賺／虧損',(p>=0?'+':'')+'NT$'+Math.round(p).toLocaleString())}}
   if(ip(o,single?it:null)==='1')rows+=R('歸屬','幫朋友買・'+(fpdOf(o,single?it:null)==='g'?'🎁送禮':fpdOf(o,single?it:null)==='0'?'未付款':'已付款'));
@@ -590,7 +590,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v290</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v291</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -619,7 +619,7 @@ DV.addEventListener('click',e=>{const h=e.target.closest('[data-dh]');if(h&&dvSt
   if(b.id==='ded'){DV.classList.remove('show');openEd(dvState.id)}
   if(b.id==='ddl'&&confirm('確定要刪除這筆訂單？')){items=items.filter(x=>x.id!==dvState.id);dvState=null;save();render();DV.classList.remove('show')}});
 let ADV={};
-const XF=[['deposit','已付訂金','number','0'],['ship','運費／折扣','text','折扣填負數'],['finAmt','尾款','number','金額'],['supAmt','二補','number','金額']];
+const XF=[['deposit','已付訂金','number','0'],['ship','運費／折扣','text','折扣填負數'],['supAmt','二補','number','金額']];
 const xon=k=>{const x=ADV.ex||{};if(k in x)return x[k];return k==='ship'?(+cur.ship||0)!==0:k==='deposit'?cur.pay==='deposit':(+cur[k]||0)>0};
 const xfields=()=>`<div class="xch">${XF.map(f=>`<button data-ex="${f[0]}" class="${xon(f[0])?'on':''}">${f[1]}</button>`).join('')}</div>`+XF.filter(f=>xon(f[0])).map(f=>`<div class="fr big"><span>${f[1]}</span><input data-f="${f[0]}" type="${f[2]}" ${f[2]==='number'?'inputmode="decimal"':''} value="${esc(cur[f[0]])}" placeholder="${f[3]}"></div>`).join('');
 function openEd(id){ADV={};if(!id)dvState=null;cur=id?JSON.parse(JSON.stringify(items.find(o=>o.id===id))):newOrder();cur._new=!id;drawEd();$('mo').classList.add('show');$('mo').scrollTop=0}
