@@ -6,7 +6,7 @@
 <style>
 @font-face{font-family:GenSen;font-weight:100 500;src:url(fonts/gsr-R.woff) format('woff');font-display:swap}
 @font-face{font-family:GenSen;font-weight:501 900;src:url(fonts/gsr-B.woff) format('woff');font-display:swap}
-:root{--sb:#fbdde0;--sd:#efa9b3;--st:#a3485a;--bg:#f3f0e8;--card:#fbfaf7;--tx:#2a2622;--mu:#9a938a;--ln:#e7e2d8;--chip:#ebe6da;--tile:#ece8de;--rd:#b05545;--gr:#5f7a4a;--heart:#d98a7a;--ff:"Hoefler Text","Baskerville",GenSen;--num:"Hoefler Text","Baskerville",Georgia,serif;--mono:ui-monospace,"SF Mono",Menlo,"Courier New",monospace;color-scheme:light}
+:root{--sb:#f7a9b9;--sd:#ee8aa0;--st:#561b2d;--bg:#f3f0e8;--card:#fbfaf7;--tx:#2a2622;--mu:#9a938a;--ln:#e7e2d8;--chip:#ebe6da;--tile:#ece8de;--rd:#b05545;--gr:#5f7a4a;--heart:#d98a7a;--ff:"Hoefler Text","Baskerville",GenSen;--num:"Hoefler Text","Baskerville",Georgia,serif;--mono:ui-monospace,"SF Mono",Menlo,"Courier New",monospace;color-scheme:light}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1b1916;--card:#262320;--tx:#f1ede4;--mu:#8f887d;--ln:#35312c;--chip:#302c27;--tile:#2d2924;color-scheme:dark}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;background-color:var(--bg);background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45 0 0 0 0 .4 0 0 0 0 .33 0 0 0 .09 0'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>");color:var(--tx);font:15px/1.45 var(--ff),-apple-system,"PingFang TC","Noto Sans TC",sans-serif;padding-bottom:110px;padding-top:env(safe-area-inset-top,0px)}
@@ -220,6 +220,9 @@ button[data-ct],button[data-kt],button[data-cht]{color:var(--st)!important}
 .it .gotl:active{transform:scale(.94)}
 .it .gotl:has(input:checked){background:var(--sb);color:var(--st);font-weight:600}
 .it .gotl:has(input:checked)::before{content:'✓';order:-1}
+.it .gotl:has(input:checked){box-shadow:0 0 0 2px var(--sd) inset}
+.it .sellc:has(input:checked){background:#ffd54a;color:#5a4300;box-shadow:0 0 0 2px #f0b800 inset}
+.pkb.on,.pkb.inh:not(.on){box-shadow:0 1px 4px #3a2e1a22}
 </style></head><body>
 <div class="w">
   <div class="top"><button class="circ" id="gear" aria-label="設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg></button><div><div class="ttl">收藏櫃</div><div class="dt" id="dt"></div></div><button class="circ" id="eye" aria-label="隱藏金額"></button></div>
@@ -522,7 +525,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v266</div></div>`;
+  <button class="dbt" id="dav" style="display:block;width:100%">${(single?it:o.items[0]).avg?'🧮 取消同品名均價':'🧮 同品名成本分攤均價'}</button><a class="dbt" id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">🔍 用品名找官方商品圖</a><button class="dbt" id="dfs" style="display:block;width:100%">📷 用我拍的照片以圖搜尋</button><button class="dbt" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v267</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -593,7 +596,7 @@ function drawEd(){
       <input data-i="${i}" data-k="note" placeholder="這個品項的備註（選填）" value="${esc(it.note||'')}" style="width:100%;margin:2px 0 6px">
       <div class="fr" style="padding:6px 0"><span>歸屬</span><select data-i="${i}" data-k="proxy"><option value="" ${!it.proxy?'selected':''}>同訂單（${(cur.proxy||'0')==='1'?'朋友的':'我的'}）</option><option value="0" ${it.proxy==='0'?'selected':''}>我的</option><option value="1" ${it.proxy==='1'?'selected':''}>幫朋友買</option></select></div>
       ${ip(cur,it)==='1'?`<div class="fr" style="padding:6px 0"><span>朋友名字</span><input data-i="${i}" data-k="fn" list="fnl" placeholder="例如：小美" value="${esc(it.fn||'')}" style="text-align:right;max-width:60%"></div><div class="fr" style="padding:6px 0"><span>朋友實付（台幣）</span><input data-i="${i}" data-k="fpa" type="number" inputmode="decimal" placeholder="沒填就是照成本算" value="${esc(it.fpa||'')}" style="text-align:right;max-width:50%"></div><datalist id="fnl">${[...new Set(items.flatMap(o=>o.items.map(x=>x.fn)).filter(Boolean))].map(n=>`<option value="${esc(n)}">`).join('')}</datalist>`:''}
-      <label class="gotl"><input type="checkbox" data-sell="${i}" ${it.sell?'checked':''}> 💰 打算賣</label>
+      <label class="gotl sellc"><input type="checkbox" data-sell="${i}" ${it.sell?'checked':''}> 💰 打算賣</label>
       ${cur.items.length>1?`<label class="gotl"><input type="checkbox" data-ap="${i}" ${it.ap?'checked':''}> 🛍 袋子／雜費分攤</label>`:''}
       <div class="fr" style="padding:6px 0"><span>分類</span><select data-i="${i}" data-k="cat"><option value="">同訂單（${esc(cur.cat||'未分類')}）</option>${(S.cats.includes(it.cat)||!it.cat?S.cats:[...S.cats,it.cat]).map(c=>`<option value="${esc(c)}" ${it.cat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
       <div class="fr" style="padding:6px 0"><span>標籤</span><select data-i="${i}" data-k="kind"><option value="">未標籤</option>${(KD().includes(it.kind)||!it.kind?KD():[...KD(),it.kind]).map(k=>`<option ${it.kind===k?'selected':''}>${esc(k)}</option>`).join('')}</select></div>
