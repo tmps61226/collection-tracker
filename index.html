@@ -599,7 +599,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v346</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v347</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1631,11 +1631,12 @@ sstar:(c)=>`<defs><filter id="sb" x="-30%" y="-30%" width="160%" height="160%"><
 function calDeco(L,P,w,H,S,seed){
   const kinds=Object.keys(DDS).sort((a,b)=>rnd(seed,'o'+a)-rnd(seed,'o'+b));
   const n=Math.max(9,Math.min(22,Math.round(w*H/8000))),placed=[],out=[];
-  const far=(x,y,r)=>{let m=1e9;P.forEach(p=>{m=Math.min(m,Math.hypot(p.x-x,p.y-y)-S*.45)});placed.forEach(p=>{m=Math.min(m,Math.hypot(p.x-x,p.y-y)-p.r)});return m-r};
+  const far=(x,y,r)=>{let m=1e9;P.forEach(p=>{m=Math.min(m,Math.hypot(p.x-x,p.y-y)-S*.34-r*.8)});placed.forEach(p=>{m=Math.min(m,Math.hypot(p.x-x,p.y-y)-p.r-r)});return m};
   for(let i=0;i<n;i++){
     const k=kinds[i%kinds.length],sz=28+Math.floor(rnd(seed,'s'+i)*18),r=sz/2;
     let bx=0,by=0,bm=-1e9;
-    for(let t=0;t<30;t++){const x=-2+rnd(seed,'x'+i+'_'+t)*(w+4-sz)+r,y=rnd(seed,'y'+i+'_'+t)*(H-sz)+r,m=far(x,y,r);if(m>bm){bm=m;bx=x;by=y;if(m>6)break}}
+    for(let t=0;t<80;t++){const x=-2+rnd(seed,'x'+i+'_'+t)*(w+4-sz)+r,y=rnd(seed,'y'+i+'_'+t)*(H-sz)+r,m=far(x,y,r);if(m>bm){bm=m;bx=x;by=y;if(m>6)break}}
+    if(bm<0)continue;
     placed.push({x:bx,y:by,r});
     const rot=k[0]==='x'?0:Math.round(rnd(seed,'r'+i)*40-20),c=DDC[Math.floor(rnd(seed,'c'+i)*DDC.length)];
     out.push(`<div class="dd" style="left:${Math.round(bx-r)}px;top:${Math.round(by-r)}px;width:${sz}px;height:${sz}px;transform:rotate(${rot}deg)"><svg viewBox="0 0 40 40" width="${sz}" height="${sz}"${k[0]==='x'?' style="shape-rendering:crispEdges"':''}>${DDS[k](c)}</svg></div>`);
@@ -1674,7 +1675,7 @@ function calRender(){
   <div class="csm">${cntAll?'這個月買了 '+cntAll+' 件・已貼 '+tot+' 張':'這個月沒有買商品'}</div></div>
   ${st.size?`<div class="cpk"><h4>這個月的貼紙</h4><div class="pile" style="height:${Math.ceil(st.size/4)*96+20}px">${[...st.values()].map((x,i)=>`<${x.pol?'div':'img'} class="${x.pol?'pol':'stk2'}" data-ci="${x.o.id}|${x.ix}" ${x.pol?'':'loading="lazy" src="'+x.img+'" alt=""'} style="${x.pol?'--pi:url(&quot;'+x.img.replace(/"/g,'%22')+'&quot;);':''}left:${Math.round((i%4)*24+rnd(x.o.id,"x")*5)}%;top:${Math.round(Math.floor(i/4)*96+rnd(x.o.id,"y")*12)}px;transform:rotate(${Math.round(rnd(x.o.id,"r")*40-20)}deg);z-index:${1+Math.floor(rnd(x.o.id,"z")*3)}">${x.pol?'</div>':''}`).join('')}</div></div>`:''}</div>`;
   calLay(D,first,days,pre);
-  const pl=document.querySelector('.pile');if(pl&&pl.clientWidth)calDeco(pl,[],pl.clientWidth,pl.clientHeight,60,'p'+y+'-'+mo);
+  const pl=document.querySelector('.pile');if(pl&&pl.clientWidth){const R=pl.getBoundingClientRect(),PP=[...pl.querySelectorAll('.stk2,.pol')].map(e=>{const q=e.getBoundingClientRect();return {x:q.left-R.left+q.width/2,y:q.top-R.top+q.height/2}});calDeco(pl,PP,pl.clientWidth,pl.clientHeight,80,'p'+y+'-'+mo)}
 }
 const rnd=(a,b)=>{let h=2166136261;for(const c of String(a)+b)h=Math.imul(h^c.charCodeAt(0),16777619)>>>0;return (h%1000)/1000};
 document.addEventListener('click',e=>{if(view!=='cal')return;const t=e.target.closest('[data-cm],[data-cd],[data-ci]');if(!t||!$('main').contains(t))return;
