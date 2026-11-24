@@ -599,7 +599,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v343</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v344</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1593,8 +1593,38 @@ const DDS={
  ribbon:()=>`<path d="M4 31C9 8 16 36 22 17S33 9 37 12" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/><path d="M4 31C9 8 16 36 22 17S33 9 37 12" fill="none" stroke="#ffa6c9" stroke-width="7" stroke-linecap="round"/><path d="M4 31C9 8 16 36 22 17S33 9 37 12" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-dasharray="0.1 5"/>`,
  beads:()=>{const C=['#ffb3d1','#b8dcff','#fff0a8','#c8f0b0','#e3ccff','#ffb3d1','#b8dcff','#fff0a8','#c8f0b0'];let o='<path d="M4 10Q20 34 36 10" fill="none" stroke="#fff" stroke-width="2.4"/>';C.forEach((c,k)=>{const t=k/8,x=4+32*t,y=10+2*2*t*(1-t)*24;o+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.6" fill="${c}" stroke="#fff" stroke-width="1.6"/><circle cx="${(x-1).toFixed(1)}" cy="${(y-1.2).toFixed(1)}" r=".9" fill="#fff"/>`});return DDG+o+`<path d="M20 24.4v4.2" stroke="#fff" stroke-width="1.6"/><path d="M20 36s-5-3-5-6a2.5 2.5 0 0 1 5-.4 2.5 2.5 0 0 1 5 .4c0 3-5 6-5 6z" fill="url(#gp)" stroke="#fff" stroke-width="1.4"/>`}
 };
+const PXC={P:'#ff9fc4',p:'#ffd0e4',B:'#8fc6f2',b:'#d6ecff',L:'#a98fd0',l:'#e3d3f4',Y:'#ffd95e',y:'#fff3b8',W:'#fff',G:'#79c997',R:'#f0507a',K:'#7b6a95'};
+const PXG={
+ heart:['..PP..PP..','.PPPPPPPP.','PPWPPPPPPP','PPPPPPPPPP','.PPPPPPPP.','..PPPPPP..','...PPPP...','....PP....'],
+ star:['....YY....','....YY....','...YYYY...','YYYYYYYYYY','.YYYWYYYY.','..YYYYYY..','..YYYYYY..','.YYY..YYY.','.YY....YY.'],
+ cursor:['K.........','KK........','KWK.......','KWWK......','KWWWK.....','KWWWWK....','KWWWWWK...','KWWWKKKK..','KWK.KWK...','K...KWK...'],
+ spark:['....yy....','....yy....','...yYYy...','yyyYWWYyyy','yyyYWWYyyy','...yYYy...','....yy....','....yy....'],
+ bow:['PPP....PPP','PWPP..PPWP','PPPPPPPPPP','PPPPRRPPPP','PPPPPPPPPP','PPP.PP.PPP','.P..PP..P.'],
+ phone:['..LLLLLL..','..LPPPPL..','..LbbbbL..','..LbbbbL..','..LPPPPL..','..LPWPWL..','..LPPPPL..','..LWPWPL..','..LPPPPL..','..LLLLLL..'],
+ game:['.LLLLLLLL.','.LBBBBBBL.','.LBbbbbBL.','.LBbbbbBL.','.LBBBBBBL.','.LBPBBRBL.','.LPPPBBBL.','.LBPBBBBL.','.LLLLLLLL.'],
+ hour:['..LLLLLL..','..LWWWWL..','...LPPL...','....LL....','....LL....','...LWWL...','..LWPPWL..','..LPPPPL..','..LLLLLL..'],
+ bfly:['LL......LL','LBL....LBL','LBBL..LBBL','.LBBLLBBL.','.LPPLLPPL.','LPPL..LPPL','LPL....LPL','.L......L.'],
+ cherry:['......GG..','.....G.GG.','....G...G.','...G....G.','..G.....G.','.RRR..RRR.','RWRR..RWRR','RRRR..RRRR','.RR....RR.'],
+ bubble:['.LLLLLLLL.','LWWWWWWWWL','LWPPWWPPWL','LWPPPPPPWL','LWWPPPPWWL','LWWWPPWWWL','.LLLLLLLL.','..LWL.....','..LL......']
+};
+const pxs=(g,sw)=>{const R=PXG[g],h=R.length,oy=Math.round((10-h)/2)*4;let a='',b='';R.forEach((r,y)=>[...r].forEach((ch,x)=>{if(ch==='.')return;let col=PXC[ch];if(sw&&sw[ch])col=PXC[sw[ch]];a+=`<rect x="${x*4-1.5}" y="${oy+y*4-1.5}" width="7" height="7"/>`;b+=`<rect x="${x*4}" y="${oy+y*4}" width="4" height="4" fill="${col}"/>`}));return `<g fill="#fff">${a}</g>${b}`};
+Object.assign(DDS,{xpheart:()=>pxs('heart'),xbheart:()=>pxs('heart',{P:'B'}),xlheart:()=>pxs('heart',{P:'L'}),
+ xpstar:()=>pxs('star'),xrstar:()=>pxs('star',{Y:'P'}),
+ xcursor:()=>pxs('cursor'),xspark:()=>pxs('spark'),xbow:()=>pxs('bow'),xphone:()=>pxs('phone'),xgame:()=>pxs('game'),xhour:()=>pxs('hour'),
+ xbfly:()=>pxs('bfly'),xcherry:()=>pxs('cherry'),xbubble:()=>pxs('bubble'),
+ xwin:()=>{const H='<path d="M20 21s-3-1.8-3-3.6a1.5 1.5 0 0 1 3-.3 1.5 1.5 0 0 1 3 .3c0 1.8-3 3.6-3 3.6z" fill="#ff9fc4"/>';return `<rect x="1.5" y="5.5" width="37" height="29" fill="#fff"/><rect x="3" y="7" width="34" height="26" fill="#fff" stroke="#a98fd0" stroke-width="2"/><rect x="4" y="8" width="32" height="7" fill="#ffb8dc"/><g fill="#fff"><rect x="26" y="9.5" width="3.5" height="3.5"/><rect x="31" y="9.5" width="3.5" height="3.5"/></g><rect x="7" y="18" width="26" height="12" fill="#ffeaf4"/><g fill="#ff9fc4"><rect x="14" y="20" width="4" height="4"/><rect x="22" y="20" width="4" height="4"/><rect x="14" y="24" width="12" height="4"/><rect x="18" y="28" width="4" height="2"/></g>`}});
 function calDeco(L,P,w,H,S,seed){
-  const out=[];
+  const kinds=['pstar','gheart','holo','bow3','cherry','butterfly','disc','tape','phone','window','beads','chrome','ribbon','xpheart','xbheart','xspark','xwin','xbubble','xgame','xcursor','xbow','xspark','xpheart'];
+  const n=Math.max(8,Math.min(20,Math.round(w*H/8500))),placed=[],out=[];
+  const far=(x,y,r)=>{let m=1e9;P.forEach(p=>{m=Math.min(m,Math.hypot(p.x-x,p.y-y)-S*.45)});placed.forEach(p=>{m=Math.min(m,Math.hypot(p.x-x,p.y-y)-p.r)});return m-r};
+  for(let i=0;i<n;i++){
+    const k=kinds[Math.floor(rnd(seed,'k'+i)*kinds.length)],sz=28+Math.floor(rnd(seed,'s'+i)*18),r=sz/2;
+    let bx=0,by=0,bm=-1e9;
+    for(let t=0;t<30;t++){const x=-2+rnd(seed,'x'+i+'_'+t)*(w+4-sz)+r,y=rnd(seed,'y'+i+'_'+t)*(H-sz)+r,m=far(x,y,r);if(m>bm){bm=m;bx=x;by=y;if(m>6)break}}
+    placed.push({x:bx,y:by,r});
+    const rot=k[0]==='x'?0:Math.round(rnd(seed,'r'+i)*40-20),c=DDC[Math.floor(rnd(seed,'c'+i)*DDC.length)];
+    out.push(`<div class="dd" style="left:${Math.round(bx-r)}px;top:${Math.round(by-r)}px;width:${sz}px;height:${sz}px;transform:rotate(${rot}deg)"><svg viewBox="0 0 40 40" width="${sz}" height="${sz}"${k[0]==='x'?' style="shape-rendering:crispEdges"':''}>${DDS[k](c)}</svg></div>`);
+  }
   // washi tape on some stickers
   const tcol=['#f7b7c8cc','#a9cdf0cc','#fbe08fcc','#b9ddaacc','#d9c4f0cc'];let nt=0;
   P.forEach((p,i)=>{if(nt>=5||rnd(seed,'tp'+i)>.35)return;nt++;const c=tcol[i%tcol.length],st=i%3===2?`radial-gradient(#fff 1px,transparent 1.4px) 0 0/6px 6px,linear-gradient(100deg,#ffb8e0cc,#b8dcffcc 40%,#e4d0ffcc 70%,#fff3b0cc)`:i%2?`repeating-linear-gradient(90deg,${c} 0 6px,#ffffffaa 6px 12px)`:`radial-gradient(#ffffffcc 1.6px,transparent 1.8px) 0 0/8px 8px,${c}`;out.push(`<i class="tp" style="left:${Math.round(p.x-22)}px;top:${Math.round(p.y-S*.5-2)}px;background:${st};transform:rotate(${Math.round(rnd(seed,'tq'+i)*50-25)}deg)"></i>`)});
