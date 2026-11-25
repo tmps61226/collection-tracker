@@ -289,9 +289,11 @@ details.adv>summary::-webkit-details-marker{display:none}details.adv>summary::af
 .bkm button{border:0;border-radius:999px;padding:7px 14px;font-size:13px;cursor:pointer;flex:none}
 .bkm button[data-bk=now]{background:var(--tx);color:var(--bg)}
 .bkm button[data-bk=later]{background:transparent;color:var(--mu);padding:7px 10px}
+.hcol{display:block;margin:5px auto 0;border:0;background:#3a2e1a0f;color:var(--mu);border-radius:999px;width:46px;height:20px;font-size:11px;line-height:20px;cursor:pointer;padding:0}
+.w.col #stats,.w.col .srw,.w.col #jb,.w.col #bk,.w.col #ar{display:none}
 </style></head><body>
 <div class="w">
-  <div class="top"><button class="circ" id="gear" aria-label="設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg></button><div><div class="ttl" id="ttl">收藏櫃</div><div class="dt" id="dt"></div></div><button class="circ" id="eye" aria-label="隱藏金額"></button></div>
+  <div class="top"><button class="circ" id="gear" aria-label="設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg></button><div><div class="ttl" id="ttl">收藏櫃</div><div class="dt" id="dt"></div><button type="button" class="hcol" id="hcol" aria-label="收起或展開上方資訊">▴</button></div><button class="circ" id="eye" aria-label="隱藏金額"></button></div>
   <div id="stats"></div>
   <div class="srw"><input class="sr" id="q" placeholder="搜尋品名、賣家、備註"><button id="isbtn" type="button" aria-label="以圖搜尋"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.3-2h6.4l1.3 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.3"/></svg></button><input type="file" id="isf" accept="image/*" hidden></div><div id="isb"></div>
   <div id="jb"></div><div id="bk"></div><div id="ar"></div>
@@ -600,7 +602,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v359</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v360</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1541,6 +1543,7 @@ $('main').addEventListener('click',e=>{if(fMode){const fd=e.target.closest('[dat
 $('hpx').addEventListener('change',()=>{$('hp').value=$('hpx').checked?'all':'hide';$('hp').dispatchEvent(new Event('input'))});
 $('fmore').addEventListener('click',()=>{const p=$('fpn');p.hidden=!p.hidden;$('fmore').querySelector('span').textContent=p.hidden?'▾':'▴'});
 ['q','fs','fc','so','hs','hsl','hsw','hp','hh'].forEach(i=>$(i).addEventListener('input',render));
+{const W0=document.querySelector('.w'),hb=$('hcol'),ap=()=>{hb.textContent=W0.classList.contains('col')?'▾':'▴'};try{if(localStorage.getItem('ct_col')==='1')W0.classList.add('col')}catch(e){}ap();hb.addEventListener('click',()=>{W0.classList.toggle('col');ap();try{localStorage.setItem('ct_col',W0.classList.contains('col')?'1':'0')}catch(e){}})}
 $('hsl').addEventListener('change',()=>{if($('hsl').checked)$('hsw').checked=false});$('hsw').addEventListener('change',()=>{if($('hsw').checked)$('hsl').checked=false});
 try{$('hsw').checked=localStorage.getItem('ct_hsw')!=='0'}catch(e){$('hsw').checked=true}
 $('hsw').addEventListener('change',()=>{try{localStorage.setItem('ct_hsw',$('hsw').checked?'1':'0')}catch(e){}});
