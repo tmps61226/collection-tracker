@@ -291,6 +291,10 @@ details.adv>summary::-webkit-details-marker{display:none}details.adv>summary::af
 .bkm button[data-bk=later]{background:transparent;color:var(--mu);padding:7px 10px}
 .dtr{display:flex;align-items:center;justify-content:center;gap:6px}.hcol{flex:none;border:0;background:#3a2e1a0f;color:var(--mu);border-radius:999px;width:30px;height:22px;font-size:11px;line-height:22px;cursor:pointer;padding:0}
 .w.col #stats,.w.col #jb,.w.col #bk,.w.col #ar{display:none}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--bg);padding:2px 0 8px;margin:18px 0 0}
+.chips{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--s1,0px));z-index:29;background:var(--bg)}
+.bar{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--s2,0px));z-index:28;background:var(--bg);padding:0 0 6px;margin-bottom:6px}
+#fpn{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--s3,0px));z-index:27}
 </style></head><body>
 <div class="w">
   <div class="top"><button class="circ" id="gear" aria-label="設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg></button><div><div class="ttl" id="ttl">收藏櫃</div><div class="dtr"><div class="dt" id="dt"></div><button type="button" class="hcol" id="hcol" aria-label="收起或展開上方資訊">▴</button></div></div><button class="circ" id="eye" aria-label="隱藏金額"></button></div>
@@ -603,7 +607,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v363</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v364</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1546,6 +1550,7 @@ $('fmore').addEventListener('click',()=>{const p=$('fpn');p.hidden=!p.hidden;$('
 ['q','fs','fc','so','hs','hsl','hsw','hp','hh'].forEach(i=>$(i).addEventListener('input',render));
 {const W0=document.querySelector('.w'),hb=$('hcol'),ap=()=>{hb.textContent=W0.classList.contains('col')?'▾':'▴'};try{if(localStorage.getItem('ct_col')==='1')W0.classList.add('col')}catch(e){}ap();hb.addEventListener('click',()=>{W0.classList.toggle('col');ap();try{localStorage.setItem('ct_col',W0.classList.contains('col')?'1':'0')}catch(e){}})}
 {const SW=document.querySelector('.srw'),sb=$('sbtn'),qq=$('q');const sy=()=>{sb.classList.toggle('on',!!qq.value);if(qq.value)SW.classList.add('on')};sb.addEventListener('click',()=>{if(SW.classList.contains('on')&&!qq.value)SW.classList.remove('on');else{SW.classList.add('on');qq.focus()}sy()});qq.addEventListener('input',sy);qq.addEventListener('blur',()=>setTimeout(()=>{if(!qq.value){SW.classList.remove('on');sb.classList.remove('on')}},250))}
+{const tp=document.querySelector('.top'),ch=$('chips'),br=document.querySelector('.bar'),rt=document.documentElement.style,H=e=>e.getBoundingClientRect().height,sS=()=>{const a=H(tp),b=H(ch),c=H(br);rt.setProperty('--s1',a+'px');rt.setProperty('--s2',(a+b)+'px');rt.setProperty('--s3',(a+b+c)+'px')};sS();if(window.ResizeObserver){const ro=new ResizeObserver(sS);[tp,ch,br].forEach(e=>ro.observe(e))}addEventListener('resize',sS);addEventListener('load',sS);setTimeout(sS,600)}
 $('hsl').addEventListener('change',()=>{if($('hsl').checked)$('hsw').checked=false});$('hsw').addEventListener('change',()=>{if($('hsw').checked)$('hsl').checked=false});
 try{$('hsw').checked=localStorage.getItem('ct_hsw')!=='0'}catch(e){$('hsw').checked=true}
 $('hsw').addEventListener('change',()=>{try{localStorage.setItem('ct_hsw',$('hsw').checked?'1':'0')}catch(e){}});
