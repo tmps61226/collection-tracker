@@ -611,7 +611,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v389</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v390</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1299,10 +1299,7 @@ SO.addEventListener('click',e=>{
   if(b.id==='syrs')restorePrev();
   if(b.id==='cmpimg')cmpImgs();
   if(b.id==='cleanall')cleanAll();
-  if(b.id==='dupauto'){const A=dupScan().filter(x=>x.same),B=dupPlanB(A);if(!A.length&&!B.length){toast('沒有找到可以整理的賣貨便賣出');return}
-    const ta=A.reduce((a,x)=>a+x.r,0),tb=B.reduce((a,x)=>a+(+x.R.i.sp||0),0);
-    if(!confirm('找到可以整理的賣貨便賣出：\n'+(A.length?'・'+A.length+' 筆跟買進商品重複（NT$'+Math.round(ta).toLocaleString()+'），收起來不重複計算\n':'')+(B.length?'・'+B.length+' 筆對得上你買進、但還沒標售出的商品（NT$'+Math.round(tb).toLocaleString()+'），會幫你標成已售出\n':'')+'\n要全部整理嗎？（整理前會先自動備份，之後可以還原）'))return;
-    putPrev().then(()=>{A.forEach(x=>{x.R.i.mg=1;const no=((x.R.o.note||'').match(/CM\w+/)||[''])[0];x.M.forEach(Bm=>{Bm.i.mgi=(Bm.i.mgi||[]).concat({d:x.R.o.soldDate||x.R.o.buyDate||'',a:x.r,n:no})})});dupApplyB(B);save();render();drawSet();toast('已整理 '+(A.length+B.length)+' 筆賣貨便賣出',4500)});return}
+  if(b.id==='dupauto'){dupReview();return}
   if(b.id==='dupundo2'){if(!confirm('把整理過的賣貨便賣出全部還原？'))return;dupUndoAll();save();render();drawSet();toast('已還原');return}
   if(b.id==='unall'){const T=[];items.forEach(o=>{o.items.forEach(i=>{if(i.img&&i.img.o)T.push(i.img)});(o.imgs||[]).forEach(m=>{if(m&&m.o)T.push(m)})});if(!T.length){toast('沒有去背過的圖');return}if(confirm('把 '+T.length+' 張去背圖都還原成原圖？之後可以再按「全部商品去背」重做。')){T.forEach(m=>{m.s=m.o;delete m.o});save();render();toast('✓ 已還原 '+T.length+' 張')}}
 });
@@ -1565,6 +1562,19 @@ function dupPlanB(skip){
 function dupApplyB(L){L.forEach(x=>{const no=((x.R.o.note||'').match(/CM\w+/)||[''])[0],d=x.R.o.soldDate||x.R.o.buyDate||'';
   x.al.forEach(a=>{const it=a.B.i;it.sq=sq(it)+a.u;it.sp=(+it.sp||0)+a.s;it.mgi=(it.mgi||[]).concat({d,a:x.R.i.sp,n:no,u:a.u,s:a.s,b:1});if(d&&!a.B.o.soldDate)a.B.o.soldDate=d;derive(a.B.o)});x.R.i.mg=1})}
 function dupUndoAll(){items.forEach(o=>{o.items.forEach(i=>{if(i.mgi){i.mgi.filter(m=>m.b).forEach(m=>{i.sq=Math.max(0,sq(i)-m.u);i.sp=Math.max(0,(+i.sp||0)-m.s);if(!i.sp)i.sp=''});if(!sq(i))i.sp=''}});o.items.forEach(i=>{delete i.mg;delete i.mgi});derive(o)})}
+
+function dupReview(){
+  const A=dupScan().filter(x=>x.same),B=dupPlanB(A),mny=n=>'NT$'+Math.round(n).toLocaleString(),M=$('dupm');
+  if(!A.length&&!B.length){toast('沒有找到可以整理的賣貨便賣出');return}
+  const sure=x=>{const r=dNm(x.R.i.ch||'');return !!r&&x.al.every(a=>dNm(a.B.i.ch||'')===r)};
+  const bl=x=>x.al.map(a=>{const it=a.B.i,o=a.B.o;return `<div class="hint" style="margin-top:3px">→ 買進：${esc(it.name||'')}${it.ch?'（'+esc(it.ch)+'）':''}・${esc(o.buyDate||'')}・${esc(o.seller||'')} ・標售出 ${a.u} 件、${mny(a.s)}</div>`}).join('');
+  M.innerHTML=`<div class="mh"><button class="btn" id="dupx">關閉</button><span></span></div><div style="padding:6px 14px 140px">
+   <h3 style="margin:6px 0">整理賣貨便賣出</h3>
+   <div class="msg">每一筆都列出來了。有勾的才會整理，不對的取消勾選就好。沒有確認到角色的我先沒勾。</div>
+   ${A.length?`<h4 style="margin:14px 0 4px">重複的（${A.length} 筆，金額相同，收起來不重複算）</h4>`+A.map((x,k)=>`<label class="cd" style="display:block;padding:10px 12px;margin:6px 0"><input type="checkbox" data-ka="${k}" checked style="margin-right:8px"><b>${esc(x.R.i.name||'')}</b>${x.R.i.ch?'（'+esc(x.R.i.ch)+'）':''}　賣出 ${mny(x.r)}<div class="hint">對應買進 ${x.M.length} 件，賣出合計 ${mny(x.S)}</div></label>`).join(''):''}
+   ${B.length?`<h4 style="margin:14px 0 4px">對得上買進的（${B.length} 筆，標成已售出）</h4>`+B.map((x,k)=>`<label class="cd" style="display:block;padding:10px 12px;margin:6px 0"><input type="checkbox" data-kb="${k}" ${sure(x)?'checked':''} style="margin-right:8px"><b>${esc(x.R.i.name||'')}</b>${x.R.i.ch?'（'+esc(x.R.i.ch)+'）':'（沒寫角色）'}　賣出 ${x.q} 件 ${mny(x.R.i.sp)}・${esc(x.R.o.soldDate||x.R.o.buyDate||'')}${bl(x)}</label>`).join(''):''}
+   <div id="dupbar" style="position:fixed;left:0;right:0;bottom:0;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:var(--bg,#f3f0e8)"><button class="btn" id="dupgo2" style="width:100%">整理勾選的</button></div></div>`;
+  M.classList.add('show');M._A=A;M._B=B}
 function dupOpen(){
   const L=dupScan(),mgN=items.reduce((a,o)=>a+o.items.filter(i=>i.mg).length,0),same=L.filter(x=>x.same),mny=n=>'NT$'+Math.round(n).toLocaleString();
   const M=$('dupm');M.innerHTML=`<div class="mh"><button class="btn" id="dupx">關閉</button><span></span></div><div style="padding:6px 14px 120px">
@@ -1577,6 +1587,8 @@ function dupOpen(){
 }
 $('dupm').addEventListener('click',e=>{const M=$('dupm'),b=e.target.closest('button');if(!b)return;
   if(b.id==='dupx'){M.classList.remove('show');return}
+  if(b.id==='dupgo2'){const ka=[...M.querySelectorAll('[data-ka]:checked')].map(x=>M._A[+x.dataset.ka]),kb=[...M.querySelectorAll('[data-kb]:checked')].map(x=>M._B[+x.dataset.kb]);if(!ka.length&&!kb.length){toast('沒有勾選');return}
+    putPrev().then(()=>{ka.forEach(x=>{x.R.i.mg=1;const no=((x.R.o.note||'').match(/CM\w+/)||[''])[0];x.M.forEach(Bm=>{Bm.i.mgi=(Bm.i.mgi||[]).concat({d:x.R.o.soldDate||x.R.o.buyDate||'',a:x.r,n:no})})});dupApplyB(kb);save();render();M.classList.remove('show');drawSet();toast('已整理 '+(ka.length+kb.length)+' 筆',4500)});return}
   if(b.id==='dupok'){const ks=[...M.querySelectorAll('[data-dk]:checked')].map(x=>+x.dataset.dk);if(!ks.length){toast('沒有勾選');return}
     putPrev().then(()=>{let n=0,t=0;ks.forEach(k=>{const x=M._L[k];if(x){x.R.i.mg=1;const no=((x.R.o.note||'').match(/CM\w+/)||[''])[0];x.M.forEach(B=>{B.i.mgi=(B.i.mgi||[]).concat({d:x.R.o.soldDate||x.R.o.buyDate||'',a:x.r,n:no})});n++;t+=x.r}});save();render();M.classList.remove('show');toast('已併入 '+n+' 筆，清單不再重複顯示，回血少算重複的 NT$'+Math.round(t).toLocaleString(),5000)});return}
   if(b.id==='dupundo'){if(!confirm('把所有「已併入」標記還原？'))return;items.forEach(o=>o.items.forEach(i=>{delete i.mg;delete i.mgi}));save();render();dupOpen();toast('已還原')}});
