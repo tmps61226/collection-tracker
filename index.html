@@ -596,7 +596,7 @@ function openDetail(id,ix){
   rows+=R('發售',(o.rel||'').slice(0,7).replace(/^(\d{4})-0?(\d{1,2})$/,'$1/$2'));
   if(o.status==='pre'&&FS[o.fs])rows+=R('貨況','<i class="fsp '+o.fs+'">'+FS[o.fs]+'</i>');if(+o.supAmt>0)rows+=R('二補',pp(o,+o.supAmt));
   if(o.status!=='pre'&&o.status!=='wish')rows+=R('收貨日期',fmt(o.recvDate));
-  if(n>0){rows+=R('出售日期',fmt(o.soldDate))+R('賣出金額',+it.sp?'NT$'+Math.round(+it.sp).toLocaleString():'')+(it.mg?R('賣出統計','已併入買進商品，不重複計算'):'')+(it.mgi&&it.mgi.length?R('賣貨便',it.mgi.map(m=>(m.d?fmt(m.d)+' ':'')+'整批 NT$'+Math.round(m.a).toLocaleString()+(m.n?'・訂單 '+m.n:'')).join('；')):'');if(single&&it.cu)rows+=R('成本','不明（不計入盈虧）');else if(single&&+it.sp){const p=(+it.sp||0)-unitCost(o,it)*n;rows+=R('淨賺／虧損',(p>=0?'+':'')+'NT$'+Math.round(p).toLocaleString())}}
+  if(n>0){rows+=R('出售日期',fmt(o.soldDate))+R('賣出金額',+it.sp?'NT$'+Math.round(+it.sp).toLocaleString():'')+(it.fee?R('已扣手續費','−NT$'+Math.round(it.fee).toLocaleString()+'（原 NT$'+Math.round(it.gsp).toLocaleString()+'）'):'')+(it.mg?R('賣出統計','已併入買進商品，不重複計算'):'')+(it.mgi&&it.mgi.length?R('賣貨便',it.mgi.map(m=>(m.d?fmt(m.d)+' ':'')+'整批 NT$'+Math.round(m.a).toLocaleString()+(m.n?'・訂單 '+m.n:'')).join('；')):'');if(single&&it.cu)rows+=R('成本','不明（不計入盈虧）');else if(single&&+it.sp){const p=(+it.sp||0)-unitCost(o,it)*n;rows+=R('淨賺／虧損',(p>=0?'+':'')+'NT$'+Math.round(p).toLocaleString())}}
   if(ip(o,single?it:null)==='1')rows+=R('歸屬','幫朋友買・'+(fpdOf(o,single?it:null)==='g'?'🎁送禮':fpdOf(o,single?it:null)==='0'?'未付款':'已付款'));
   if(o.link)rows+=R('連結',`<a href="${esc(o.link)}" target="_blank" rel="noopener">開啟</a>`);
   {const cl=[...new Set((single?[it]:o.items).map(i=>i.ch).filter(Boolean))];if(cl.length)rows=R('角色',cl.map(esc).join('、'))+rows}
@@ -617,7 +617,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v418</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v419</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const f=g.querySelector('.gi');if(f&&f.scrollWidth>f.clientWidth+1)g.classList.add('lg')}
@@ -1241,7 +1241,7 @@ function drawSet(){
   <div class="cd"><h3>隱藏總投入</h3><div class="fr"><span>首頁不顯示「總投入」金額</span><input id="hideamt" type="checkbox" ${S.hide?'checked':''} style="flex:none;width:auto"></div><div class="msg">開啟後，總投入、價格、總額、淨賺都顯示 ＊＊＊。輸入價格時還是看得到自己打的數字。首頁右上角的眼睛也可以隨時切換。</div></div>
   <div class="cd"><h3>刷卡</h3><div class="fr"><span>國外手續費 %（刷卡自動加上）</span><input id="cardfee" type="number" inputmode="decimal" step="any" value="${+S.cardFee||0}"></div></div>
   <div class="cd"><h3>匯率（換算成台幣，用於統計）</h3>${['JPY','CNY','KRW','USD','HKD'].map(c=>`<div class="fr"><span>1 ${CURN[c]} =</span><input data-rate="${c}" type="number" inputmode="decimal" step="any" value="${S.rates[c]||({HKD:4}[c])}"></div>`).join('')}</div>
-  <div class="cd"><h3>賣出對帳</h3><button class="btn" id="dupauto">🔎 一鍵合併重複的賣出</button>${items.some(o=>o.items.some(i=>i.mg))?'<button class="btn" id="dupundo2">↩ 還原整理過的賣出</button>':''}<div class="msg">賣貨便的賣出如果跟買進的商品是同一批，會算兩次。按一下：重複的收起來；對得上你買進商品的，自動標成已售出、帶入賣出金額，「要賣的」裡就不會再出現。賣貨便那筆會收起來（不會刪除，可以還原）。</div></div>
+  <div class="cd"><h3>賣出對帳</h3><button class="btn" id="dupauto">🔎 一鍵合併重複的賣出</button><button class="btn" id="feeauto">💸 套用蝦皮實收金額</button>${items.some(o=>o.items.some(i=>i.gsp))?'<button class="btn" id="feeundo">↩ 還原實收金額</button>':''}${items.some(o=>o.items.some(i=>i.mg))?'<button class="btn" id="dupundo2">↩ 還原整理過的賣出</button>':''}<div class="msg">賣貨便的賣出如果跟買進的商品是同一批，會算兩次。按一下：重複的收起來；對得上你買進商品的，自動標成已售出、帶入賣出金額，「要賣的」裡就不會再出現。賣貨便那筆會收起來（不會刪除，可以還原）。</div></div>
   <div class="cd"><h3>商品圖</h3><button class="btn" id="bgall">✂️ 全部商品去背</button><button class="btn" id="unall">↩ 全部還原原圖</button><button class="btn" id="cleanall">🧹 全部去背圖清殘影</button><button class="btn" id="cmpimg">🗜 縮小全部圖片</button><div class="msg">替還沒去背的商品圖一次去背，櫃子會更好看。需要網路，張數多時請保持畫面開著。</div></div>
   <div class="cd"><h3>☁️ 雲端同步（你自己的私人 GitHub）</h3><div class="msg" style="margin:0 0 8px">${syncMsg()}</div>
     <div class="fr"><span>金鑰</span><input id="ghtok" type="password" autocomplete="off" placeholder="github_pat_…" value="${esc(GH().t)}"></div>
@@ -1314,6 +1314,11 @@ SO.addEventListener('click',e=>{
   if(b.id==='cmpimg')cmpImgs();
   if(b.id==='cleanall')cleanAll();
   if(b.id==='dupauto'){dupReview();return}
+  if(b.id==='feeauto'){S.noFeeAuto=false;const A=feeScan();if(!A.length){toast('沒有找到需要扣手續費的賣出');return}
+    const fee=A.reduce((a,x)=>a+(x.gross-x.net),0);
+    if(!confirm('找到 '+A.length+' 筆備註有「實收進帳」的賣出，賣出金額會改成實收，共少算手續費 NT$'+Math.round(fee).toLocaleString()+'：\n\n'+A.slice(0,8).map(x=>(x.L[0].name||'').slice(0,12)+'　'+Math.round(x.gross)+' → '+Math.round(x.net)).join('\n')+(A.length>8?'\n…還有 '+(A.length-8)+' 筆':'')+'\n\n要套用嗎？（會先備份，之後可以還原）'))return;
+    putPrev().then(()=>{feeApply(A);save();render();drawSet();toast('已套用 '+A.length+' 筆實收金額',4500)});return}
+  if(b.id==='feeundo'){if(!confirm('把套用過的實收金額全部還原成原本的賣出金額？（之後也不會再自動套用）'))return;S.noFeeAuto=true;feeUndo();save();render();drawSet();toast('已還原');return}
   if(b.id==='dupundo2'){if(!confirm('把整理過的賣貨便賣出全部還原？'))return;dupUndoAll();save();render();drawSet();toast('已還原');return}
   if(b.id==='unall'){const T=[];items.forEach(o=>{o.items.forEach(i=>{if(i.img&&i.img.o)T.push(i.img)});(o.imgs||[]).forEach(m=>{if(m&&m.o)T.push(m)})});if(!T.length){toast('沒有去背過的圖');return}if(confirm('把 '+T.length+' 張去背圖都還原成原圖？之後可以再按「全部商品去背」重做。')){T.forEach(m=>{m.s=m.o;delete m.o});save();render();toast('✓ 已還原 '+T.length+' 張')}}
 });
@@ -1582,6 +1587,12 @@ function dupApplyB(L){L.forEach(x=>{const no=((x.R.o.note||'').match(/CM\w+/)||[
   x.al.forEach(a=>{const it=a.B.i;if(!a.f)it.sq=sq(it)+a.u;it.sp=(+it.sp||0)+a.s;it.mgi=(it.mgi||[]).concat({d,a:x.R.i.sp,n:no,u:a.u,s:a.s,b:1,f:a.f?1:0});if(d&&!a.B.o.soldDate)a.B.o.soldDate=d;derive(a.B.o)});x.R.i.mg=1})}
 function dupUndoAll(){items.forEach(o=>{o.items.forEach(i=>{if(i.mgi){i.mgi.filter(m=>m.b).forEach(m=>{if(!m.f)i.sq=Math.max(0,sq(i)-m.u);i.sp=Math.max(0,(+i.sp||0)-m.s);if(!i.sp)i.sp=''});if(!sq(i))i.sp=''}});o.items.forEach(i=>{delete i.mg;delete i.mgi});derive(o)})}
 
+
+function feeScan(){const out=[];items.forEach(o=>{const txt=(o.note||'')+' '+o.items.map(i=>i.note||'').join(' '),m=txt.match(/實收進帳\s*NT\$?\s*([\d,]+)/);if(!m)return;const net=+m[1].replace(/,/g,''),L=o.items.filter(i=>sq(i)>0&&+i.sp>0&&!i.gsp&&!i.mg),gross=L.reduce((a,i)=>a+(+i.sp),0);if(!L.length||!(net>0)||!(net<gross-0.5))return;out.push({o,L,net,gross})});return out}
+function feeApply(A){A.forEach(x=>{let left=x.net;x.L.forEach((i,k)=>{const sh=k===x.L.length-1?left:Math.round(x.net*(+i.sp)/x.gross);left-=sh;i.gsp=+i.sp;i.fee=Math.round(+i.sp-sh);i.sp=sh})})}
+let feeT=0;function feeAuto(){if(S.noFeeAuto)return;const A=feeScan();if(!A.length)return;feeApply(A);feeSv();render();toast('已自動把 '+A.length+' 筆蝦皮賣出改成實收金額（扣手續費）',4500)}
+function feeUndo(){items.forEach(o=>o.items.forEach(i=>{if(i.gsp){i.sp=i.gsp;delete i.gsp;delete i.fee}}))}
+const feeSv=save;save=function(){const r=feeSv.apply(this,arguments);clearTimeout(feeT);feeT=setTimeout(feeAuto,700);return r};
 function dupReview(){
   const A=dupScan().filter(x=>x.same),B=dupPlanB(A),mny=n=>'NT$'+Math.round(n).toLocaleString(),M=$('dupm');
   if(!A.length&&!B.length){toast('沒有找到可以整理的賣貨便賣出');return}
@@ -2068,7 +2079,7 @@ async function autoTrimAll(){
   if(ch){save();render()}
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){autoPull();}else if(autoOn()&&isDirty()&&lsGet('syncSha'))syncUp(true)});
-(async()=>{const a=await loadItems(),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);if(dedupChars()>0)setTimeout(()=>{save();toast('已合併重複的角色',3500)},800);renderCats();if(window.LOADMISS>0)setTimeout(()=>toast('⚠ 有 '+window.LOADMISS+' 筆資料讀不到，請先不要刪除或匯入，並到設定按「還原下載前的資料」或用備份檔救回',15000),1500);try{if(!localStorage.getItem('fixCut1')){localStorage.setItem('fixCut1','1');Promise.resolve(fixCut()).then(n=>{if(n){render();toast('已找回 '+n+' 張去背圖的標記',4000)}}).catch(()=>{})}}catch(e){}try{if(!localStorage.getItem('fixPaid1')){localStorage.setItem('fixPaid1','1');Promise.resolve(fixPaid()).then(n=>{if(n){render();toast('已把 '+n+' 筆已到貨的訂單標為已付清（可在設定還原）')}})}}catch(e){}try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{const h=localStorage.getItem('hp2')||(localStorage.getItem('hp')==='0'?'all':'hide');$('hp').value=h}catch(e){}
+(async()=>{const a=await loadItems(),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);if(dedupChars()>0)setTimeout(()=>{save();toast('已合併重複的角色',3500)},800);renderCats();setTimeout(feeAuto,1500);if(window.LOADMISS>0)setTimeout(()=>toast('⚠ 有 '+window.LOADMISS+' 筆資料讀不到，請先不要刪除或匯入，並到設定按「還原下載前的資料」或用備份檔救回',15000),1500);try{if(!localStorage.getItem('fixCut1')){localStorage.setItem('fixCut1','1');Promise.resolve(fixCut()).then(n=>{if(n){render();toast('已找回 '+n+' 張去背圖的標記',4000)}}).catch(()=>{})}}catch(e){}try{if(!localStorage.getItem('fixPaid1')){localStorage.setItem('fixPaid1','1');Promise.resolve(fixPaid()).then(n=>{if(n){render();toast('已把 '+n+' 筆已到貨的訂單標為已付清（可在設定還原）')}})}}catch(e){}try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{const h=localStorage.getItem('hp2')||(localStorage.getItem('hp')==='0'?'all':'hide');$('hp').value=h}catch(e){}
 try{const v=localStorage.getItem('view');if(VB[v])view=v;Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===view))}catch(e){}render();setTimeout(()=>autoTrimAll().catch(()=>{}),400);jobs=[];saveJobs();if(applyCfgHash()){fillCfg();toast('已設定，開始從雲端下載…');setTimeout(()=>syncDown(),300)}else setTimeout(autoPull,1500)})();
 
 /* shrink every "NT$" next to numerals (Hoefler old-style figures make caps look big) */
