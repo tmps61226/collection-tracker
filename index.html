@@ -49,6 +49,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .sc .nm{text-align:center;padding:6px 2px 0}.sc .pr{text-align:center;padding-bottom:8px;line-height:1.15}
 .row .sl{display:inline-block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}.bd.cat{background:#dcefe6;color:#3f7a62}.bd.cat.no{background:#f6d9d3;color:#b05545}.bd.pre{background:#26406b;color:#fff}.bd.wish{background:#f3edc2;color:#8a7a2a}.bd.sold{background:#e8e4dc;color:#8a8478}.bd.due{background:#f6d9d3;color:#b05545}
 .list{background:var(--card);border-radius:24px;overflow:hidden;box-shadow:0 2px 14px #3a2e1a12}
+.row.so{opacity:.5}
 .row{display:flex;gap:12px;padding:12px;border-bottom:1px solid var(--ln);cursor:pointer;align-items:center}
 .row:last-child{border:0}
 .row .im{width:60px;height:60px;flex:none;display:flex;align-items:center;justify-content:center;background:var(--tile);border-radius:16px;padding:6px}
@@ -532,7 +533,7 @@ function render(){
     return}
   $('main').innerHTML=vw==='grid'
    ?`<div class="cab g4 stk"><div class="shf"><div class="shr">${cells.map(c=>`<div class="sc${c.hid?' hid':''}" data-id="${c.o.id}" data-ix="${c.ix}"${c.grp?` data-grp="${GRP.indexOf(c)}"`:''}>${c.grp?'':HB(c)}<div class="bds">${cb(c)}</div><div class="si">${c.img?`<img loading="lazy" decoding="async" src="${c.img}" alt="">`:'<span style="font-size:11px;color:var(--mu)">無圖</span>'}</div><div class="nm">${esc(c.name)}</div><div class="pr">${cp(c)}</div></div>`).join('')}</div></div></div>`
-   :`${fMode?fTop():''}<div class="list">${cells.map((c,ci)=>{const o=c.o;const fd=fMode&&(()=>{const it=fitOf(c);return it&&flSt(c.o,it)==='given'})();return `<div class="row${c.hid?' hid':''}${fd?' fdone':''}" data-id="${o.id}" data-ix="${c.ix}"${c.grp?` data-grp="${GRP.indexOf(c)}"`:''}><div class="im">${im(c)}</div><div class="mt"><div class="nm">${esc(c.name)}</div><small><span class="bds">${fMode?'':cb(c)}${fMode?'':`<span class="bd cat${c.cat&&S.cats.includes(c.cat)?'':' no'}">${esc(c.cat||'未分類')}</span>`}</span><span class="sl">${esc(o.seller||o.src||'')}${dk(o)?' · '+fmt(dk(o)):''}</span></small>${fchips(c)}</div><div class="pr">${c.cu?cp(c):o.cur==='TWD'&&!(cTx(c)>0)?money(o,c.price):pp(o,c.price,cTx(c))}</div>${c.grp?'':HB(c)}</div>`}).join('')}</div>`;
+   :`${fMode?fTop():''}<div class="list">${cells.map((c,ci)=>{const o=c.o;const fd=fMode&&(()=>{const it=fitOf(c);return it&&flSt(c.o,it)==='given'})();return `<div class="row${c.hid?' hid':''}${fd?' fdone':''}${c.tag==='已售出'?' so':''}" data-id="${o.id}" data-ix="${c.ix}"${c.grp?` data-grp="${GRP.indexOf(c)}"`:''}><div class="im">${im(c)}</div><div class="mt"><div class="nm">${esc(c.name)}</div><small><span class="bds">${fMode?'':cb(c)}${fMode?'':`<span class="bd cat${c.cat&&S.cats.includes(c.cat)?'':' no'}">${esc(c.cat||'未分類')}</span>`}</span><span class="sl">${esc(o.seller||o.src||'')}${dk(o)?' · '+fmt(dk(o)):''}</span></small>${fchips(c)}</div><div class="pr">${c.cu?cp(c):o.cur==='TWD'&&!(cTx(c)>0)?money(o,c.price):pp(o,c.price,cTx(c))}</div>${c.grp?'':HB(c)}</div>`}).join('')}</div>`;
 }
 
 /* editor */
@@ -614,7 +615,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v403</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v404</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
