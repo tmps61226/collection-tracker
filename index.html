@@ -507,7 +507,7 @@ function render(){
       const shu=(+o.ship||0)/(o.items.length||1);
       const u=(fs==='sold'&&n>0&&r>0)?n:(n>0&&r>0?r:q);
       const gt=o.status==='pre'&&!!it.got;if(o.status==='pre'&&((fs==='have'&&!gt)||(fs==='pre'&&gt)))return;
-      if(!vis(o,it,fc))return;if(fs==='have'&&r<=0)return;if(fs==='sold'&&n<=0)return;if($('hs').checked&&r<=0)return;
+      if(!vis(o,it,fc))return;if(fs==='have'&&r<=0)return;if(fs==='sold'&&(n<=0||r>0))return;if($('hs').checked&&r<=0)return;
       cells.push({o,ix:o.items.indexOf(it),sl:!!it.sell,sn:n,rn:r,q:u,base:it.name||'未命名',hid:!!(it.hide||it.mg),cat:ic(o,it),name:(it.sell&&r>0?'💰 ':'')+(it.name||'未命名')+(n>0&&r>0?' ×'+u:q>1&&n===0?' ×'+q:''),img:it.img?it.img.s:cover(o),price:(+it.price||0)*u+shu+bagLine(o,it)*(u/q),tag:n>=q?'已售出':n>0?'已售 '+n+'/'+q:'',cu:!!it.cu,sp:+it.sp||0,st:gt?'have':undefined,ch:it.ch||'',avgNT:it.avg?unitCost(o,it)*u:null});
     });
     else cells.push({o,ix:-1,q:o.items.length===1?(+o.items[0].qty||1):0,base:o.items.length===1?(o.items[0].name||''):'',hid:o.items.every(i=>i.hide||i.mg),cat:ic(o,o.items[0]),name:(o.items.some(i=>i.sell&&sq(i)<(+i.qty||1))?'💰 ':'')+title(o),img:(o.items.length===1&&o.items[0].img)?o.items[0].img.s:cover(o),price:total(o),ch:o.items.length===1?(o.items[0].ch||''):'',avgNT:(o.items.length===1&&o.items[0].avg)?unitCost(o,o.items[0])*(+o.items[0].qty||1):null});
@@ -617,7 +617,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v410</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v411</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
