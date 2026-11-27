@@ -609,7 +609,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v371</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v372</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1316,7 +1316,7 @@ const GH=()=>({t:(lsGet('ghTok')||'').trim(),r:(lsGet('ghRepo')||'tmps61226/coll
 const lastSync=()=>+lsGet('lastSync')||0;
 const isDirty=()=>lsGet('dirty')==='1'||(+lsGet('lastSave')||0)>lastSync();
 function h53(s){let a=0xdeadbeef,b=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}a=Math.imul(a^(a>>>16),2246822507)^Math.imul(b^(b>>>13),3266489909);b=Math.imul(b^(b>>>16),2246822507)^Math.imul(a^(a>>>13),3266489909);return(4294967296*(2097151&b)+(a>>>0)).toString(16)}
-function packData(){const imgs={};const json=JSON.stringify({v:1,savedAt:Date.now(),items,settings:S},(k,v)=>{if(typeof v==='string'&&v.startsWith('data:')){if(k==='o')return undefined;const m=/^data:([^;,]+);base64,/.exec(v);if(!m)return v;const ext=m[1].includes('png')?'png':m[1].includes('webp')?'webp':'jpg',n=h53(v)+v.length.toString(36)+'.'+ext;imgs[n]=v.slice(m[0].length);return'@img:'+n}return v});return{json,imgs}}
+function packData(){const imgs={};const json=JSON.stringify({v:1,savedAt:Date.now(),items,settings:S},(k,v)=>{if(v&&typeof v==='object'&&typeof v.o==='string'&&v.o.startsWith('data:')&&!v.c)return{...v,c:1};if(typeof v==='string'&&v.startsWith('data:')){if(k==='o')return undefined;const m=/^data:([^;,]+);base64,/.exec(v);if(!m)return v;const ext=m[1].includes('png')?'png':m[1].includes('webp')?'webp':'jpg',n=h53(v)+v.length.toString(36)+'.'+ext;imgs[n]=v.slice(m[0].length);return'@img:'+n}return v});return{json,imgs}}
 const MIME={png:'image/png',webp:'image/webp',jpg:'image/jpeg'};
 const b64=s=>btoa(unescape(encodeURIComponent(s)));
 async function gh(path,method,body,raw){
@@ -1334,6 +1334,7 @@ let syncBusy=false;
 function fillCfg(){const a=$('ghtok'),b=$('ghrepo'),g=GH();if(a)a.value=g.t||'';if(b)b.value=g.r||''}
 function grabCfg(){const a=$('ghtok'),b=$('ghrepo');if(a)lsSet('ghTok',a.value.trim());if(b&&b.value.trim()!==GH().r){lsSet('ghRepo',b.value.trim());try{localStorage.removeItem('syncSha')}catch(e){}}}
 function syncMsg(){return lastSync()?'上次同步：'+new Date(lastSync()).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'還沒同步過'}
+async function fixCut(){const ids=(await kvGet('pids'))||[],bid=new Map(items.map(o=>[o.id,o]));let n=0;for(const id of ids){const o=bid.get(id);if(!o)continue;const p=await kvGet('p:'+id);if(!p||!p.items)continue;p.items.forEach((pi,ix)=>{const it=o.items[ix];if(it&&it.img&&pi.img&&pi.img.o&&pi.img.s===it.img.s&&!it.img.o&&!it.img.c){it.img.c=1;n++}})}if(n)await save();return n}
 async function putPrev(){try{
   const pfp=(await kvGet('pfp'))||{},cur=new Map(items.map(o=>[o.id,FP.get(o.id)||fpOf(o)]));
   for(const o of items){if(pfp[o.id]!==cur.get(o.id)){await kvTx(st=>st.put(o,'p:'+o.id));pfp[o.id]=cur.get(o.id)}}
@@ -1439,7 +1440,8 @@ async function syncDown(auto){
       else{let buf,er;for(let t=0;t<3&&!buf;t++){try{buf=new Uint8Array(await Promise.race([(async()=>(await gh('/contents/img/'+n+'?ref='+head,'GET',null,true)).arrayBuffer())(),new Promise((_,j)=>setTimeout(()=>j(new Error('逾時')),25000))]))}catch(e){er=e;if(e.status&&e.status!==403&&e.status!==429)break}}if(!buf)throw er||new Error('圖片下載失敗');let s='';for(let i=0;i<buf.length;i+=8192)s+=String.fromCharCode.apply(null,buf.subarray(i,i+8192));got[n]='data:'+MIME[ext]+';base64,'+btoa(s)}
       if(!auto)toast('下載圖片 '+(++done)+'/'+names.length+'…',0)});
     const full=JSON.parse(text,(k,v)=>typeof v==='string'&&v.startsWith('@img:')?got[v.slice(5)]:v);
-    items=full.items.map(mig);if(full.settings&&full.settings.cats)S=Object.assign(S,full.settings);
+    const lc=new Map();items.forEach(o=>o.items.forEach((it,ix)=>{if(it.img&&(it.img.o||it.img.c))lc.set(o.id+'|'+ix,it.img)}));
+    items=full.items.map(mig);items.forEach(o=>o.items.forEach((it,ix)=>{const m=it.img,l=lc.get(o.id+'|'+ix);if(m&&l&&l.s===m.s&&!m.o&&!m.c)m.c=1}));if(full.settings&&full.settings.cats)S=Object.assign(S,full.settings);
     lsSet('syncSha',head);lsSet('lastBackup',String(Date.now()));
     save();lsSet('lastSync',String(Date.now()+1));lsSet('dirty','0');clearTimeout(autoT);renderCats();render();renderBk();if(SO.classList.contains('show'))drawSet();toast(auto?'☁️ 已更新成雲端最新資料':'✓ 已從雲端下載 '+items.length+' 筆（下載前的資料有留一份，可在設定還原）',auto?2500:4500)
   }catch(e){if(!auto)toast('下載失敗：'+e.message,5000)}finally{syncBusy=false}}
@@ -1679,7 +1681,7 @@ function calLay(D,first,days,pre){
 function calRender(){
   $('chips').style.display='none';
   const pad=n=>String(n).padStart(2,'0'),y=calY,mo=calMo,pre=y+'-'+pad(mo+1)+'-',D={};let cntAll=0;
-  items.forEach(o=>{const od=o.buyDate||o.recvDate;if(!(o.status==='have'||o.status==='sold')||!od)return;o.items.forEach((it,ix)=>{if(ip(o,it)==='1')return;if(it.sell&&sq(it)<(+it.qty||1))return;if(!/漢頓|ハンギョドン|hangyodon/i.test([ic(o,it),it.ch,it.name,it.note,it.kind].join(' ')))return;if(it.hide&&!$('hh').checked)return;if(od.startsWith(pre))cntAll+=+it.qty||1;const cut=!!(it.img&&it.img.o&&it.img.s);if(!cut)return;const src=it.img.s;(D[od]=D[od]||[]).push({o,ix,q:+it.qty||1,name:it.name||'未命名',img:src,pol:!cut})})});
+  items.forEach(o=>{const od=o.buyDate||o.recvDate;if(!(o.status==='have'||o.status==='sold')||!od)return;o.items.forEach((it,ix)=>{if(ip(o,it)==='1')return;if(it.sell&&sq(it)<(+it.qty||1))return;if(!/漢頓|ハンギョドン|hangyodon/i.test([ic(o,it),it.ch,it.name,it.note,it.kind].join(' ')))return;if(it.hide&&!$('hh').checked)return;if(od.startsWith(pre))cntAll+=+it.qty||1;const cut=!!(it.img&&it.img.s&&(it.img.o||it.img.c));if(!cut)return;const src=it.img.s;(D[od]=D[od]||[]).push({o,ix,q:+it.qty||1,name:it.name||'未命名',img:src,pol:!cut})})});
   const first=new Date(y,mo,1).getDay(),days=new Date(y,mo+1,0).getDate(),td=today(),mon=[];
   let g='';for(let i=0;i<first;i++)g+='<div class="cd0"></div>';
   for(let d=1;d<=days;d++){const k=pre+pad(d);(D[k]||[]).forEach(x=>mon.push(x));g+=`<div class="cdy${k===td?' td':''}"><i>${d}</i></div>`}
@@ -1972,7 +1974,7 @@ async function autoTrimAll(){
   if(ch){save();render()}
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){autoPull();}else if(autoOn()&&isDirty()&&lsGet('syncSha'))syncUp(true)});
-(async()=>{const a=await loadItems(),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);renderCats();if(window.LOADMISS>0)setTimeout(()=>toast('⚠ 有 '+window.LOADMISS+' 筆資料讀不到，請先不要刪除或匯入，並到設定按「還原下載前的資料」或用備份檔救回',15000),1500);try{if(!localStorage.getItem('fixPaid1')){localStorage.setItem('fixPaid1','1');Promise.resolve(fixPaid()).then(n=>{if(n){render();toast('已把 '+n+' 筆已到貨的訂單標為已付清（可在設定還原）')}})}}catch(e){}try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{const h=localStorage.getItem('hp2')||(localStorage.getItem('hp')==='0'?'all':'hide');$('hp').value=h}catch(e){}
+(async()=>{const a=await loadItems(),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);renderCats();if(window.LOADMISS>0)setTimeout(()=>toast('⚠ 有 '+window.LOADMISS+' 筆資料讀不到，請先不要刪除或匯入，並到設定按「還原下載前的資料」或用備份檔救回',15000),1500);try{if(!localStorage.getItem('fixCut1')){localStorage.setItem('fixCut1','1');Promise.resolve(fixCut()).then(n=>{if(n){render();toast('已找回 '+n+' 張去背圖的標記',4000)}}).catch(()=>{})}}catch(e){}try{if(!localStorage.getItem('fixPaid1')){localStorage.setItem('fixPaid1','1');Promise.resolve(fixPaid()).then(n=>{if(n){render();toast('已把 '+n+' 筆已到貨的訂單標為已付清（可在設定還原）')}})}}catch(e){}try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{const h=localStorage.getItem('hp2')||(localStorage.getItem('hp')==='0'?'all':'hide');$('hp').value=h}catch(e){}
 try{const v=localStorage.getItem('view');if(VB[v])view=v;Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===view))}catch(e){}render();setTimeout(()=>autoTrimAll().catch(()=>{}),400);jobs=[];saveJobs();if(applyCfgHash()){fillCfg();toast('已設定，開始從雲端下載…');setTimeout(()=>syncDown(),300)}else setTimeout(autoPull,1500)})();
 
 /* shrink every "NT$" next to numerals (Hoefler old-style figures make caps look big) */
