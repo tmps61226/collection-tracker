@@ -444,7 +444,9 @@ const friendNet=o=>{ // 朋友付的 − 朋友品項應分攤的成本 (正=多
   const fp=+o.fpaid||0;if(!fp)return null;const fr=o.items.filter(i=>ip(o,i)==='1'),mine=o.items.filter(i=>ip(o,i)!=='1');if(!fr.length||!mine.length)return null;
   const sb=a=>a.reduce((x,i)=>x+(+i.qty||0)*(+i.price||0),0),fs=sb(fr),all=sb(o.items),fair=fs+(all?(+o.ship||0)*fs/all:0);return{fp,fair,net:fp-fair,mineSub:sb(mine)}};
 const got=(o,it)=>o.status==='have'||o.status==='sold'||(o.status==='pre'&&!!it.got);
-let kindF='',charF='',KH='',CH_H='',KO=(()=>{try{return localStorage.getItem('kopen')==='1'}catch(e){return false}})();const CH=()=>S.chars||[];const KD=()=>S.kinds||['娃娃','扭蛋','公仔','小物','徽章'];
+let kindF='',charF='',KH='',CH_H='',KO=(()=>{try{return localStorage.getItem('kopen')==='1'}catch(e){return false}})();const CH=()=>S.chars||[];
+const cZ=t=>String(t||'').replace(/[\u200b-\u200f\u2060\ufeff]/g,'').trim(),cK=t=>cZ(t).normalize('NFKC').replace(/\s+/g,'').toLowerCase(),canon=t=>{t=cZ(t);return CH().find(c=>cK(c)===cK(t))||t};
+function dedupChars(){const L=S.chars||[],seen=new Map(),out=[],map={};let n=0;L.forEach(c=>{const k=cK(c);if(!k)return;if(seen.has(k)){n++;if(c!==seen.get(k))map[c]=seen.get(k)}else{seen.set(k,c);out.push(c)}});if(n||out.length!==L.length){S.chars=out;items.forEach(o=>o.items.forEach(it=>{if(it.ch&&map[it.ch])it.ch=map[it.ch]}))}return n}const KD=()=>S.kinds||['娃娃','扭蛋','公仔','小物','徽章'];
 let VISX=0;
 const HT=()=>view==='shelf'&&!fMode&&S.cats.includes('漢頓');
 const vis=(o,it,fc)=>{if(fMode)return ip(o,it)==='1'&&FLF[flTab]({o,it});if(it.hide&&!$('hh').checked)return false;if(($('hsl').checked||$('fs').value==='sell')&&!(it.sell&&sq(it)<(+it.qty||1)))return false;if($('hsw').checked&&!HT()&&!$('hsl').checked&&$('fs').value!=='sell'&&it.sell&&sq(it)<(+it.qty||1))return false;if(kindF&&(it.kind||'')!==kindF)return false;if(charF&&(it.ch||'')!==charF)return false;const m=$('hp').value,p=ip(o,it)==='1';const owe=p&&fpdOf(o,it)==='0'&&got(o,it);if(p&&S.ahp!==false&&got(o,it)&&!owe&&!VISX&&!$('hh').checked)return false;if(m==='hide'&&p&&!owe)return false;if(m==='only')return p&&(fc==='all'||ic(o,it)===fc);if(fc==='all'&&(S.hid||[]).includes(ic(o,it)))return false;return fc==='all'||ic(o,it)===fc};
@@ -609,7 +611,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v375</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v376</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -726,7 +728,7 @@ function upd(){
 const MO=$('mo');
 function onField(ev){
   const e=ev.target;
-  if(e.dataset.i!==undefined){const it=cur.items[+e.dataset.i];if(it){if(e.dataset.k==='ch'&&e.value==='__new'){const v=(prompt('新增角色名稱（例如 美樂蒂）')||'').trim();if(v){if(!CH().includes(v))S.chars=[...CH(),v];it.ch=v;save()}drawEd();return}it[e.dataset.k]=e.value;if(e.dataset.k==='price'&&e.value!==''&&+e.value>=0)delete it.cu;if(e.dataset.k==='proxy'){if(e.value==='1'&&cur.fpd==null)cur.fpd='0';drawEd();return}if(e.dataset.k==='price'&&cur.even){cur.even='';delete cur.tw0;delete cur._s0;cur.items.forEach(x=>delete x.p0)}upd()}return}
+  if(e.dataset.i!==undefined){const it=cur.items[+e.dataset.i];if(it){if(e.dataset.k==='ch'&&e.value==='__new'){const v=(prompt('新增角色名稱（例如 美樂蒂）')||'').trim();if(v){const cv=canon(v);if(!CH().includes(cv))S.chars=[...CH(),cv];it.ch=cv;save()}drawEd();return}it[e.dataset.k]=e.value;if(e.dataset.k==='price'&&e.value!==''&&+e.value>=0)delete it.cu;if(e.dataset.k==='proxy'){if(e.value==='1'&&cur.fpd==null)cur.fpd='0';drawEd();return}if(e.dataset.k==='price'&&cur.even){cur.even='';delete cur.tw0;delete cur._s0;cur.items.forEach(x=>delete x.p0)}upd()}return}
   const f=e.dataset.f;if(!f)return;
   if(f==='src'&&e.value==='__new'){const v=(prompt('新的購買來源名稱（例如：Yahoo拍賣、朋友A）')||'').trim();if(v){if(!SRC.includes(v)&&!(S.srcX||[]).includes(v)){S.srcX=(S.srcX||[]).concat(v);save()}cur.src=v}drawEd();return}
   if(f==='_paid'){const n=parseFloat(e.value);if(n>=0){if(cur._s0===undefined)cur._s0=+cur.ship||0;cur.items.forEach(i=>{if(i.p0===undefined)i.p0=i.price});
@@ -787,7 +789,7 @@ MO.addEventListener('click',ev=>{
     it.qty=q-1;if(+it.sq>it.qty){it.sq=it.qty}
     const n={name:it.name,qty:1,price:it.price};if(it.cat)n.cat=it.cat;cur.items.splice(i+1,0,n);drawEd();toast('已拆出一款，可以改名字、加照片');return}
   if(b.dataset.chs!==undefined){const i=+b.dataset.chs,it=cur.items[i],v=prompt('輸入角色／款式名稱，用頓號或逗號分開\n例如：美樂蒂、凱蒂、大耳狗\n（每個角色會變成一個品項，各自加照片、標已收到）','');if(v===null)return;
-    const names=[...new Set(v.split(/[、,，;；\/\n]+/).map(x=>x.trim()).filter(Boolean))];if(!names.length)return;
+    const nm0=v.split(/[、,，;；\/\n]+/).map(x=>canon(x)).filter(Boolean),sk=new Set(),names=nm0.filter(x=>{const k=cK(x);if(sk.has(k))return false;sk.add(k);return true});if(!names.length)return;
     const q=+it.qty||1;const mk=nm=>{const n={name:it.name,qty:1,price:it.price,note:nm,ch:nm};['cat','kind','sell','proxy','fn','giv','fpd'].forEach(k=>{if(it[k]!=null&&it[k]!=='')n[k]=it[k]});if(it.got)n.got=it.got;return n};
     const add=names.map(mk);const rest=q-names.length;
     const sold=sq(it),spT=+it.sp||0,full=sold>0&&sold>=q&&rest>=0;
@@ -1272,7 +1274,7 @@ SO.addEventListener('click',e=>{
   if(b.dataset.kt!==undefined){const i=+b.dataset.kt,l=[...KD()];l.unshift(l.splice(i,1)[0]);S.kinds=l;save();drawSet();render();return}
   if(b.dataset.cht!==undefined){const i=+b.dataset.cht,l=[...CH()];l.unshift(l.splice(i,1)[0]);S.chars=l;save();drawSet();render();return}
   if(b.dataset.cd!==undefined){if(confirm('刪除這個分類？（已使用的訂單不會被刪除）')){S.cats.splice(+b.dataset.cd,1);save();drawSet()}}
-  if(b.id==='addchar'){const v=$('newchar').value.trim();if(v&&!CH().includes(v)){S.chars=[...CH(),v];save();drawSet()}return}
+  if(b.id==='addchar'){const v=$('newchar').value.trim();if(v&&!CH().some(c=>cK(c)===cK(v))){S.chars=[...CH(),cZ(v)];save();drawSet()}return}
   if(b.dataset.chd!==undefined){const k=CH()[+b.dataset.chd];if(confirm('刪除角色「'+k+'」？已設定的品項會變成未設定。')){S.chars=CH().filter(x=>x!==k);items.forEach(o=>o.items.forEach(it=>{if(it.ch===k)delete it.ch}));save();drawSet();render()}return}
   if(b.id==='addkind'){const v=$('newkind').value.trim();if(v&&!KD().includes(v)){S.kinds=[...KD(),v];save();drawSet();render()}return}
   if(b.dataset.kd!==undefined){const k=KD()[+b.dataset.kd];if(confirm('刪除標籤「'+k+'」？已貼的品項會變成未標籤。')){S.kinds=KD().filter(x=>x!==k);items.forEach(o=>o.items.forEach(it=>{if(it.kind===k)delete it.kind}));save();drawSet();render()}return}
@@ -1441,7 +1443,7 @@ async function syncDown(auto){
       if(!auto)toast('下載圖片 '+(++done)+'/'+names.length+'…',0)});
     const full=JSON.parse(text,(k,v)=>typeof v==='string'&&v.startsWith('@img:')?got[v.slice(5)]:v);
     const lc=new Map();items.forEach(o=>o.items.forEach((it,ix)=>{if(it.img&&(it.img.o||it.img.c))lc.set(o.id+'|'+ix,it.img)}));
-    items=full.items.map(mig);items.forEach(o=>o.items.forEach((it,ix)=>{const m=it.img,l=lc.get(o.id+'|'+ix);if(m&&l&&l.s===m.s&&!m.o&&!m.c)m.c=1}));if(full.settings&&full.settings.cats)S=Object.assign(S,full.settings);
+    items=full.items.map(mig);items.forEach(o=>o.items.forEach((it,ix)=>{const m=it.img,l=lc.get(o.id+'|'+ix);if(m&&l&&l.s===m.s&&!m.o&&!m.c)m.c=1}));if(full.settings&&full.settings.cats)S=Object.assign(S,full.settings);dedupChars();dedupChars();
     lsSet('syncSha',head);lsSet('lastBackup',String(Date.now()));
     save();lsSet('lastSync',String(Date.now()+1));lsSet('dirty','0');clearTimeout(autoT);renderCats();render();renderBk();if(SO.classList.contains('show'))drawSet();toast(auto?'☁️ 已更新成雲端最新資料':'✓ 已從雲端下載 '+items.length+' 筆（下載前的資料有留一份，可在設定還原）',auto?2500:4500)
   }catch(e){if(!auto)toast('下載失敗：'+e.message,5000)}finally{syncBusy=false}}
@@ -1977,7 +1979,7 @@ async function autoTrimAll(){
   if(ch){save();render()}
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){autoPull();}else if(autoOn()&&isDirty()&&lsGet('syncSha'))syncUp(true)});
-(async()=>{const a=await loadItems(),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);renderCats();if(window.LOADMISS>0)setTimeout(()=>toast('⚠ 有 '+window.LOADMISS+' 筆資料讀不到，請先不要刪除或匯入，並到設定按「還原下載前的資料」或用備份檔救回',15000),1500);try{if(!localStorage.getItem('fixCut1')){localStorage.setItem('fixCut1','1');Promise.resolve(fixCut()).then(n=>{if(n){render();toast('已找回 '+n+' 張去背圖的標記',4000)}}).catch(()=>{})}}catch(e){}try{if(!localStorage.getItem('fixPaid1')){localStorage.setItem('fixPaid1','1');Promise.resolve(fixPaid()).then(n=>{if(n){render();toast('已把 '+n+' 筆已到貨的訂單標為已付清（可在設定還原）')}})}}catch(e){}try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{const h=localStorage.getItem('hp2')||(localStorage.getItem('hp')==='0'?'all':'hide');$('hp').value=h}catch(e){}
+(async()=>{const a=await loadItems(),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);if(dedupChars()>0)setTimeout(()=>{save();toast('已合併重複的角色',3500)},800);renderCats();if(window.LOADMISS>0)setTimeout(()=>toast('⚠ 有 '+window.LOADMISS+' 筆資料讀不到，請先不要刪除或匯入，並到設定按「還原下載前的資料」或用備份檔救回',15000),1500);try{if(!localStorage.getItem('fixCut1')){localStorage.setItem('fixCut1','1');Promise.resolve(fixCut()).then(n=>{if(n){render();toast('已找回 '+n+' 張去背圖的標記',4000)}}).catch(()=>{})}}catch(e){}try{if(!localStorage.getItem('fixPaid1')){localStorage.setItem('fixPaid1','1');Promise.resolve(fixPaid()).then(n=>{if(n){render();toast('已把 '+n+' 筆已到貨的訂單標為已付清（可在設定還原）')}})}}catch(e){}try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{const h=localStorage.getItem('hp2')||(localStorage.getItem('hp')==='0'?'all':'hide');$('hp').value=h}catch(e){}
 try{const v=localStorage.getItem('view');if(VB[v])view=v;Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===view))}catch(e){}render();setTimeout(()=>autoTrimAll().catch(()=>{}),400);jobs=[];saveJobs();if(applyCfgHash()){fillCfg();toast('已設定，開始從雲端下載…');setTimeout(()=>syncDown(),300)}else setTimeout(autoPull,1500)})();
 
 /* shrink every "NT$" next to numerals (Hoefler old-style figures make caps look big) */
