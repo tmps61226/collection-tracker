@@ -100,7 +100,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .shf::after{content:"";position:absolute;left:-10px;right:-10px;bottom:-10px;height:11px;background:linear-gradient(#ffffffed 0%,#f3f1ec99 45%,#d9d4c859 100%);border-top:1.5px solid #fff;border-bottom:1px solid #8a806e40;box-shadow:0 9px 12px -3px #3a2e1a2e,inset 0 1px 0 #fff}
 .shr{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
 .sc{text-align:center;position:relative;cursor:pointer;min-width:0}
-.sc .si{aspect-ratio:1;display:flex;align-items:flex-end;justify-content:center;padding:0 2px}
+.sc .si{aspect-ratio:1;display:flex;align-items:flex-end;justify-content:center;padding:0 2px;position:relative;min-height:0}.sc .si>img{position:absolute;left:2px;top:0;width:calc(100% - 4px);height:100%}
 .sc img{width:100%;height:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 1px 0 #fff) drop-shadow(0 -1px 0 #fff) drop-shadow(0 2px 2px #0002)}
 .sc:active{transform:scale(.96)}
 .sc.em{border:1.5px dashed #c9ced6;border-radius:14px;aspect-ratio:.8;margin:2px 4px 8px;display:flex;align-items:center;justify-content:center;color:#b3b9c2;font-size:22px}
@@ -617,7 +617,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v426</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v427</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const f=g.querySelector('.gi');if(f&&f.scrollWidth>f.clientWidth+1)g.classList.add('lg')}
