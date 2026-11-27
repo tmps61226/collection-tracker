@@ -578,7 +578,7 @@ function openGD(ids){
   DV.innerHTML=`<div class="mh">${dvNb()}<button id="dcx" aria-label="關閉"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 3l12 12M15 3L3 15"/></svg></button></div>
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${ST[f.o.status]||''}</span></span><div class="dvi">${im?`<img loading="lazy" decoding="async" src="${im}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(base)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
-  <div class="dst"><div class="m"><b>${q} 件</b>數量</div><div class="p"><b${cfs(ic(f.o,f.it)||'未分類',0)}>${esc(ic(f.o,f.it)||'未分類')}</b>分類</div><div class="y">${gpt}<b>NT$${nt.toLocaleString()}</b><span>單件成本</span></div></div>${gprog}${cards}<button class="btn" id="gcost" style="width:100%;margin-top:12px">統一設定成本</button></div>`;
+  <div class="dst"><div class="m"><b>${q} 件</b>數量</div><div class="p"><b${cfs(ic(f.o,f.it)||'未分類',0)}>${esc(ic(f.o,f.it)||'未分類')}</b>分類</div><div class="y">${gpt}<b>NT$${nt.toLocaleString()}</b><span>單件成本</span></div></div>${gprog}${cards}<div style="display:flex;gap:8px;margin-top:12px"><button class="btn" id="gname" style="flex:1">統一改名字</button><button class="btn" id="gcost" style="flex:1">統一設定成本</button></div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 function openDetail(id,ix){
   if(!dvKeep)dvNav=-1;
@@ -617,7 +617,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v424</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v425</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const f=g.querySelector('.gi');if(f&&f.scrollWidth>f.clientWidth+1)g.classList.add('lg')}
@@ -631,6 +631,9 @@ DV.addEventListener('change',e=>{const t=e.target;if(t.id!=='dcat'||!dvState)ret
 DV.addEventListener('click',e=>{const h=e.target.closest('[data-dh]');if(h&&dvState){const o=items.find(x=>x.id===dvState.id);if(o){const k=+h.dataset.dh,ix=dvState.ix,it=ix>=0?o.items[ix]:(o.items.length===1?o.items[0]:null),cu=it?lv(o,it):(+o.love||0),nv=cu===k?k-1:k;const sc=DV.scrollTop;dvKeep=1;if(dvState.g){dvState.g.forEach(([i2,x2])=>{const oo=items.find(z=>z.id===i2);if(oo&&oo.items[x2])oo.items[x2].love=nv});const gg=dvState.g;save();render();openGD(gg)}else{if(it)it.love=nv;else o.love=nv;save();render();openDetail(o.id,ix)}dvKeep=0;DV.scrollTop=sc}return}
   const go=e.target.closest('[data-oid]');if(go){openDetail(go.dataset.oid,+go.dataset.oix);return}
   const b=e.target.closest('button');if(!b)return;
+  if(b.id==='gname'&&dvState&&dvState.g){const g=dvState.g,L=g.map(([id,ix])=>{const o=items.find(x=>x.id===id);return o&&o.items[ix]?{o,it:o.items[ix]}:null}).filter(Boolean);
+    const cur=(L[0]&&L[0].it.name||'').replace(/\s*×\d+$/,''),v=prompt('這 '+L.length+' 筆要統一改成的名字：',cur);if(v===null)return;const nm=v.trim();if(!nm){toast('名字不能是空的');return}
+    putPrev().then(()=>{L.forEach(x=>{x.it.name=nm});save();render();dvKeep=true;openGD(g);dvKeep=false;toast('已把 '+L.length+' 筆改名為「'+nm+'」')});return}
   if(b.id==='gcost'&&dvState&&dvState.g){const g=dvState.g,L=g.map(([id,ix])=>{const o=items.find(x=>x.id===id);return o&&o.items[ix]?{o,it:o.items[ix]}:null}).filter(Boolean);
     const ok=L.filter(x=>x.o.cur==='TWD'),bad=L.length-ok.length,cur=ok.length&&ok.every(x=>+x.it.price===+ok[0].it.price&&!x.it.cu)?ok[0].it.price:'';
     const v=prompt('這 '+L.length+' 筆要統一設定的「單件成本」（台幣）：'+(bad?'\n（有 '+bad+' 筆不是台幣訂單，不會改）':''),cur);if(v===null)return;const n=parseFloat(v);if(!(n>=0)){toast('請輸入數字');return}
