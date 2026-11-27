@@ -611,7 +611,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v385</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v386</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const b=g.querySelector('.gi b');if(b&&b.getBoundingClientRect().height>26)g.classList.add('lg')}
@@ -1231,7 +1231,7 @@ function drawSet(){
   <div class="cd"><h3>隱藏總投入</h3><div class="fr"><span>首頁不顯示「總投入」金額</span><input id="hideamt" type="checkbox" ${S.hide?'checked':''} style="flex:none;width:auto"></div><div class="msg">開啟後，總投入、價格、總額、淨賺都顯示 ＊＊＊。輸入價格時還是看得到自己打的數字。首頁右上角的眼睛也可以隨時切換。</div></div>
   <div class="cd"><h3>刷卡</h3><div class="fr"><span>國外手續費 %（刷卡自動加上）</span><input id="cardfee" type="number" inputmode="decimal" step="any" value="${+S.cardFee||0}"></div></div>
   <div class="cd"><h3>匯率（換算成台幣，用於統計）</h3>${['JPY','CNY','KRW','USD','HKD'].map(c=>`<div class="fr"><span>1 ${CURN[c]} =</span><input data-rate="${c}" type="number" inputmode="decimal" step="any" value="${S.rates[c]||({HKD:4}[c])}"></div>`).join('')}</div>
-  <div class="cd"><h3>賣出對帳</h3><button class="btn" id="dupchk">🔎 找重複計算的賣出</button><div class="msg">賣貨便的賣出紀錄，如果跟買進的商品是同一批，會被算兩次。這裡會幫你找出來，併入後，這筆賣貨便紀錄會從清單收起來，不再重複顯示和計算，訂單編號和日期會記在買進商品的詳細頁裡（紀錄不會刪，勾「顯示已隱藏」看得到，可隨時還原）。</div></div>
+  <div class="cd"><h3>賣出對帳</h3><button class="btn" id="dupauto">🔎 一鍵合併重複的賣出</button>${items.some(o=>o.items.some(i=>i.mg))?'<button class="btn" id="dupundo2">↩ 還原已合併的賣出</button>':''}<div class="msg">賣貨便的賣出如果跟買進的商品是同一批，會算兩次。按一下，金額相同的會自動收起來、不重複計算（不會刪除，可以還原）。</div></div>
   <div class="cd"><h3>商品圖</h3><button class="btn" id="bgall">✂️ 全部商品去背</button><button class="btn" id="unall">↩ 全部還原原圖</button><button class="btn" id="cleanall">🧹 全部去背圖清殘影</button><button class="btn" id="cmpimg">🗜 縮小全部圖片</button><div class="msg">替還沒去背的商品圖一次去背，櫃子會更好看。需要網路，張數多時請保持畫面開著。</div></div>
   <div class="cd"><h3>☁️ 雲端同步（你自己的私人 GitHub）</h3><div class="msg" style="margin:0 0 8px">${syncMsg()}</div>
     <div class="fr"><span>金鑰</span><input id="ghtok" type="password" autocomplete="off" placeholder="github_pat_…" value="${esc(GH().t)}"></div>
@@ -1299,7 +1299,9 @@ SO.addEventListener('click',e=>{
   if(b.id==='syrs')restorePrev();
   if(b.id==='cmpimg')cmpImgs();
   if(b.id==='cleanall')cleanAll();
-  if(b.id==='dupchk'){dupOpen();return}
+  if(b.id==='dupauto'){const L=dupScan().filter(x=>x.same);if(!L.length){toast('沒有找到金額相同的重複賣出');return}const t=L.reduce((a,x)=>a+x.r,0);if(!confirm('找到 '+L.length+' 筆重複的賣貨便賣出（合計 NT$'+Math.round(t).toLocaleString()+'）。\n要全部合併嗎？（合併前會先自動備份，之後可以還原）'))return;
+    putPrev().then(()=>{L.forEach(x=>{x.R.i.mg=1;const no=((x.R.o.note||'').match(/CM\w+/)||[''])[0];x.M.forEach(B=>{B.i.mgi=(B.i.mgi||[]).concat({d:x.R.o.soldDate||x.R.o.buyDate||'',a:x.r,n:no})})});save();render();drawSet();toast('已合併 '+L.length+' 筆，回血少算重複的 NT$'+Math.round(t).toLocaleString(),5000)});return}
+  if(b.id==='dupundo2'){if(!confirm('把已合併的賣出全部還原？'))return;items.forEach(o=>o.items.forEach(i=>{delete i.mg;delete i.mgi}));save();render();drawSet();toast('已還原');return}
   if(b.id==='unall'){const T=[];items.forEach(o=>{o.items.forEach(i=>{if(i.img&&i.img.o)T.push(i.img)});(o.imgs||[]).forEach(m=>{if(m&&m.o)T.push(m)})});if(!T.length){toast('沒有去背過的圖');return}if(confirm('把 '+T.length+' 張去背圖都還原成原圖？之後可以再按「全部商品去背」重做。')){T.forEach(m=>{m.s=m.o;delete m.o});save();render();toast('✓ 已還原 '+T.length+' 張')}}
 });
 
