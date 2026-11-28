@@ -420,22 +420,25 @@ async function mkThumb(blob,mime){let bm=null,w=0,h=0,src=null;
 /* 把一張 data URL 圖片放進圖片庫，回傳參照。格式特殊、重新編碼後不能完全還原的，就不轉、原樣保留 */
 /* 同一張圖（同一個 SHA）同時存兩次時排隊處理，避免兩種寫法的 data URL 互相蓋掉圖片資訊 */
 const IPQ=new Map();
-async function imgPut(v){if(typeof v!=='string'||!v.startsWith('data:')||v.length<=400)return v;const k=v.length+'|'+v.slice(-48);const q=IPQ.get(k)||{p:Promise.resolve(),n:0};q.n++;const prev=q.p;let rel;q.p=new Promise(r=>rel=r);IPQ.set(k,q);
+async function imgPut(v){if(typeof v!=='string'||!v.startsWith('data:')||v.length<=400)return v;const k=own(v.length+'|'+v.slice(-48));const q=IPQ.get(k)||{p:Promise.resolve(),n:0};q.n++;const prev=q.p;let rel;q.p=new Promise(r=>rel=r);IPQ.set(k,q);
   try{await prev;return await imgPut0(v)}finally{rel();if(--q.n===0)IPQ.delete(k)}}
+/* 短字串做一份獨立的複本：從整張圖的長字串切出來的短字串（MIME、開頭），在 JavaScript 引擎裡會一直連著整張圖的長字串，存進圖片資訊後整張圖就永遠留在記憶體 */
+const own=x=>typeof x==='string'?x.split('').join(''):x;
 async function imgPut0(v){const m=DURL.exec(v.slice(0,300));if(!m)return v;
   const b64=v.slice(m[0].length);if(!b64.length||b64.length%4||!B64RE.test(b64))return v;
   /* 可逆檢查：base64 只有最後 4 個字可能有不同寫法；最後 4 個字解開再編回去必須一樣，位元組數也要對 */
   const tail=b64.slice(-4);let canon=false;try{canon=btoa(atob(tail))===tail}catch(e){}if(!canon)return v;
   const pad=tail.endsWith('==')?2:tail.endsWith('=')?1:0,want=b64.length/4*3-pad;
-  const bytes=new Uint8Array(await (await fetch(v)).arrayBuffer());if(bytes.length!==want)return v;
-  const sha=hexOf(await crypto.subtle.digest('SHA-256',bytes)),ref='img:'+sha,pre=v.slice(0,m[0].length-1),m0=BMX.get(sha);
+  /* v472：直接解 base64，不用 fetch(data URL)：瀏覽器會把 fetch 過的整個 data URL 字串留在快取裡，大量還原或升級時記憶體只增不減 */
+  let bytes;try{bytes=b64u8(b64)}catch(e){return v}if(bytes.length!==want)return v;
+  const sha=hexOf(await crypto.subtle.digest('SHA-256',bytes)),ref='img:'+sha,pre=own(v.slice(0,m[0].length-1)),m0=BMX.get(sha);
   if(m0){/* 同樣的位元組已經在圖片庫：data URL 開頭（MIME 寫法、參數）不同就不轉、原樣保留，才能逐字還原 */
     if(m0.pre!==pre)return v;if(await bOk(sha,m0.bytes))return ref;
     /* 圖片資訊在、本體不在或壞了：用這份已核對的位元組修補 */
     const ok=await blobSelfTest();await kvTx(st=>st.put(ok?new Blob([bytes],{type:m0.mime}):bytes.buffer,'B:'+sha));
     if(!(await bOk(sha,bytes.length)))throw new Error('圖片存進手機後讀回來核對不一致');BHAS.add(sha);return ref}
-  const mime=m[1].toLowerCase(),ext=mime.includes('png')?'png':mime.includes('webp')?'webp':'jpg';
-  const meta={sha,mime,pre:v.slice(0,m[0].length-1),bytes:bytes.length,n:b64.length,h:h64(b64),hv:h64(v),lv:v.length,cn:h53(v)+v.length.toString(36)+'.'+ext,t:Date.now()};meta.pid=meta.h+':'+meta.n;
+  const mime=own(m[1].toLowerCase()),ext=mime.includes('png')?'png':mime.includes('webp')?'webp':'jpg';
+  const meta={sha,mime,pre,bytes:bytes.length,n:b64.length,h:h64(b64),hv:h64(v),lv:v.length,cn:h53(v)+v.length.toString(36)+'.'+ext,t:Date.now()};meta.pid=meta.h+':'+meta.n;
   const blob=new Blob([bytes],{type:mime});let th=null;try{th=await mkThumb(blob,mime)}catch(e){}if(th){meta.w=th.w;meta.ht=th.h;meta.th=1}
   const ok=await blobSelfTest();const thv=th?(ok?th.blob:await th.blob.arrayBuffer()):null;
   /* 交易內再確認：另一個分頁可能剛存了同一份位元組但不同寫法；那樣這一份就不轉、原樣保留 */
@@ -485,7 +488,8 @@ const irDrop=n=>{if(!IO_)return;const L=n.matches&&n.matches('img[data-ir]')?[n]
 new MutationObserver(ms=>{for(const m of ms){for(const n of m.removedNodes)if(n.nodeType===1)irDrop(n);for(const n of m.addedNodes)if(n.nodeType===1)irWatch(n)}}).observe(document.documentElement,{childList:true,subtree:true});
 /* 需要真正像素的功能（裁切、去背、放大主體…）：參照換成物件網址再處理；沒有改變就回傳原本的參照 */
 const refWrap=fn=>async(u,...a)=>{if(!isRef(u))return fn(u,...a);return withURL(u,'f',async x=>{const out=await fn(x,...a);return out===x?u:out})};
-const imgFetchBlob=async v=>isRef(v)?await imgBlob(v,'f'):await (await fetch(v)).blob();
+const dataBlob=async v=>{const m=typeof v==='string'&&DURL.exec(v.slice(0,300));if(m){try{return new Blob([b64u8(v.slice(m[0].length))],{type:m[1]})}catch(e){}}return await (await fetch(v)).blob()};
+const imgFetchBlob=async v=>isRef(v)?await imgBlob(v,'f'):await dataBlob(v);
 /* 更新檔裡的圖片對照表：先把裡面的圖片放進圖片庫，讓比對用同一種參照 */
 async function ingestDeep(x){if(Array.isArray(x)){for(let i=0;i<x.length;i++){if(typeof x[i]==='string')x[i]=await imgPut(x[i]);else await ingestDeep(x[i])}}else if(isRec(x)){for(const k of Object.keys(x)){if(typeof x[k]==='string')x[k]=await imgPut(x[k]);else await ingestDeep(x[k])}}}
 /* 存檔前把清單裡新的 data URL 圖片放進圖片庫（只處理圖片欄位；處理期間如果欄位被改掉就不動） */
@@ -2302,7 +2306,7 @@ async function readBackup(FL,opt){opt=opt||{};const warn=[];
 async function deepCheck(FL,onp){let n=0,badN=0;const badL=[];const H=[];for(const f of FL){const m=await bkHead(f);H.push({f,m})}
   for(const h of H){let d;try{d=JSON.parse(await h.f.text())}catch(e){continue}const L=Array.isArray(d.items)?d.items:Array.isArray(d)?d:[];d=null;
     for(const o of L){const ims=[];if(isRec(o)){(o.items||[]).forEach(it=>{if(isRec(it)&&isRec(it.img))['s','o'].forEach(k=>{if(typeof it.img[k]==='string'&&it.img[k].startsWith('data:image'))ims.push([it.name||'',it.img[k],k])})});(o.imgs||[]).forEach(m=>{if(isRec(m))['s','o'].forEach(k=>{if(typeof m[k]==='string'&&m[k].startsWith('data:image'))ims.push(['明細圖',m[k],k])})})}
-      for(const [nm,v,k] of ims){n++;try{const b=await (await fetch(v)).blob();let ok=false;try{const bm=await createImageBitmap(b);ok=bm.width>0;bm.close&&bm.close()}catch(e){const u=URL.createObjectURL(b);try{const im=new Image();im.src=u;await im.decode();ok=im.naturalWidth>0}catch(x){}URL.revokeObjectURL(u)}if(!ok)throw 0}catch(e){badN++;if(badL.length<5)badL.push((nm||'').slice(0,14)+(k==='o'?'（原圖）':''))}if(onp&&n%20===0)onp(n)}}}
+      for(const [nm,v,k] of ims){n++;try{const b=await dataBlob(v);let ok=false;try{const bm=await createImageBitmap(b);ok=bm.width>0;bm.close&&bm.close()}catch(e){const u=URL.createObjectURL(b);try{const im=new Image();im.src=u;await im.decode();ok=im.naturalWidth>0}catch(x){}URL.revokeObjectURL(u)}if(!ok)throw 0}catch(e){badN++;if(badL.length<5)badL.push((nm||'').slice(0,14)+(k==='o'?'（原圖）':''))}if(onp&&n%20===0)onp(n)}}}
   return {n,badN,badL}}
 async function verifyBackup(FL){try{const r=await readBackup(FL,{keep:false});if(r.patch||r.imgOnly){alert('這是更新用的檔案，不是備份');return}
     if(r.raw){const g=r.manifest.gen;let local=null;try{local=await rawRead(g,true)}catch(e){}
@@ -2324,7 +2328,11 @@ async function rescueMark(gen,patch){await kvTx(st=>{const q=st.get('rescues');q
 /* 型別保留編碼：JSON 表達不了的值（undefined、NaN、±Infinity、-0、BigInt、Date、Blob/File、ArrayBuffer、型別陣列、Map、Set、陣列空位）都編成 {"$t":…}；
    本身就有 "$t" 鍵的物件也先包起來，避免誤認。匯出時編碼、放回時解碼，逐鍵還原成原本的型別 */
 const u8b64=u=>{let s='';for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(s)};
-const b64u8=s=>{const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u};
+/* base64 → 位元組：純 JavaScript 解碼（v472）。不把整張圖的長字串交給瀏覽器內建函式（atob、fetch），瀏覽器會把交給它的長字串另外保存，大量還原或升級時記憶體不會釋放 */
+const B64D=(()=>{const t=new Int16Array(128).fill(-1);const a='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';for(let i=0;i<64;i++)t[a.charCodeAt(i)]=i;return t})();
+const b64u8=s=>{let n=s.length;if(n%4)throw new Error('base64 長度不對');let pad=0;if(n&&s.charCodeAt(n-1)===61){pad++;if(s.charCodeAt(n-2)===61)pad++}const u=new Uint8Array(n/4*3-pad);let j=0;
+  for(let i=0;i<n;i+=4){const c0=s.charCodeAt(i),c1=s.charCodeAt(i+1),c2=s.charCodeAt(i+2),c3=s.charCodeAt(i+3);const a=c0<128?B64D[c0]:-1,b=c1<128?B64D[c1]:-1,c=c2===61?0:c2<128?B64D[c2]:-1,d=c3===61?0:c3<128?B64D[c3]:-1;
+    if((a|b|c|d)<0)throw new Error('base64 內容不對');const x=a<<18|b<<12|c<<6|d;u[j++]=x>>16&255;if(j<u.length)u[j++]=x>>8&255;if(j<u.length)u[j++]=x&255}return u};
 /* 版本 2：支援共享參照與循環參照（先找出出現兩次以上的物件，第一次出現標 id，之後用 ref 指回去）、DataView、RegExp、包裝型別。
    不支援的型別（例如 ImageData）會標成 {"$t":"x"}，整份匯出標記 lossy：不能用來授權刪除手機裡的保存區。 */
 const defP=(o,k,v)=>Object.defineProperty(o,k,{value:v,enumerable:true,writable:true,configurable:true});
