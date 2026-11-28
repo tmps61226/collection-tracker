@@ -387,7 +387,7 @@ async function loadItems(){
   }catch(e){RO=true;ROWHY='手機儲存空間讀取失敗（'+((e&&e.name)||'錯誤')+'）';console.error(e);return[]}
 }
 async function save(){if(RO){roBlock();SAVEST='fail';return false}AVC=null;SAVEST='saving';try{localStorage.setItem('dirty','1');localStorage.setItem('lastSave',String(Date.now()))}catch(e){}schedAuto();
-  try{await idbPut();saveFail=0;SAVEST='ok';lsSet('lastLocalOk',String(Date.now()));return true}catch(e){console.error(e);try{await new Promise(r=>setTimeout(r,800));await idbPut();saveFail=0;SAVEST='ok';lsSet('lastLocalOk',String(Date.now()));return true}catch(e2){console.error(e2);SAVEST='fail';lsSet('dirty','1');if(!saveFail++||saveFail%5===0)toast('⚠ 這次沒存進手機！資料只在目前畫面，關掉 app 會消失。請先到設定按「上傳」或「備份」。（'+((e2&&e2.name)||'錯誤')+'）',12000);return false}}}
+  try{await idbPut();saveFail=0;SAVEST='ok';lsSet('lastLocalOk',String(Date.now()));if(PREVUNDO){PREVUNDO=false;setTimeout(()=>undoToast('整理完成，不滿意可以復原',()=>restorePrev()),600)}return true}catch(e){console.error(e);try{await new Promise(r=>setTimeout(r,800));await idbPut();saveFail=0;SAVEST='ok';lsSet('lastLocalOk',String(Date.now()));return true}catch(e2){console.error(e2);SAVEST='fail';lsSet('dirty','1');if(!saveFail++||saveFail%5===0)toast('⚠ 這次沒存進手機！資料只在目前畫面，關掉 app 會消失。請先到設定按「上傳」或「備份」。（'+((e2&&e2.name)||'錯誤')+'）',12000);return false}}}
 
 /* partial sales: items carry sq (units sold) and sp (TWD revenue) */
 function migSold(o){
@@ -653,7 +653,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div>${paRow(o,single?[it]:o.items)}<button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v459</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div>${paRow(o,single?[it]:o.items)}<button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v460</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function paRow(o,L){const un=L.filter(i=>sq(i)<(+i.qty||1)),anySold=L.some(i=>sq(i)>0)||o.status==='sold',B=[];
@@ -1307,7 +1307,7 @@ function drawSet(){
     <div class="fr"><span>倉庫</span><input id="ghrepo" value="${esc(GH().r)}" placeholder="帳號/倉庫名"></div>
     <div class="fr"><span>自動同步（開啟時檢查、修改後自動上傳）</span><input id="autosync" type="checkbox" ${lsGet('autoSync')!=='0'?'checked':''} style="flex:none;width:auto"></div>
     <button class="btn" id="syup">⬆ 上傳到雲端</button><button class="btn" id="sydn">⬇ 從雲端下載</button>${GH().t?'<button class="btn" id="qrcfg">📱 顯示設定 QR（用來接新裝置）</button>':''}${GH().t?'<button class="btn" id="cpcfg">🔗 複製設定連結（傳給自己的另一台裝置）</button>':''}
-    <div class="fr"><span>新裝置：貼上設定連結</span><input id="cfglink" placeholder="貼上從另一台複製的連結" autocomplete="off"></div><button class="btn" id="apcfg">套用設定連結並下載</button>${lsGet('prevAt')?'<button class="btn" id="syrs">↩ 還原下載前的資料</button>':''}
+    <div class="fr"><span>新裝置：貼上設定連結</span><input id="cfglink" placeholder="貼上從另一台複製的連結" autocomplete="off"></div><button class="btn" id="apcfg">套用設定連結並下載</button>${lsGet('prevAt')?'<button class="btn" id="syrs">↩ 還原到上一次快照（下載或整理前）</button>':''}
     <div class="msg">換手機或資料不見時，貼上同一把金鑰再按「下載」就能還原。開啟自動同步後，改完資料幾秒會自動上傳，打開 app 時會自動拿雲端最新的。如果兩支手機都有沒同步的修改，會停下來讓你選，不會自己蓋掉。金鑰只存在這支手機。</div></div>
   <div class="cd"><h3>AI 辨識</h3><div class="fr"><span>Gemini Key</span><input id="sgk" type="password" autocomplete="off" placeholder="貼上免費金鑰" value="${esc(localStorage.getItem('gk')||'')}"></div><div class="msg">截圖自動填表、AI 智慧新增會用到。金鑰只存在這支手機，不會放進備份檔。</div></div>
   <div class="cd"><h3>整理與維護</h3><button class="btn" data-n="merge">🔗 合併現有訂單</button><button class="btn" data-n="rcpt">🧾 合併同一張收據</button><button class="btn" data-n="bag">🛍 找紙袋／袋子品項</button><button class="btn" data-n="dup">🔍 找重複的商品</button><button class="btn" data-n="del">🗑 批次刪除訂單</button></div>
@@ -1427,6 +1427,7 @@ function fillCfg(){const a=$('ghtok'),b=$('ghrepo'),g=GH();if(a)a.value=g.t||'';
 function grabCfg(){const a=$('ghtok'),b=$('ghrepo');if(a)lsSet('ghTok',a.value.trim());if(b&&b.value.trim()!==GH().r){lsSet('ghRepo',b.value.trim());try{localStorage.removeItem('syncSha')}catch(e){}}}
 function syncMsg(){return lastSync()?'上次同步：'+new Date(lastSync()).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'還沒同步過'}
 async function fixCut(){const ids=(await kvGet('pids'))||[],bid=new Map(items.map(o=>[o.id,o]));let n=0;for(const id of ids){const o=bid.get(id);if(!o)continue;const p=await kvGet('p:'+id);if(!p||!p.items)continue;p.items.forEach((pi,ix)=>{const it=o.items[ix];if(it&&it.img&&pi.img&&pi.img.o&&pi.img.s===it.img.s&&!it.img.o&&!it.img.c){it.img.c=1;n++}})}if(n)await save();return n}
+let PREVUNDO=false;
 async function putPrev(){try{
   const pfp=(await kvGet('pfp'))||{},cur=new Map(items.map(o=>[o.id,FP.get(o.id)||fpOf(o)]));
   for(const o of items){if(pfp[o.id]!==cur.get(o.id)){await kvTx(st=>st.put(o,'p:'+o.id));pfp[o.id]=cur.get(o.id)}}
@@ -1434,7 +1435,7 @@ async function putPrev(){try{
   await kvTx(st=>{st.put(items.map(o=>o.id),'pids');st.put({t:Date.now(),settings:S},'pmeta');st.put(pfp,'pfp');gone.forEach(id=>st.delete('p:'+id));st.delete('prev')});
   const cp=await kvGetS('pids');if(!Array.isArray(cp)||cp.length!==items.length)throw new Error('快照數量不符');
   for(const o of items.slice(0,3)){if(!(await kvGetS('p:'+o.id)))throw new Error('快照缺資料')}
-  lsSet('prevAt',String(Date.now()));return true}catch(e){console.error(e);return false}}
+  lsSet('prevAt',String(Date.now()));if(!syncBusy)PREVUNDO=true;return true}catch(e){console.error(e);return false}}
 const shaKnown=h=>{if(!h)return true;if(h===lsGet('syncSha'))return true;if(h===lsGet('syncPend')){lsSet('syncSha',h);return true}return false};
 let autoT;const autoOn=()=>GH().t&&lsGet('autoSync')!=='0';
 function schedAuto(){if(!autoOn())return;clearTimeout(autoT);autoT=setTimeout(()=>syncUp(true),6000)}
@@ -1520,7 +1521,7 @@ async function restorePrev(){let p=await kvGet('pmeta'),list=null;
   if(!p||!list){toast('沒有可還原的資料');return}
   if(roBlock())return;
   {const ids0=(await kvGet('pids'));if(Array.isArray(ids0)&&ids0.length!==list.length){toast('⚠ 快照資料不完整（應有 '+ids0.length+' 筆，只讀到 '+list.length+' 筆），已停止還原，現有資料沒有被動到',8000);return}}
-  if(!confirm('還原成 '+new Date(p.t).toLocaleString('zh-TW')+' 下載前的資料（'+list.length+' 筆）？')) return;
+  if(!confirm('還原成 '+new Date(p.t).toLocaleString('zh-TW')+' 的快照（'+list.length+' 筆）？\n之後做的修改會不見。')) return;
   const bak=items,bakS=S;items=list.map(mig);if(p.settings&&p.settings.cats)S=Object.assign(S,p.settings);const okr=await save();if(!okr){items=bak;S=bakS;toast('⚠ 還原沒有寫進手機，已保留原本的資料',6000);return}renderCats();render();drawSet();toast('✓ 已還原')}
 async function syncDown(auto){
   if(auto!==true)auto=false;if(syncBusy)return;if(!auto)grabCfg();const g=GH();if(!g.t){if(!auto)toast('請先貼上金鑰');return}
@@ -2179,7 +2180,7 @@ async function autoTrimAll(){
   if(ch){save();render()}
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){autoPull();}else if(autoOn()&&isDirty()&&lsGet('syncSha'))syncUp(true)});
-(async()=>{const a=await loadItems(),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);if(dedupChars()>0)setTimeout(()=>{save();toast('已合併重複的角色',3500)},800);renderCats();setTimeout(feeAuto,1500);if(window.LOADMISS>0)setTimeout(()=>toast('⚠ 有 '+window.LOADMISS+' 筆資料讀不到，請先不要刪除或匯入，並到設定按「還原下載前的資料」或用備份檔救回',15000),1500);try{if(!localStorage.getItem('fixCut1')){localStorage.setItem('fixCut1','1');Promise.resolve(fixCut()).then(n=>{if(n){render();toast('已找回 '+n+' 張去背圖的標記',4000)}}).catch(()=>{})}}catch(e){}try{if(!localStorage.getItem('fixPaid1')){localStorage.setItem('fixPaid1','1');Promise.resolve(fixPaid()).then(n=>{if(n){render();toast('已把 '+n+' 筆已到貨的訂單標為已付清（可在設定還原）')}})}}catch(e){}try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{const h=localStorage.getItem('hp2')||(localStorage.getItem('hp')==='0'?'all':'hide');$('hp').value=h}catch(e){}
+(async()=>{const a=await loadItems(),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);if(dedupChars()>0)setTimeout(()=>{save();toast('已合併重複的角色',3500)},800);renderCats();setTimeout(feeAuto,1500);if(window.LOADMISS>0)setTimeout(()=>toast('⚠ 有 '+window.LOADMISS+' 筆資料讀不到，請先不要刪除或匯入，並到設定按「還原到上一次快照」或用備份檔救回',15000),1500);try{if(!localStorage.getItem('fixCut1')){localStorage.setItem('fixCut1','1');Promise.resolve(fixCut()).then(n=>{if(n){render();toast('已找回 '+n+' 張去背圖的標記',4000)}}).catch(()=>{})}}catch(e){}try{if(!localStorage.getItem('fixPaid1')){localStorage.setItem('fixPaid1','1');Promise.resolve(fixPaid()).then(n=>{if(n){render();toast('已把 '+n+' 筆已到貨的訂單標為已付清（可在設定還原）')}})}}catch(e){}try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{const h=localStorage.getItem('hp2')||(localStorage.getItem('hp')==='0'?'all':'hide');$('hp').value=h}catch(e){}
 try{const v=localStorage.getItem('view');if(VB[v])view=v;Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===view))}catch(e){}render();setTimeout(()=>autoTrimAll().catch(()=>{}),400);jobs=[];saveJobs();if(applyCfgHash()){fillCfg();toast('已設定，開始從雲端下載…');setTimeout(()=>syncDown(),300)}else setTimeout(autoPull,1500)})();
 
 /* shrink every "NT$" next to numerals (Hoefler old-style figures make caps look big) */
