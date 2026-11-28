@@ -1661,7 +1661,7 @@ const fnv64=t=>{let h1=2166136261,h2=0x9747b28c;for(let i=0;i<t.length;i++){cons
 const BKT={full:'完整備份（含去背前原圖）',display:'一般備份（不含去背前原圖）',rescue:'救援備份（不完整）'};
 function bkPlan(mode){const rep=mode==='full'?undefined:(k,v)=>k==='o'&&typeof v==='string'&&v.startsWith('data:')?undefined:v,set=String(Date.now()),parts=[];let cur=[],sz=0;
   const st=JSON.stringify(S,(k,v)=>/^(gk|ghTok)$/.test(k)?undefined:v),over=u8len(st)+600;
-  for(const o of items){const n=u8len(JSON.stringify(o,rep))+1;if(n+over>BK_LIM)throw new Error('「'+title(o).slice(0,20)+'」這一筆有 '+Math.round(n/1e6)+' MB，超過單一檔案上限，無法備份。請先移除或縮小它的圖片。');if(cur.length&&sz+n+over>BK_LIM){parts.push(cur);cur=[];sz=0}cur.push(o.id);sz+=n}parts.push(cur);
+  for(const o of items){const n=u8len(JSON.stringify(o,rep))+1;if(n+over>BK_LIM)throw new Error('「'+title(o).slice(0,20)+'」這一筆有 '+(n>=1e6?Math.round(n/1e6)+' MB':Math.ceil(n/1e3)+' KB')+'，超過單一檔案上限，無法備份。請先移除或縮小它的圖片。');if(cur.length&&sz+n+over>BK_LIM){parts.push(cur);cur=[];sz=0}cur.push(o.id);sz+=n}parts.push(cur);
   return {mode,rep,set,parts,st,n:items.length,t:Date.now(),incomplete:mode==='rescue'}}
 function bkPart(P,i){const ids=new Set(P.parts[i]),L=items.filter(o=>ids.has(o.id)),arr='['+L.map(o=>JSON.stringify(o,P.rep)).join(',')+']';
   const man={app:'collection-tracker',fmt:2,type:P.mode,label:BKT[P.mode],set:P.set,part:i+1,parts:P.parts.length,count:L.length,orders:P.n,t:P.t,hash:fnv64(arr),incomplete:P.incomplete||undefined,note:'不含 Gemini／GitHub 金鑰'};
