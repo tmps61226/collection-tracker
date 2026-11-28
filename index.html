@@ -1752,7 +1752,7 @@ function bkPlan(mode,src){const rep=bkRep(mode),set=String(Date.now())+Math.rand
   const st=src?src.st:stOf(),over=u8len(st)+900,ids=list.map(o=>o.id),fps=list.map(o=>fpRep(o,rep));
   list.forEach((o,i)=>{const n=u8len(JSON.stringify(o,rep))+1;if(n+over>BK_LIM){if(cur.length){parts.push(cur);cur=[];sz=0}parts.push([o.id]);big.push(title(o).slice(0,16)+'（'+Math.ceil(n/1e6)+' MB）');return}if(cur.length&&sz+n+over>BK_LIM){parts.push(cur);cur=[];sz=0}cur.push(o.id);sz+=n});if(cur.length||!parts.length)parts.push(cur);
   return {mode,rep,set,parts,st,list,live:!src,ids,fps:new Map(ids.map((id,i)=>[id,fps[i]])),setHash:h64(fps.join('\n')+'\n'+st),ih:idsHash(ids),stHash:h64(st),n:list.length,t:Date.now(),mut:MUTREV,rev:BASEREV,big,incomplete:mode==='rescue',state:[]}}
-async function bkCheck(P){if(!P.live)return true;if(P.list!==items||MUTREV!==P.mut||items.length!==P.n||items.some((o,i)=>o.id!==P.ids[i]))return false;let m;try{m=await kvGetS('meta')}catch(e){return P.mode==='rescue'}if(((m&&m.rev)||0)!==P.rev&&P.mode!=='rescue')return false;return true}
+async function bkCheck(P){if(!P.live)return true;if(P.list!==items||MUTREV!==P.mut||items.length!==P.n||items.some((o,i)=>o.id!==P.ids[i]))return false;try{await putChain}catch(e){}if(MUTREV!==P.mut)return false;let m;try{m=await kvGetS('meta')}catch(e){return P.mode==='rescue'}if(((m&&m.rev)||0)!==BASEREV&&P.mode!=='rescue')return false;return true}
 async function bkPart(P,i){if(!(await bkCheck(P))){P.void=true;throw new Error('資料在分卷途中改過，這一組備份已作廢，請重新匯出')}
   const ids=new Set(P.parts[i]),L=P.list.filter(o=>ids.has(o.id));for(const o of L)if(fpRep(o,P.rep)!==P.fps.get(o.id)){P.void=true;throw new Error('「'+title(o).slice(0,14)+'」在分卷途中改過，這一組備份已作廢，請重新匯出')}
   const arr='['+L.map(o=>JSON.stringify(o,P.rep)).join(',')+']',st=i===0?P.st:'';
@@ -1766,6 +1766,7 @@ let BKP=null;
 async function doBackup(mode){
   if(!mode){const m=await bkChoose();if(!m)return false;mode=m}
   if((RO||SAVEST==='fail'||MUTREV!==COMMITREV)&&mode!=='rescue'){if(!confirm((RO?'目前是唯讀保護中，資料可能不完整。':'目前有修改還沒存進手機。')+'\n只能匯出「救援備份（不完整）」，還原時會特別提醒。要匯出嗎？'))return false;mode='rescue'}
+  try{await putChain}catch(e){}
   let P;try{P=bkPlan(mode)}catch(e){toast('⚠ 沒辦法產生備份：'+e.message,9000);return false}lsSet('bkGen',String(Date.now()));
   if(P.big.length&&!confirm('有 '+P.big.length+' 筆訂單的圖片特別大，會各自單獨放一個檔：\n'+P.big.slice(0,5).join('\n')+'\n\n這些檔案比較大，存檔可能比較久。要繼續嗎？'))return false;
   if(P.parts.length===1){let f;try{f=await bkPart(P,0)}catch(e){toast('⚠ 備份檔產生失敗：'+((e&&e.message)||'可能是手機記憶體不足'),8000);return false}const r=await bkDeliver(f,BKT[mode]);f=null;bkDone(r,1,mode);return r!=='cancel'}
