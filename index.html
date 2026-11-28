@@ -338,10 +338,13 @@ const fmt=s=>{if(!s)return'';const d=new Date(s+'T00:00');return d.getFullYear()
 /* storage */
 let dbp;const db=()=>dbp||(dbp=new Promise((res,rej)=>{try{const r=indexedDB.open('collection-tracker',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}}));
 const kvGet=async k=>{try{const d=await db();return await new Promise(r=>{const q=d.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r(undefined)})}catch(e){return undefined}};
-let saveFail=0;
+const kvGetS=async k=>{const d=await db();return await new Promise((r,j)=>{const q=d.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>{try{r(q.result)}catch(e){j(e)}};q.onerror=()=>j(q.error||new Error('讀取失敗'));setTimeout(()=>j(new Error('讀取逾時')),20000)})};
+let RO=false,ROWHY='';const roBlock=()=>{if(RO){toast('⚠ 資料沒有完整讀進來，已暫停修改、匯入、刪除和上傳，避免蓋掉原本的資料。請先用備份或雲端還原。',8000);return true}return false};
+let saveFail=0,SAVEST='ok';
 /* 分片儲存：每張訂單單獨存一筆（o:ID），只寫有變動的，避免每次把全部資料（可能數百 MB）一次搬進記憶體而當機 */
 const kvTx=(f)=>db().then(d=>new Promise((res,rej)=>{const t=d.transaction('kv','readwrite');f(t.objectStore('kv'));t.oncomplete=()=>res();t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error||new Error('abort'))}));
-const fpOf=o=>JSON.stringify(o,(k,v)=>typeof v==='string'&&v.length>400?v.length+'|'+v.slice(0,24)+v.slice(-24):v);
+const strFp=v=>{const n=v.length;let h=2166136261;const step=Math.max(1,Math.floor(n/64));for(let i=0;i<n;i+=step){h^=v.charCodeAt(i);h=Math.imul(h,16777619)}h^=v.charCodeAt(n-1);h=Math.imul(h,16777619);return n+'|'+v.slice(0,16)+v.slice(-16)+'|'+(h>>>0).toString(36)};
+const fpOf=o=>JSON.stringify(o,(k,v)=>typeof v==='string'&&v.length>400?strFp(v):v);
 const FP=new Map();let sharded=false,putChain=Promise.resolve();
 function uniqIds(){const seen=new Set();items.forEach(o=>{if(!o.id||seen.has(o.id))o.id='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);seen.add(o.id)})}
 async function putShards(){
@@ -350,16 +353,19 @@ async function putShards(){
   const gone=[...FP.keys()].filter(id=>!cur.has(id));
   await kvTx(st=>{st.put(items.map(o=>o.id),'oids');st.put(S,'settings')});
   if(gone.length){await kvTx(st=>gone.forEach(id=>st.delete('o:'+id)));gone.forEach(id=>FP.delete(id))}
+  const chk=await kvGetS('oids');if(!Array.isArray(chk)||chk.length!==items.length)throw new Error('寫入後檢查不一致');
   if(!sharded){sharded=true;await kvTx(st=>st.delete('items'))}
 }
 const idbPut=()=>(putChain=putChain.catch(()=>{}).then(putShards));
 async function loadItems(){
-  const ids=await kvGet('oids');
-  if(Array.isArray(ids)){sharded=true;const out=[];for(const id of ids){const o=await kvGet('o:'+id);if(o){out.push(o);FP.set(o.id,fpOf(o))}}window.LOADMISS=ids.length-out.length;return out}
-  return (await kvGet('items'))||[];
+  try{
+    const ids=await kvGetS('oids');
+    if(Array.isArray(ids)){sharded=true;const out=[];for(const id of ids){const o=await kvGetS('o:'+id);if(o){out.push(o);FP.set(o.id,fpOf(o))}}window.LOADMISS=ids.length-out.length;if(window.LOADMISS>0){RO=true;ROWHY='有 '+window.LOADMISS+' 筆讀不到'}return out}
+    return (await kvGetS('items'))||[];
+  }catch(e){RO=true;ROWHY='手機儲存空間讀取失敗（'+((e&&e.name)||'錯誤')+'）';console.error(e);return[]}
 }
-async function save(){AVC=null;try{localStorage.setItem('dirty','1');localStorage.setItem('lastSave',String(Date.now()))}catch(e){}schedAuto();
-  try{await idbPut();saveFail=0}catch(e){console.error(e);try{await new Promise(r=>setTimeout(r,800));await idbPut();saveFail=0}catch(e2){console.error(e2);if(!saveFail++||saveFail%5===0)toast('⚠ 這次沒存進手機！資料只在目前畫面，關掉 app 會消失。請先到設定按「上傳」或「備份」。（'+((e2&&e2.name)||'錯誤')+'）',12000)}}}
+async function save(){if(RO){roBlock();SAVEST='fail';return false}AVC=null;SAVEST='saving';try{localStorage.setItem('dirty','1');localStorage.setItem('lastSave',String(Date.now()))}catch(e){}schedAuto();
+  try{await idbPut();saveFail=0;SAVEST='ok';lsSet('lastLocalOk',String(Date.now()));return true}catch(e){console.error(e);try{await new Promise(r=>setTimeout(r,800));await idbPut();saveFail=0;SAVEST='ok';lsSet('lastLocalOk',String(Date.now()));return true}catch(e2){console.error(e2);SAVEST='fail';lsSet('dirty','1');if(!saveFail++||saveFail%5===0)toast('⚠ 這次沒存進手機！資料只在目前畫面，關掉 app 會消失。請先到設定按「上傳」或「備份」。（'+((e2&&e2.name)||'錯誤')+'）',12000);return false}}}
 
 /* partial sales: items carry sq (units sold) and sp (TWD revenue) */
 function migSold(o){
@@ -618,7 +624,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v442</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v443</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const f=g.querySelector('.gi');if(f&&f.scrollWidth>f.clientWidth+1)g.classList.add('lg')}
@@ -1257,6 +1263,7 @@ function drawSet(){
     <button class="btn" id="syup">⬆ 上傳到雲端</button><button class="btn" id="sydn">⬇ 從雲端下載</button>${GH().t?'<button class="btn" id="qrcfg">📱 顯示設定 QR（用來接新裝置）</button>':''}${GH().t?'<button class="btn" id="cpcfg">🔗 複製設定連結（傳給自己的另一台裝置）</button>':''}
     <div class="fr"><span>新裝置：貼上設定連結</span><input id="cfglink" placeholder="貼上從另一台複製的連結" autocomplete="off"></div><button class="btn" id="apcfg">套用設定連結並下載</button>${lsGet('prevAt')?'<button class="btn" id="syrs">↩ 還原下載前的資料</button>':''}
     <div class="msg">換手機或資料不見時，貼上同一把金鑰再按「下載」就能還原。開啟自動同步後，改完資料幾秒會自動上傳，打開 app 時會自動拿雲端最新的。如果兩支手機都有沒同步的修改，會停下來讓你選，不會自己蓋掉。金鑰只存在這支手機。</div></div>
+  <div class="cd"><h3>資料安全</h3>${safeCard()}</div>
   <div class="cd"><h3>備份</h3><div class="msg" style="margin:0 0 8px">${lastBk()?'上次備份：'+Math.floor((Date.now()-lastBk())/864e5)+' 天前':'還沒備份過'}（超過 7 天首頁會提醒）</div><button class="btn" id="ex">匯出備份</button><button class="btn" id="im">匯入備份</button><button class="btn" id="exl">匯出文字版（不含圖片，給 Claude 看用）</button><input type="file" id="imf" accept=".json" hidden>
     <div class="msg">資料只存在這支手機。匯出時選「儲存到檔案」→ iCloud Drive，換手機或資料不見時用「匯入備份」就能還原。</div></div>`;
 }
@@ -1373,7 +1380,9 @@ async function putPrev(){try{
   for(const o of items){if(pfp[o.id]!==cur.get(o.id)){await kvTx(st=>st.put(o,'p:'+o.id));pfp[o.id]=cur.get(o.id)}}
   const gone=Object.keys(pfp).filter(id=>!cur.has(id));gone.forEach(id=>delete pfp[id]);
   await kvTx(st=>{st.put(items.map(o=>o.id),'pids');st.put({t:Date.now(),settings:S},'pmeta');st.put(pfp,'pfp');gone.forEach(id=>st.delete('p:'+id));st.delete('prev')});
-  lsSet('prevAt',String(Date.now()))}catch(e){console.error(e)}}
+  const cp=await kvGetS('pids');if(!Array.isArray(cp)||cp.length!==items.length)throw new Error('快照數量不符');
+  for(const o of items.slice(0,3)){if(!(await kvGetS('p:'+o.id)))throw new Error('快照缺資料')}
+  lsSet('prevAt',String(Date.now()));return true}catch(e){console.error(e);return false}}
 const shaKnown=h=>{if(!h)return true;if(h===lsGet('syncSha'))return true;if(h===lsGet('syncPend')){lsSet('syncSha',h);return true}return false};
 let autoT;const autoOn=()=>GH().t&&lsGet('autoSync')!=='0';
 function schedAuto(){if(!autoOn())return;clearTimeout(autoT);autoT=setTimeout(()=>syncUp(true),6000)}
@@ -1437,7 +1446,7 @@ async function autoPull(){if(!autoOn()||syncBusy||!lsGet('syncSha')||Date.now()-
     if(isDirty()){toast('雲端有較新的資料，但這支手機也有還沒上傳的修改。請到設定選「上傳」或「下載」',6000);return}
     await syncDown(true)}catch(e){}}
 async function syncUp(auto){
-  if(auto!==true)auto=false;if(syncBusy){if(auto)schedAuto();return}if(!auto)grabCfg();const g=GH();if(!g.t){if(!auto)toast('請先貼上金鑰');return}
+  if(auto!==true)auto=false;if(RO){if(!auto)roBlock();return}if(syncBusy){if(auto)schedAuto();return}if(!auto)grabCfg();const g=GH();if(!g.t){if(!auto)toast('請先貼上金鑰');return}
   const tt=(m,ms)=>{if(!auto)toast(m,ms)};clearTimeout(autoT);
   syncBusy=true;try{
     tt('連線中…',0);let {br,head}=await repoHead(),base=null,have=new Set();
@@ -1457,16 +1466,19 @@ async function restorePrev(){let p=await kvGet('pmeta'),list=null;
   if(p){const ids=(await kvGet('pids'))||[];list=[];for(const id of ids){const o=await kvGet('p:'+id);if(o)list.push(o)}}
   else{const q=await kvGet('prev');if(q&&Array.isArray(q.items)){p=q;list=q.items}}
   if(!p||!list){toast('沒有可還原的資料');return}
+  if(roBlock())return;
+  {const ids0=(await kvGet('pids'));if(Array.isArray(ids0)&&ids0.length!==list.length){toast('⚠ 快照資料不完整（應有 '+ids0.length+' 筆，只讀到 '+list.length+' 筆），已停止還原，現有資料沒有被動到',8000);return}}
   if(!confirm('還原成 '+new Date(p.t).toLocaleString('zh-TW')+' 下載前的資料（'+list.length+' 筆）？')) return;
-  items=list.map(mig);if(p.settings&&p.settings.cats)S=Object.assign(S,p.settings);await save();renderCats();render();drawSet();toast('✓ 已還原')}
+  const bak=items,bakS=S;items=list.map(mig);if(p.settings&&p.settings.cats)S=Object.assign(S,p.settings);const okr=await save();if(!okr){items=bak;S=bakS;toast('⚠ 還原沒有寫進手機，已保留原本的資料',6000);return}renderCats();render();drawSet();toast('✓ 已還原')}
 async function syncDown(auto){
   if(auto!==true)auto=false;if(syncBusy)return;if(!auto)grabCfg();const g=GH();if(!g.t){if(!auto)toast('請先貼上金鑰');return}
   syncBusy=true;try{
+    if(RO&&!auto&&!confirm('這支手機的資料沒有完整讀進來。從雲端下載可以救回資料，要繼續嗎？'))return;if(RO&&auto)return;
     if(!auto)toast('連線中…',0);const {head}=await repoHead();if(!head){toast('雲端還沒有資料，請先在主要的手機按「上傳」',4500);return}
     let text;try{text=await(await gh('/contents/data.json?ref='+head,'GET',null,true)).text()}catch(e){if(e.status===404){toast('雲端還沒有資料，請先在主要的手機按「上傳」',4500);return}throw e}
     const d=JSON.parse(text);if(!Array.isArray(d.items))throw new Error('雲端資料格式不對');
     if(!auto&&!confirm('雲端有 '+d.items.length+' 筆資料，下載會取代這支手機現有的 '+items.length+' 筆，確定嗎？')){toast('已取消');return}
-    await putPrev();
+    if(!RO&&!(await putPrev())){toast('⚠ 下載前的備份快照建立失敗，為了安全已取消下載，現有資料沒有被動到',8000);return}
     const names=[...new Set([...text.matchAll(/@img:([\w.]+)/g)].map(m=>m[1]))],local=packData().imgs,got={};let done=0;
     await pool(names,6,async n=>{const ext=n.split('.').pop();
       if(local[n]){got[n]='data:'+MIME[ext]+';base64,'+local[n]}
@@ -1474,11 +1486,17 @@ async function syncDown(auto){
       if(!auto)toast('下載圖片 '+(++done)+'/'+names.length+'…',0)});
     const full=JSON.parse(text,(k,v)=>typeof v==='string'&&v.startsWith('@img:')?got[v.slice(5)]:v);
     const lc=new Map();items.forEach(o=>o.items.forEach((it,ix)=>{if(it.img&&(it.img.o||it.img.c))lc.set(o.id+'|'+ix,it.img)}));
-    items=full.items.map(mig);items.forEach(o=>o.items.forEach((it,ix)=>{const m=it.img,l=lc.get(o.id+'|'+ix);if(m&&l&&l.s===m.s&&!m.o&&!m.c)m.c=1}));if(full.settings&&full.settings.cats)S=Object.assign(S,full.settings);dedupChars();dedupChars();
+    const oldItems=items,oldS=S;items=full.items.map(mig);items.forEach(o=>o.items.forEach((it,ix)=>{const m=it.img,l=lc.get(o.id+'|'+ix);if(m&&l&&l.s===m.s&&!m.o&&!m.c)m.c=1}));if(full.settings&&full.settings.cats)S=Object.assign(S,full.settings);dedupChars();dedupChars();
+    const wasRO=RO;RO=false;const okd=await save();if(!okd){RO=wasRO;items=oldItems;S=oldS;throw new Error('下載的資料沒有成功寫進手機，原本的資料已保留，沒有更新同步記號')}
     lsSet('syncSha',head);lsSet('lastBackup',String(Date.now()));
-    save();lsSet('lastSync',String(Date.now()+1));lsSet('dirty','0');clearTimeout(autoT);renderCats();render();renderBk();if(SO.classList.contains('show'))drawSet();toast(auto?'☁️ 已更新成雲端最新資料':'✓ 已從雲端下載 '+items.length+' 筆（下載前的資料有留一份，可在設定還原）',auto?2500:4500)
+    lsSet('lastSync',String(Date.now()+1));lsSet('dirty','0');clearTimeout(autoT);renderCats();render();renderBk();if(SO.classList.contains('show'))drawSet();toast(auto?'☁️ 已更新成雲端最新資料':'✓ 已從雲端下載 '+items.length+' 筆（下載前的資料有留一份，可在設定還原）',auto?2500:4500)
   }catch(e){if(!auto)toast('下載失敗：'+e.message,5000)}finally{syncBusy=false}}
 
+/* data safety center */
+function safeCard(){const lo=+lsGet('lastLocalOk')||0,ls=+lsGet('lastSync')||0,dirty=lsGet('dirty')==='1',tm=t=>t?new Date(t).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'尚無';
+  const st=RO?`<b style="color:#c0392b">⚠ 唯讀保護中：${esc(ROWHY)}</b>`:SAVEST==='fail'?'<b style="color:#c0392b">⚠ 上次存入手機失敗，資料可能只在畫面上</b>':SAVEST==='saving'?'儲存中…':'✓ 手機儲存正常';
+  const cl=GH().t?(syncBusy?'同步中…':dirty?'有修改尚未上傳到雲端':'✓ 雲端與手機一致'):'未連接雲端';
+  return `<div class="msg" style="margin:0 0 6px;line-height:1.8">${st}<br>手機最後成功儲存：${tm(lo)}<br>雲端：${cl}（最後成功同步：${tm(ls)}）<br>備份：${lastBk()?tm(lastBk())+'（只代表檔案已產生，尚未驗證能還原）':'還沒備份過'}<br>快照：${lsGet('prevAt')?tm(+lsGet('prevAt')):'尚無'}</div>`}
 /* backup */
 const BK_DAYS=7;
 function lastBk(){return Math.max(+lsGet('lastBackup')||0,lastSync())}
@@ -1487,11 +1505,11 @@ async function doLite(){
   try{const f=new File([blob],name,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'收藏櫃文字版'});return}}catch(e){if(e&&e.name==='AbortError')return}
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();toast('已匯出文字版（'+Math.round(blob.size/1024)+' KB）',3500)}
 async function doBackup(){
-  const name='collection-backup-'+today()+'.json',blob=new Blob([JSON.stringify({items,settings:S},(k,v)=>k==='o'&&typeof v==='string'&&v.startsWith('data:')?undefined:v)],{type:'application/json'});
+  const name='collection-backup-'+today()+'.json',blob=new Blob([JSON.stringify({manifest:{app:'collection-tracker',type:'full-display',ver:'v443',orders:items.length,t:Date.now(),note:'不含金鑰；不含部分原始大圖'},items,settings:S},(k,v)=>k==='o'&&typeof v==='string'&&v.startsWith('data:')?undefined:v)],{type:'application/json'});
   try{const f=new File([blob],name,{type:'application/json'});
     if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'收藏櫃備份'});markBk();return true}}catch(e){if(e&&e.name==='AbortError')return false}
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();markBk();return true}
-function markBk(){try{localStorage.setItem('lastBackup',String(Date.now()));localStorage.removeItem('bkSnooze')}catch(e){}renderBk();if(SO.classList.contains('show'))drawSet();toast('✓ 已備份（若是用分享選單，請確認有選「儲存到檔案」）',4500)}
+function markBk(){try{localStorage.setItem('lastBackup',String(Date.now()));localStorage.removeItem('bkSnooze')}catch(e){}renderBk();if(SO.classList.contains('show'))drawSet();toast('✓ 已產生備份檔（'+items.length+' 筆）。若用分享選單，請確認有選「儲存到檔案」；尚未驗證能還原',5500)}
 function renderBk(){renderJobs();
   const el=$('bk');if(!el)return;let sn=0;try{sn=+localStorage.getItem('bkSnooze')||0}catch(e){}
   const l=lastBk(),d=l?Math.floor((Date.now()-l)/864e5):999;
@@ -1878,6 +1896,7 @@ function patchImport(d){
   save();renderCats();render();try{drawSet()}catch(e){}toast('已更新 '+n+' 個品項、'+nf+' 位朋友')}
 function imgOnlyImport(its){const ms=its.filter(x=>x&&x.imgs&&x.imgs.length&&items.some(y=>y.id===x.id));if(!ms.length){alert('這個檔案裡的訂單，app 裡都找不到，所以沒有圖片可以換');return}if(confirm('要把 '+ms.length+' 筆訂單的圖片換成高清版嗎？（只換圖片，其他資料不動）')){ms.forEach(x=>{const o=items.find(y=>y.id===x.id);o.imgs=x.imgs;o.cover=0});save();renderCats();render();try{drawSet()}catch(e){}toast('已更新 '+ms.length+' 筆的圖片')}}
 async function bulkImport(files){
+  if(roBlock())return;
   const f=files[0],nm=(f.name||'').toLowerCase();let add=null;
   try{
     if(files.length===1&&/\.json$/.test(nm)){const d=JSON.parse(await f.text()),a=Array.isArray(d)?d:d.items;if(!Array.isArray(a))throw new Error('JSON 裡找不到商品清單');if(d&&d.patch===true){patchImport(d);return}if(d&&d.imgOnly===true){imgOnlyImport(a);return}add=a.filter(x=>x&&(x.items||x.name)).map(mig)}
