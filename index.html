@@ -311,6 +311,7 @@ body:has(.mo.show,.sheet.show,#cr[style*=flex]) :is(.top,.chips,.bar,#fpn){z-ind
     <select id="fc"></select>
     <select id="so"><option value="buy">預設（最新在上）</option><option value="eta">預計到貨（晚的在上）</option><option value="price">價格高低</option></select>
     <button type="button" id="fmore" class="fmore">篩選<i id="fcnt"></i> <span>▾</span></button>
+    <button type="button" id="tbtn" class="sbtn" aria-label="整理工具"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg></button>
     <button type="button" id="sbtn" class="sbtn" aria-label="搜尋"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button>
   </div>
   <div id="fpn" class="fpn" hidden>
@@ -321,7 +322,7 @@ body:has(.mo.show,.sheet.show,#cr[style*=flex]) :is(.top,.chips,.bar,#fpn){z-ind
 </div>
 <div class="nav"><div class="pill"><button id="vs" aria-label="櫃子"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M4 9.2h16M4 14.8h16"/></svg></button><button id="vg" aria-label="想買"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5S3.5 15 3.5 8.9A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 8.5 1.9C20.5 15 12 20.5 12 20.5z"/></svg></button><button id="vl" aria-label="列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button><button id="vc" aria-label="月曆"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16M8.5 3.5v3M15.5 3.5v3"/></svg></button><button id="vf" aria-label="朋友的商品"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.4-3.4 2.7-5.2 5.5-5.2s5.1 1.8 5.5 5.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M16.5 14.2c2.4 0 3.8 1.6 4.1 4"/></svg></button></div><button class="plus" id="add" aria-label="新增"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
 <div id="toast"></div>
-<div class="sheet" id="sheet"><div class="box"><button data-n="have"><b>已買到了</b><small>門市、日本現場、自己去買的</small></button><button data-n="pre"><b>預購／喊單</b><small>還沒到貨，等收貨</small></button><button data-n="wish"><b>想買</b><small>先記起來，之後再決定</small></button><button data-n="file"><b>📄 匯入檔案新增商品</b><small>Excel、CSV、JSON、PDF、Word、文字都可以</small></button><button id="tlt" class="tlt"><b>🧰 整理工具</b><small>合併、找重複、找紙袋、批次刪除 ▾</small></button><div id="tlb" class="tlb" hidden><button data-n="merge"><b>🔗 合併現有訂單</b></button><button data-n="rcpt"><b>🧾 合併同一張收據</b></button><button data-n="bag"><b>🛍 找紙袋／袋子品項</b></button><button data-n="dup"><b>🔍 找重複的商品</b></button><button data-n="del"><b>🗑 批次刪除訂單</b></button></div></div></div><div class="mo" id="mg" style="z-index:7"></div><div class="mo" id="fl" style="z-index:4"></div><input type="file" id="bulkf" accept=".json,.csv,.tsv,.xlsx,.xlsm,.xls,.ods,.docx,.pdf,.txt,.md,.html,.htm,.eml,application/pdf,text/*,image/*" multiple hidden>
+<div class="sheet" id="sheet"><div class="box"><button data-n="have"><b>已買到了</b><small>門市、日本現場、自己去買的</small></button><button data-n="pre"><b>預購／喊單</b><small>還沒到貨，等收貨</small></button><button data-n="wish"><b>想買</b><small>先記起來，之後再決定</small></button><button data-n="imp"><b>匯入</b><small>截圖或文件、表格、還原備份</small></button></div></div><div class="sheet" id="tsheet"><div class="box"><div style="font-size:13px;color:var(--mu);margin:0 4px 10px">整理工具（整理資料才會用到）</div><button data-n="merge"><b>🔗 合併現有訂單</b></button><button data-n="rcpt"><b>🧾 合併同一張收據</b></button><button data-n="bag"><b>🛍 找紙袋／袋子品項</b></button><button data-n="dup"><b>🔍 找重複的商品</b></button><button data-n="del"><b>🗑 批次刪除訂單</b></button></div></div><div class="sheet" id="isheet"><div class="box"><div style="font-size:13px;color:var(--mu);margin:0 4px 10px">你要匯入什麼？</div><button data-i="ai"><b>📷 截圖或文件</b><small>用 AI 讀成商品：截圖、PDF、Word、文字</small></button><button data-i="tbl"><b>📊 表格</b><small>Excel 或 CSV，一次新增多筆（第一列要寫品名、數量、單價…）</small></button><button data-i="bk"><b>♻️ 還原備份</b><small>到設定的備份區，選之前匯出的 .json</small></button></div></div><div class="mo" id="mg" style="z-index:7"></div><div class="mo" id="fl" style="z-index:4"></div><input type="file" id="bulkf" accept=".json,.csv,.tsv,.xlsx,.xlsm,.xls,.ods,.docx,.pdf,.txt,.md,.html,.htm,.eml,application/pdf,text/*,image/*" multiple hidden>
 <div id="selbar"><button id="selx">取消</button><span id="selmsg"></span><button id="selcat">改分類</button><button id="seldel">刪除</button></div><div class="sheet" id="catsh" style="z-index:9"><div class="box" id="catbx"></div></div><div class="mo" id="dv"></div><div class="mo" id="mo"></div><div class="mo" id="so2"></div><div class="mo" id="dupm" style="z-index:7"></div>
 
 <script>
@@ -618,7 +619,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v440</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v441</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const f=g.querySelector('.gi');if(f&&f.scrollWidth>f.clientWidth+1)g.classList.add('lg')}
@@ -683,7 +684,7 @@ function drawEd(){
   const cats=S.cats.includes(cur.cat)||!cur.cat?S.cats:[...S.cats,cur.cat];
   $('mo').innerHTML=`
   <div class="mh"><button id="cx">取消</button><span>${cur._new?'':'<button class="dl" id="dl">刪除</button> '}<button class="sv" id="sv">儲存</button></span></div>
-  <div class="cd"><h3>截圖自動填表</h3>
+  <div class="cd"><h3>AI 讀截圖</h3>
     <div class="shb"><button class="btn pri" id="shot">📷 上傳截圖</button><button class="btn" id="doc">📄 上傳檔案</button>${cur.imgs.length?'<button class="btn" id="reshot">🔄 重新辨識</button>':''}</div>
     <input type="file" id="docf" accept="application/pdf,.pdf,.txt,.md,.csv,.tsv,.json,.html,.htm,.eml,.xlsx,.xlsm,.xls,.ods,.docx,text/*,image/*" multiple hidden><input type="file" id="shotf" accept="image/*" multiple hidden>
     <div class="msg" id="msg"></div><div class="msg" id="gu"></div>
@@ -1257,16 +1258,16 @@ function drawSet(){
     <button class="btn" id="syup">⬆ 上傳到雲端</button><button class="btn" id="sydn">⬇ 從雲端下載</button>${GH().t?'<button class="btn" id="qrcfg">📱 顯示設定 QR（用來接新裝置）</button>':''}${GH().t?'<button class="btn" id="cpcfg">🔗 複製設定連結（傳給自己的另一台裝置）</button>':''}
     <div class="fr"><span>新裝置：貼上設定連結</span><input id="cfglink" placeholder="貼上從另一台複製的連結" autocomplete="off"></div><button class="btn" id="apcfg">套用設定連結並下載</button>${lsGet('prevAt')?'<button class="btn" id="syrs">↩ 還原下載前的資料</button>':''}
     <div class="msg">換手機或資料不見時，貼上同一把金鑰再按「下載」就能還原。開啟自動同步後，改完資料幾秒會自動上傳，打開 app 時會自動拿雲端最新的。如果兩支手機都有沒同步的修改，會停下來讓你選，不會自己蓋掉。金鑰只存在這支手機。</div></div>
-  <div class="cd"><h3>備份</h3><div class="msg" style="margin:0 0 8px">${lastBk()?'上次備份：'+Math.floor((Date.now()-lastBk())/864e5)+' 天前':'還沒備份過'}（超過 7 天首頁會提醒）</div><button class="btn" id="ex">匯出備份</button><button class="btn" id="im">匯入備份</button><button class="btn" id="exl">匯出文字版（不含圖片，給 Claude 看用）</button><input type="file" id="imf" accept=".json" hidden>
-    <div class="msg">資料只存在這支手機。匯出時選「儲存到檔案」→ iCloud Drive，換手機或資料不見時用「匯入備份」就能還原。</div></div>`;
+  <div class="cd"><h3>備份</h3><div class="msg" style="margin:0 0 8px">${lastBk()?'上次備份：'+Math.floor((Date.now()-lastBk())/864e5)+' 天前':'還沒備份過'}（超過 7 天首頁會提醒）</div><button class="btn" id="ex">匯出備份</button><button class="btn" id="im">還原備份</button><button class="btn" id="exl">匯出文字版（不含圖片，給 Claude 看用）</button><input type="file" id="imf" accept=".json" hidden>
+    <div class="msg">資料只存在這支手機。匯出時選「儲存到檔案」→ iCloud Drive，換手機或資料不見時用「還原備份」就能還原。</div></div>`;
 }
 $('eye').onclick=()=>{S.hide=!S.hide;save();render()};
 document.addEventListener('click',e=>{const kt=e.target.closest('[data-ktog]');if(kt&&$('stats').contains(kt)){KO=!KO;try{localStorage.setItem('kopen',KO?'1':'0')}catch(x){}render();return}const c=e.target.closest('[data-cf]');if(c&&($('stats').contains(c)||$('fpn').contains(c))){const v=c.dataset.cf;charF=(charF===v?'':v);render();return}const k=e.target.closest('[data-kf]');if(k&&$('stats').contains(k)){const v=k.dataset.kf;kindF=(kindF===v?'':v);render()}});
 {const SOP=()=>{try{return JSON.parse(lsGet('setOpen')||'{}')}catch(e){return{}}};
 const foldSet=()=>{const o=SOP();SO.querySelectorAll('.cd').forEach(c=>{const h=c.querySelector('h3');if(!h)return;const t=h.textContent.trim();const open=t in o?o[t]:/同步|備份|雲端/.test(t);c.classList.toggle('fold',!open)})};
-const GRPS=[['分類・角色',/^(收藏櫃名稱|自訂分類|標籤|角色|收藏櫃不顯示)/],['記帳設定',/^(購買來源|朋友代買|我的暱稱|隱藏總投入|刷卡|匯率)/],['資料・備份',/^(賣出對帳|商品圖|☁|雲端|備份)/]];
+const GRPS=[['分類・角色',/^(收藏櫃名稱|自訂分類|標籤|角色|收藏櫃不顯示)/],['記帳設定',/^(購買來源|朋友代買|我的暱稱|隱藏總投入|刷卡|匯率)/],['資料・備份',/^(☁|雲端|備份)/],['維護工具（整理舊資料才用）',/^(賣出對帳|商品圖)/]];
 const GO=()=>{try{return JSON.parse(lsGet('setGrp')||'{}')}catch(e){return{}}};
-const grpSet=()=>{const o=GO(),cs=[...SO.querySelectorAll(':scope>.cd')];GRPS.forEach(([n,re])=>{const L=cs.filter(c=>re.test(((c.querySelector('h3')||{}).textContent||'').trim()));if(!L.length)return;const g=document.createElement('div');g.className='gp'+(o[n]?'':' shut');g.innerHTML='<div class="gh" data-g="'+n+'"><h2>'+n+'</h2></div><div class="gb"></div>';L[0].before(g);L.forEach(c=>g.querySelector('.gb').appendChild(c))})};
+const grpSet=()=>{const o=GO(),cs=[...SO.querySelectorAll(':scope>.cd')];GRPS.forEach(([n,re])=>{const L=cs.filter(c=>re.test(((c.querySelector('h3')||{}).textContent||'').trim()));if(!L.length)return;const g=document.createElement('div');g.className='gp'+(o[n]?'':' shut');g.innerHTML='<div class="gh" data-g="'+n+'"><h2>'+n+'</h2></div><div class="gb"></div>';if(/^維護/.test(n))SO.appendChild(g);else L[0].before(g);L.forEach(c=>g.querySelector('.gb').appendChild(c))})};
 const ds0=drawSet;drawSet=function(){ds0();foldSet();grpSet()};
 SO.addEventListener('click',e=>{const h=e.target.closest('.gh');if(!h)return;const g=h.parentElement,o=GO();g.classList.toggle('shut');o[h.dataset.g]=!g.classList.contains('shut');lsSet('setGrp',JSON.stringify(o))});
 SO.addEventListener('click',e=>{const h=e.target.closest('.cd>h3');if(!h)return;const c=h.parentElement,o=SOP();c.classList.toggle('fold');o[h.textContent.trim()]=!c.classList.contains('fold');lsSet('setOpen',JSON.stringify(o))})}
@@ -1815,13 +1816,23 @@ const SY={},tk=()=>fMode?'f':view,rsY=k=>requestAnimationFrame(()=>window.scroll
 function setView(v){SY[tk()]=scrollY;fMode=false;$('vf').classList.remove('on');view=v;try{localStorage.setItem('view',v)}catch(e){}Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===v));render();rsY(v)}
 $('vg').onclick=()=>setView('grid');$('vl').onclick=()=>setView('list');$('vs').onclick=()=>setView('shelf');$('vc').onclick=()=>setView('cal');
 $('vf').onclick=()=>{SY[tk()]=scrollY;fMode=!fMode;flTab='all';Object.values(VB).forEach(id=>$(id).classList.toggle('on',!fMode&&VB[view]===id));$('vf').classList.toggle('on',fMode);render();rsY(tk())};
-$('add').onclick=()=>{$('tlb').hidden=true;$('sheet').classList.add('show')};
-$('sheet').addEventListener('click',e=>{
-  if(e.target.closest('#tlt')){const t=$('tlb');t.hidden=!t.hidden;return}
+$('add').onclick=()=>{$('sheet').classList.add('show')};
+$('tbtn').onclick=()=>$('tsheet').classList.add('show');
+$('isheet').addEventListener('click',e=>{
+  const sh=$('isheet'),b=e.target.closest('[data-i]');
+  if(!b){if(e.target===sh)sh.classList.remove('show');return}
+  sh.classList.remove('show');const f=$('bulkf'),k=b.dataset.i;
+  if(k==='ai'){f.accept='image/*,.pdf,.docx,.txt,.md,.html,.htm,.eml,application/pdf,text/*';f.click();return}
+  if(k==='tbl'){f.accept='.csv,.tsv,.xlsx,.xlsm,.xls,.ods';f.click();return}
+  if(k==='bk'){$('gear').click();setTimeout(()=>{const h=[...SO.querySelectorAll('.cd>h3')].find(x=>x.textContent.trim()==='備份');if(!h)return;const g=h.closest('.gp');if(g&&g.classList.contains('shut'))g.querySelector('.gh').click();const c=h.parentElement;if(c.classList.contains('fold'))h.click();c.scrollIntoView({block:'center'})},60)}
+});
+function onSheet(e){
+  const sh=e.currentTarget;
+  if(e.target.closest('#tlt'))return;
   const b=e.target.closest('[data-n]');
-  if(!b){if(e.target.id==='sheet')$('sheet').classList.remove('show');return}
-  $('sheet').classList.remove('show');
-  if(b.dataset.n==='file'){$('bulkf').click();return}
+  if(!b){if(e.target===sh)sh.classList.remove('show');return}
+  sh.classList.remove('show');
+  if(b.dataset.n==='imp'){$('isheet').classList.add('show');return}
   if(b.dataset.n==='rcpt'){mgMode='rcpt';rcInit();drawMg();$('mg').classList.add('show');return}
   if(b.dataset.n==='bag'){mgMode='bag';bgInit();drawMg();$('mg').classList.add('show');return}
   if(b.dataset.n==='dup'){mgMode='dup';dupInit();drawMg();$('mg').classList.add('show');return}
@@ -1830,7 +1841,8 @@ $('sheet').addEventListener('click',e=>{
   openEd();
   if(b.dataset.n==='have'){cur.status='have';cur.recvDate=today();cur.src='門市／實體店';cur.pay='paid';drawEd()}
   if(b.dataset.n==='wish'){cur.status='wish';drawEd()}
-});
+}
+$('sheet').addEventListener('click',onSheet);$('tsheet').addEventListener('click',onSheet);
 
 /* ===== 批次匯入檔案新增商品 ===== */
 function csvRows(t){const rows=[];let r=[],c='',q=false;const d=(t.split('\n')[0].match(/\t/g)||[]).length>(t.split('\n')[0].match(/,/g)||[]).length?'\t':',';
