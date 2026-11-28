@@ -569,9 +569,9 @@ async function loadItems(){
     if(ids===undefined){if(R.items!==undefined){if(!Array.isArray(R.items))throw bad('舊格式資料錯誤');out=R.items.filter(o=>!vOrder(o,0,'hard').hard.length);if(out.length!==R.items.length)throw bad('舊格式資料有損壞')}
       else{if(R.okeys.length)throw bad('找不到訂單索引，但手機裡還有訂單資料');if(meta)throw bad('找不到訂單索引')}}
     else{if(!Array.isArray(ids))throw bad('訂單索引格式錯誤');if(ids.some(x=>typeof x!=='string'||!x))throw bad('訂單索引內容錯誤');if(new Set(ids).size!==ids.length)throw bad('訂單索引有重複');
-      sharded=true;let miss=0,wrong=0;for(const id of ids){const o=R.recs.get(id);if(o===undefined){miss++;continue}if(!isRec(o)||o.id!==id||vOrder(o,out.length,'hard').hard.length){wrong++;continue}out.push(o);FP.set(o.id,fpOf(o))}
+      sharded=true;let miss=0,wrong=0;const WHY=[];for(const id of ids){const o=R.recs.get(id);if(o===undefined){miss++;continue}if(!isRec(o)||o.id!==id||vOrder(o,out.length,'hard').hard.length){wrong++;/* 診斷：記下前 3 筆的原因（只用來顯示） */if(WHY.length<3){let w;try{w=!isRec(o)?'不是物件（'+(o===null?'null':Array.isArray(o)?'陣列':typeof o)+'）':o.id!==id?'編號和清單不一致（清單 '+String(id).slice(0,20)+'，資料 '+(typeof o.id)+' '+String(o.id).slice(0,20)+'）':vOrder(o,out.length,'hard').hard[0]}catch(e){w='無法判斷'}WHY.push(w)}continue}out.push(o);FP.set(o.id,fpOf(o))}
       const ks=new Set(ids);ORPHANS=R.okeys.filter(k=>!ks.has(k.slice(K.o.length))).length;
-      window.LOADMISS=miss+wrong;if(miss||wrong)throw bad((miss?'有 '+miss+' 筆讀不到':'')+(wrong?(miss?'、':'')+wrong+' 筆內容不對':''));
+      window.LOADMISS=miss+wrong;if(miss||wrong)throw bad((miss?'有 '+miss+' 筆讀不到':'')+(wrong?(miss?'、':'')+wrong+' 筆內容不對':'')+(WHY.length?'（例：'+WHY.join('；')+'）':''));
       if(meta&&typeof meta.n==='number'&&(meta.n!==ids.length||(meta.ih&&meta.ih!==idsHash(ids)))){ROMETA=true;throw bad('訂單清單和上次存檔的記錄對不上（上次 '+meta.n+' 筆，現在 '+ids.length+' 筆）')}
       if(meta&&meta.ch&&meta.ch!==chOf(ids.map(id=>FP.get(id)))){ROMETA=true;throw bad('訂單內容和上次存檔的記錄對不上（筆數一樣，但內容被別的程式改過）')}
       if(meta&&meta.sh&&meta.sh!==shOf(s)){ROMETA=true;throw bad('設定內容和上次存檔的記錄對不上')}}
