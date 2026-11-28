@@ -120,7 +120,7 @@ input,select,textarea,button{font:inherit;color:var(--tx)}
 .plus{pointer-events:auto;flex:none;width:50px;height:50px;border-radius:50%;border:0;background:#8fd3c0;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 8px #3a8a7440}
 .plus svg{width:24px;height:24px;stroke-width:2.6}
 .pill button{flex-direction:column;gap:2px;height:54px;border-radius:20px;font-size:11px;font-weight:600}.pill button span{line-height:1}.pill #vl{display:none}
-.pill .plus{flex:none;width:58px;height:58px;border-radius:50%;margin-top:-16px;background:#8fd3c0;color:#fff;box-shadow:0 3px 8px #3a8a7440;gap:1px}.pill .plus svg{width:22px;height:22px}
+.pill .plus{flex:1;width:auto;height:54px;border-radius:20px;margin:0;background:#8fd3c0;color:#fff;box-shadow:none;gap:2px}.pill .plus svg{width:22px;height:22px}
 .pill:has(#vl.on) #vs{background:#d9f0e8;color:#2f7a66;box-shadow:inset 0 0 0 2px #b4e0d2}
 .vt{display:inline-flex;flex:none;background:var(--chip);border-radius:999px;padding:2px}.vt button{border:0;background:none;border-radius:999px;padding:6px 10px;font-size:12.5px;color:var(--mu);cursor:pointer}
 body:has(#vs.on) .vt [data-vt=s],body:has(#vl.on) .vt [data-vt=l]{background:var(--sb);color:var(--st)}
@@ -175,6 +175,8 @@ html,body{touch-action:manipulation}#dv{z-index:5;max-width:100vw;overflow-x:hid
 .mh .sv{background:var(--tx);color:var(--bg)}.mh .dl{color:var(--rd)}
 .cd{background:var(--card);border-radius:22px;margin:0 12px 12px;padding:4px 16px;box-shadow:0 2px 12px #3a2e1a0f}
 .gh{background:var(--card);border-radius:22px;margin:0 12px 12px;padding:4px 16px;box-shadow:0 2px 12px #3a2e1a0f;cursor:pointer}.gh h2{display:flex;justify-content:space-between;align-items:center;margin:14px 0;font-size:18px;font-weight:800}.gh h2::after{content:'收起 ▴';font:600 14px/1.4 inherit;opacity:.6}.gp.shut .gh h2::after{content:'展開 ▾'}.gp.shut .gb{display:none}.gh[data-g^=分類]{background:#fbe3e6;color:#b0586a}.gh[data-g^=記帳]{background:#fdf0c9;color:#9a7416}.gh[data-g^=資料]{background:#dff1ec;color:#2f7a66}.gh h2::after{color:inherit}.gb{margin-top:-4px}.gb .cd{margin-left:20px;margin-right:20px;box-shadow:none;border:1px solid #3a2e1a14}
+.gp{margin:0 12px 14px;border-radius:24px;background:var(--gl,transparent);padding-bottom:6px}.gp.shut{padding-bottom:0}.gp>.gh{margin:0;background:var(--gc);color:var(--gt);box-shadow:none}.gp>.gb{margin-top:8px}.gp>.gb .cd{margin-left:10px;margin-right:10px;margin-bottom:8px;border:0;border-left:5px solid var(--gc)}
+.gp[data-g^=外觀]{--gc:#fbe8b4;--gt:#8a6610;--gl:#fdf6e2}.gp[data-g^=分類]{--gc:#f7d4da;--gt:#a34a5d;--gl:#fcefef}.gp[data-g^=金額]{--gc:#d6e3f7;--gt:#38598f;--gl:#eff4fb}.gp[data-g^=AI]{--gc:#e3d9f5;--gt:#64489a;--gl:#f4f0fa}.gp[data-g^=同步]{--gc:#cdeae2;--gt:#2a7360;--gl:#ecf6f2}.gp[data-g^=整理]{--gc:#e8dccb;--gt:#715a3c;--gl:#f6f1ea}
 .cd.fold>*:not(h3){display:none}.cd h3::after{content:'收起 ▴';font:600 14px/1.4 inherit;font-family:inherit;color:var(--tx);opacity:.6;flex:none;margin-left:10px}.cd.fold h3::after{content:'展開 ▾'}.cd.fold h3{margin:16px 0}.cd h3{align-items:center}
 .warn{background:#fbe9e4;color:#a3402b;border-radius:14px;padding:10px 12px;margin:10px 0;font-size:13px;line-height:1.5}
 .cd h3{cursor:pointer;display:flex;justify-content:space-between;margin:12px 0 2px;font-family:inherit;font-size:16px;font-weight:700;color:var(--tx)}
@@ -268,7 +270,7 @@ button[data-ct],button[data-kt],button[data-cht]{color:var(--ac)!important}
 .it .gotl:has(input:checked){border-color:var(--sb);box-shadow:none}
 .it .sellc:has(input:checked){border-color:#e3cd86}
 .ith{background:var(--tile);width:64px;height:64px;border-radius:18px}
-.it{padding-top:12px}.it .ixb{display:flex;flex-direction:column;flex:none;gap:2px}.it .ixb .x{position:static;padding:4px 4px;font-size:13px}.it .ir input[data-k=name]{min-width:0;flex:1}
+.it{padding-top:12px}.it .ixb{display:flex;flex-direction:column;flex:none;gap:2px}.it .ixb{gap:5px!important}.it .ixb .x{position:static;padding:6px 12px;font-size:12.5px;font-weight:600;border-radius:999px;background:var(--chip);color:var(--tx);white-space:nowrap}.it .ixb .x:not(.cp){background:#fbe3dd;color:#b3392e}.it .ir input[data-k=name]{min-width:0;flex:1}
 .btn{background:#fffdf9}
 
 details.adv{margin:4px 0}details.adv>summary{cursor:pointer;color:var(--ac);font-size:14px;padding:10px 0;list-style:none;display:flex;justify-content:space-between}
@@ -649,7 +651,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div>${paRow(o,single?[it]:o.items)}<button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v454</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div>${paRow(o,single?[it]:o.items)}<button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v455</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function paRow(o,L){const un=L.filter(i=>sq(i)<(+i.qty||1)),anySold=L.some(i=>sq(i)>0)||o.status==='sold',B=[];
@@ -1316,7 +1318,7 @@ const foldSet=()=>{const o=SOP();SO.querySelectorAll('.cd').forEach(c=>{const h=
 const GRPS=[['外觀與顯示',/^(收藏櫃名稱|收藏櫃不顯示|隱藏總投入)/],['分類與標籤',/^(自訂分類|標籤|角色|購買來源|我的暱稱)/],['金額與交易',/^(刷卡|匯率|賣出對帳|朋友代買)/],['AI 辨識設定',/^AI 辨識/],['同步與備份',/^(☁|雲端|備份|資料安全)/],['整理與維護',/^(整理與維護|商品圖)/]];
 SO.addEventListener('input',e=>{if(e.target.id==='sgk')try{localStorage.setItem('gk',e.target.value.trim())}catch(x){}});
 const GO=()=>{try{return JSON.parse(lsGet('setGrp')||'{}')}catch(e){return{}}};
-const grpSet=()=>{const o=GO(),cs=[...SO.querySelectorAll(':scope>.cd')];GRPS.forEach(([n,re])=>{const L=cs.filter(c=>re.test(((c.querySelector('h3')||{}).textContent||'').trim()));if(!L.length)return;const g=document.createElement('div');g.className='gp'+(o[n]?'':' shut');g.innerHTML='<div class="gh" data-g="'+n+'"><h2>'+n+'</h2></div><div class="gb"></div>';SO.appendChild(g);L.forEach(c=>g.querySelector('.gb').appendChild(c))})};
+const grpSet=()=>{const o=GO(),cs=[...SO.querySelectorAll(':scope>.cd')];GRPS.forEach(([n,re])=>{const L=cs.filter(c=>re.test(((c.querySelector('h3')||{}).textContent||'').trim()));if(!L.length)return;const g=document.createElement('div');g.className='gp'+(o[n]?'':' shut');g.dataset.g=n;g.innerHTML='<div class="gh" data-g="'+n+'"><h2>'+n+'</h2></div><div class="gb"></div>';SO.appendChild(g);L.forEach(c=>g.querySelector('.gb').appendChild(c))})};
 const de0=drawEd;drawEd=function(){de0();document.querySelectorAll('#mo .it').forEach(it=>{const sl=it.querySelector('select[data-k="proxy"]'),row=sl&&sl.closest('.fr'),box=row&&row.querySelector('.pk'),lb=it.querySelector('.sellc');if(!box||!lb||box.parentElement.classList.contains('pkw'))return;const w=document.createElement('div');w.className='pkw';box.parentNode.insertBefore(w,box);w.append(box,lb)});document.querySelectorAll('#mo .cd').forEach(c=>{const h=c.querySelector('h3');if(h&&h.textContent.trim()==='截圖自動填表'&&!EDAIO)c.classList.add('fold')})};
 $('mo').addEventListener('click',e=>{const h=e.target.closest('.cd>h3');if(h&&h.textContent.trim()==='截圖自動填表'){EDAIO=!EDAIO;h.parentElement.classList.toggle('fold')}});
 const ds0=drawSet;drawSet=function(){ds0();foldSet();grpSet()};
