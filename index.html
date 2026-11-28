@@ -638,7 +638,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v445</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v446</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const f=g.querySelector('.gi');if(f&&f.scrollWidth>f.clientWidth+1)g.classList.add('lg')}
@@ -679,7 +679,8 @@ let ADV={};
 const XF=[['deposit','已付訂金','number','0'],['ship','運費／折扣','text','折扣填負數'],['supAmt','二補','number','金額']];
 const xon=k=>{const x=ADV.ex||{};if(k in x)return x[k];return k==='ship'?(+cur.ship||0)!==0:k==='deposit'?cur.pay==='deposit':(+cur[k]||0)>0};
 const xfields=()=>`<div class="xch">${XF.map(f=>`<button data-ex="${f[0]}" class="${xon(f[0])?'on':''}">${f[1]}</button>`).join('')}</div>`+XF.filter(f=>xon(f[0])).map(f=>`<div class="fr big"><span>${f[1]}</span><input data-f="${f[0]}" type="${f[2]}" ${f[2]==='number'?'inputmode="decimal"':''} value="${esc(cur[f[0]])}" placeholder="${f[3]}"></div>`).join('');
-function openEd(id){ADV={};if(!id)dvState=null;cur=id?JSON.parse(JSON.stringify(items.find(o=>o.id===id))):newOrder();cur._new=!id;drawEd();$('mo').classList.add('show');$('mo').scrollTop=0}
+let EDSNAP='',EDAIO=false;const edNow=()=>{try{return JSON.stringify(cur)}catch(e){return''}};
+function openEd(id){ADV={};EDAIO=false;if(!id)dvState=null;cur=id?JSON.parse(JSON.stringify(items.find(o=>o.id===id))):newOrder();cur._new=!id;drawEd();EDSNAP=edNow();$('mo').classList.add('show');$('mo').scrollTop=0}
 function chipify(){
   MO.querySelectorAll('select[data-k="cat"],select[data-k="kind"],select[data-k="ch"],select[data-k="proxy"],select[data-f="cat"],select[data-f="src"]').forEach(sl=>{
     const row=sl.closest('.fr');if(!row||row.querySelector('.pk'))return;row.classList.add('pkr');sl.style.display='none';
@@ -702,7 +703,7 @@ function drawEd(){
   const hearts=[1,2,3,4,5].map(n=>`<span data-h="${n}">${n<=cur.love?'♥':'♡'}</span>`).join('');
   const cats=S.cats.includes(cur.cat)||!cur.cat?S.cats:[...S.cats,cur.cat];
   $('mo').innerHTML=`
-  <div class="mh"><button id="cx">取消</button><span>${cur._new?'':'<button class="dl" id="dl">刪除</button> '}<button class="sv" id="sv">儲存</button></span></div>
+  <div class="mh"><button id="cx">取消</button><span>${cur._new?'':'<button class="dl" id="dl">刪除訂單</button> '}<button class="sv" id="sv">儲存</button></span></div>
   <div class="cd"><h3>截圖自動填表</h3>
     <div class="shb"><button class="btn pri" id="shot">📷 上傳截圖</button><button class="btn" id="doc">📄 上傳檔案</button>${cur.imgs.length?'<button class="btn" id="reshot">🔄 重新辨識</button>':''}</div>
     <input type="file" id="docf" accept="application/pdf,.pdf,.txt,.md,.csv,.tsv,.json,.html,.htm,.eml,.xlsx,.xlsm,.xls,.ods,.docx,text/*,image/*" multiple hidden><input type="file" id="shotf" accept="image/*" multiple hidden>
@@ -840,7 +841,7 @@ MO.addEventListener('click',ev=>{
   if(id==='evn'){setEven(cur,!cur.even);drawEd();toast(cur.even?'已把品項價格平均分攤（每件 '+Math.round((+cur.items[0].price||0)*100)/100+'）':'已還原各自價格');return}
   if(b.dataset.cp!==undefined){const k=+b.dataset.cp,src=cur.items[k];if(!src)return;const c=JSON.parse(JSON.stringify(src));delete c.sq;delete c.sp;delete c.gsp;delete c.fee;delete c.mg;delete c.mgi;cur.items.splice(k+1,0,c);drawEd();toast('已複製「'+(c.name||'品項')+'」');return}
   if(id==='addit'){cur.items.push({name:'',qty:1,price:''});drawEd();return}
-  if(id==='cx'){MO.classList.remove('show');backDetail()}
+  if(id==='cx'){if(EDSNAP&&edNow()!==EDSNAP&&!confirm('有修改還沒儲存，確定要放棄嗎？'))return;MO.classList.remove('show');backDetail()}
   if(id==='tk'){testKey();return}
   if(id==='reshot'){reShot();return}
   if(id==='doc'){const k=($('gk').value||'').trim();if(!k){setMsg('請先貼上 Gemini API Key');return}localStorage.setItem('gk',k);$('docf').click();return}
@@ -856,7 +857,7 @@ MO.addEventListener('click',ev=>{
   if(id==='undo'){const m=cur.imgs[cur.cover];m.s=m.o;delete m.o;drawEd();toast('已還原原圖')}
   if(b.dataset.wok){delete cur.tot;upd();return}
   if(id==='sv'){delete cur._new;delete cur.chk;delete cur.tot;derive(cur);cur.items=cur.items.filter((i,n)=>i.name||+i.price||n===0);const i=items.findIndex(x=>x.id===cur.id);i<0?items.unshift(cur):items[i]=cur;save();render();MO.classList.remove('show');backDetail()}
-  if(id==='dl'&&confirm('確定要刪除這筆訂單？')){items=items.filter(x=>x.id!==cur.id);dvState=null;save();render();MO.classList.remove('show')}
+  if(id==='dl'&&confirm('確定要刪除整筆訂單「'+title(cur)+'」（共 '+cur.items.length+' 個品項）？\n只刪這個品項請回到編輯頁，用該品項的「刪除」。')){items=items.filter(x=>x.id!==cur.id);dvState=null;save();render();MO.classList.remove('show')}
 });
 const setMsg=t=>{const m=$('msg');if(m)m.textContent=t};
 const setMsg2=t=>{const m=$('msg2');if(m)m.textContent=t};
@@ -1289,6 +1290,8 @@ const foldSet=()=>{const o=SOP();SO.querySelectorAll('.cd').forEach(c=>{const h=
 const GRPS=[['分類・角色',/^(收藏櫃名稱|自訂分類|標籤|角色|收藏櫃不顯示)/],['記帳設定',/^(購買來源|朋友代買|我的暱稱|隱藏總投入|刷卡|匯率)/],['資料・備份',/^(賣出對帳|商品圖|☁|雲端|備份|整理與維護|資料安全)/]];
 const GO=()=>{try{return JSON.parse(lsGet('setGrp')||'{}')}catch(e){return{}}};
 const grpSet=()=>{const o=GO(),cs=[...SO.querySelectorAll(':scope>.cd')];GRPS.forEach(([n,re])=>{const L=cs.filter(c=>re.test(((c.querySelector('h3')||{}).textContent||'').trim()));if(!L.length)return;const g=document.createElement('div');g.className='gp'+(o[n]?'':' shut');g.innerHTML='<div class="gh" data-g="'+n+'"><h2>'+n+'</h2></div><div class="gb"></div>';L[0].before(g);L.forEach(c=>g.querySelector('.gb').appendChild(c))})};
+const de0=drawEd;drawEd=function(){de0();document.querySelectorAll('#mo .cd').forEach(c=>{const h=c.querySelector('h3');if(h&&h.textContent.trim()==='截圖自動填表'&&!EDAIO)c.classList.add('fold')})};
+$('mo').addEventListener('click',e=>{const h=e.target.closest('.cd>h3');if(h&&h.textContent.trim()==='截圖自動填表'){EDAIO=!EDAIO;h.parentElement.classList.toggle('fold')}});
 const ds0=drawSet;drawSet=function(){ds0();foldSet();grpSet()};
 SO.addEventListener('click',e=>{const h=e.target.closest('.gh');if(!h)return;const g=h.parentElement,o=GO();g.classList.toggle('shut');o[h.dataset.g]=!g.classList.contains('shut');lsSet('setGrp',JSON.stringify(o))});
 SO.addEventListener('click',e=>{const h=e.target.closest('.cd>h3');if(!h)return;const c=h.parentElement,o=SOP();c.classList.toggle('fold');o[h.textContent.trim()]=!c.classList.contains('fold');lsSet('setOpen',JSON.stringify(o))})}
