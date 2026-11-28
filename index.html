@@ -198,6 +198,7 @@ html,body{touch-action:manipulation}#dv{z-index:5;max-width:100vw;overflow-x:hid
 .it{background:var(--tile);border-radius:16px;padding:10px;margin:8px 0;position:relative}
 .it input{border:0;background:var(--card);border-radius:12px;padding:9px 12px;width:100%;margin-bottom:6px}
 .it .two{display:flex;gap:6px}.it .two input{margin:0}
+.it .x.cp{right:52px;color:var(--tx)}
 .it .x{position:absolute;top:6px;right:8px;border:0;background:transparent;color:var(--rd);cursor:pointer;font-size:13px}
 .ir{display:flex;gap:8px;align-items:center;padding-right:34px;margin-bottom:6px}.ir input{margin:0}
 .ith{flex:none;width:56px;height:56px;border-radius:14px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--mu);cursor:pointer}.ith img{width:100%;height:100%;object-fit:contain;border-radius:12px}
@@ -697,7 +698,7 @@ function drawEd(){
 </div>
   <div class="cd"><h3>來源</h3>${sel('類型','src',srcOpts())}${storeRow()}${fr('連結','link','url','https://')}${fr('購買日期','buyDate','date')}<div class="fr"><span>發售年月</span><input data-f="rel" type="month" value="${esc((cur.rel||'').slice(0,7))}"></div></div>
   <div class="cd"><h3>品項</h3>
-    ${cur.items.map((it,i)=>`<div class="it"><button class="x" data-del="${i}">刪除</button>
+    ${cur.items.map((it,i)=>`<div class="it"><button class="x cp" data-cp="${i}">複製</button><button class="x" data-del="${i}">刪除</button>
       <div class="ir"><div class="ith" data-ip="${i}">${it.img?`<img loading="lazy" decoding="async" src="${it.img.s}">`:'📷'}</div><input data-i="${i}" data-k="name" placeholder="品名" value="${esc(it.name)}"></div> 
       ${cur.status==='pre'?`<label class="gotl"><input type="checkbox" data-got="${i}" ${it.got?'checked':''}> 這個品項已到貨</label>`:''}
       <input data-i="${i}" data-k="note" placeholder="這個品項的備註（選填）" value="${esc(it.note||'')}" style="width:100%;margin:2px 0 6px">
@@ -715,7 +716,7 @@ function drawEd(){
       ${it.img?`<div style="margin-top:6px">${it.img.o?`<button class="btn" data-iun="${i}">還原原圖</button><button class="btn" data-icl="${i}">🧹 清殘影</button>`:`<button class="btn" data-ibg="${i}">✂️ 去背</button>`}<button class="btn" data-icr="${i}">✂ 裁切</button><button class="btn" data-izm="${i}">🔍 放大主體</button><button class="btn" data-ipst="${i}">📋 貼上去背圖</button><button class="btn" data-irm="${i}">移除圖片</button></div>`:''}</div>`).join('')}
     <input type="file" id="itf" accept="image/*" hidden>
     <div class="msg">到貨後，每個品項會在收藏櫃各自顯示。點左邊的縮圖，可以替這個品項單獨加照片、去背。盲盒有不同款式時，按「拆出一款」，每一款各自放照片；抽到重複的款式，就把數量留在那一款。</div>
-    <button class="btn" id="addit">＋ 新增品項</button><button class="btn" id="dupit">⧉ 複製品項</button>${units(cur)>1?(cur.even?'<button class="btn" id="evn">↩ 還原各自價格（目前已平均分攤）</button>':'<button class="btn" id="evn">⚖ 整筆總價平均分給每件</button>'+(cur.items.some(i=>+i.price>0)&&cur.items.some(i=>!(+i.price>0))?'<button class="btn" id="fil">🧮 沒填價格的品項，平均分剩下的金額</button>':'')):''}${cur.items.filter(i=>i.img&&!i.img.o).length?`<button class="btn" id="bgord">✂️ 全部品項去背（${cur.items.filter(i=>i.img&&!i.img.o).length} 張）</button>`:''}${dupGroups(cur).length?`<button class="btn" id="mrg">合併相同品項（${dupGroups(cur).length} 組）</button>`:''}</div>
+    <button class="btn" id="addit">＋ 新增品項</button>${units(cur)>1?(cur.even?'<button class="btn" id="evn">↩ 還原各自價格（目前已平均分攤）</button>':'<button class="btn" id="evn">⚖ 整筆總價平均分給每件</button>'+(cur.items.some(i=>+i.price>0)&&cur.items.some(i=>!(+i.price>0))?'<button class="btn" id="fil">🧮 沒填價格的品項，平均分剩下的金額</button>':'')):''}${cur.items.filter(i=>i.img&&!i.img.o).length?`<button class="btn" id="bgord">✂️ 全部品項去背（${cur.items.filter(i=>i.img&&!i.img.o).length} 張）</button>`:''}${dupGroups(cur).length?`<button class="btn" id="mrg">合併相同品項（${dupGroups(cur).length} 組）</button>`:''}</div>
   ${cur.items.some(i=>ip(cur,i)==='1')?`<div class="cd"><h3>朋友付款狀態</h3>${seg('fpd',[['0','朋友還沒付錢'],['1','朋友已付錢'],['g','🎁 送禮']])}<div class="msg">到貨後，「朋友還沒付錢」的商品會繼續顯示在收藏櫃，提醒你跟朋友收錢；選「已付錢」才會自動隱藏。</div></div>`:''}
   ${cur.items.some(i=>ip(cur,i)==='1')&&cur.items.some(i=>ip(cur,i)!=='1')?`<div class="cd"><h3>朋友分攤</h3>${fr('朋友付你的金額','fpaid','number','例如 189')}<div class="msg" id="fph" style="margin-top:6px"></div></div>`:''}
   ${cur.status==='pre'||cur.status==='wish'?`<div class="cd"><h3>${cur.status==='wish'?'發售狀態':'預購貨況'}</h3>${cur.status==='pre'?`<div style="display:flex;gap:8px"><div style="flex:1.6;min-width:0">${seg('fs',Object.keys(FS).map(p=>[p,FS[p]]))}</div><div style="flex:1;min-width:0">${seg('tg',[['1','未成團'],['2','已成團']])}</div></div>`:seg('fs',Object.keys(FS).map(p=>[p,FS[p]]))}</div>`:''}
@@ -817,7 +818,7 @@ MO.addEventListener('click',ev=>{
   if(b.dataset.del!==undefined){cur.items.splice(+b.dataset.del,1);if(!cur.items.length)cur.items.push({name:'',qty:1,price:''});drawEd();return}
   if(id==='fil'){const r0=effRate(cur),def=Math.round(+cur.twPaid>0?+cur.twPaid:tw(cur,total(cur))),v=prompt('這筆訂單實際總共付了多少台幣？\n（已填價格的品項照原價，剩下的金額平均分給沒填價格的品項）',def);if(v===null)return;const T=parseFloat(v);if(!(T>0)){toast('請輸入台幣金額');return}const er=fillZero(cur,T);if(er){toast(er,4000);return}drawEd();toast('已把剩餘金額平均分給沒填價格的品項',3500);return}
   if(id==='evn'){setEven(cur,!cur.even);drawEd();toast(cur.even?'已把品項價格平均分攤（每件 '+Math.round((+cur.items[0].price||0)*100)/100+'）':'已還原各自價格');return}
-  if(id==='dupit'){const src=cur.items[cur.items.length-1];if(!src)return;const c=JSON.parse(JSON.stringify(src));delete c.sq;delete c.sp;delete c.gsp;delete c.fee;delete c.mg;delete c.mgi;cur.items.push(c);drawEd();toast('已複製「'+(c.name||'品項')+'」');return}
+  if(b.dataset.cp!==undefined){const k=+b.dataset.cp,src=cur.items[k];if(!src)return;const c=JSON.parse(JSON.stringify(src));delete c.sq;delete c.sp;delete c.gsp;delete c.fee;delete c.mg;delete c.mgi;cur.items.splice(k+1,0,c);drawEd();toast('已複製「'+(c.name||'品項')+'」');return}
   if(id==='addit'){cur.items.push({name:'',qty:1,price:''});drawEd();return}
   if(id==='cx'){MO.classList.remove('show');backDetail()}
   if(id==='tk'){testKey();return}
