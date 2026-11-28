@@ -2222,7 +2222,7 @@ function vImg(m,E,ext){if(!isRec(m)){E('的圖片資料不是正確格式');retu
 function vOrder(o,k,lvl,ext){ext=ext||{n:0};const P={hard:[],full:[]},lab='第 '+(k+1)+' 筆訂單'+(isRec(o)&&Array.isArray(o.items)&&isRec(o.items[0])&&typeof o.items[0].name==='string'&&o.items[0].name?'「'+o.items[0].name.slice(0,12)+'」':'');
   const H=t=>P.hard.push(lab+t),F=t=>P.full.push(lab+t);
   if(!isRec(o)){H('不是正確的資料');return P}
-  if(o.id==null||o.id==='')(lvl==='legacy'?F:H)('缺少編號');else if(typeof o.id!=='string'||!/^[\w.:\-]{1,80}$/.test(o.id))H('編號不正確');
+  if(o.id==null||o.id==='')(lvl==='legacy'?F:H)('缺少編號');else if(typeof o.id!=='string'||o.id.length>200||/[\u0000-\u001f"<>]/.test(o.id))H('編號不正確（'+JSON.stringify(String(o.id)).slice(0,40)+'）');/* v472：舊版允許中文、空白、符號的編號，照樣接受；只擋會弄壞畫面的引號、角括號與控制字元 */
   if(!Array.isArray(o.items)){H('的品項不是清單');return P}
   o.items.forEach((it,j)=>{if(!isRec(it))H('的第 '+(j+1)+' 個品項是空的或格式錯誤')});if(P.hard.length||lvl==='hard')return P;
   if(!o.items.length)F('沒有任何品項');
