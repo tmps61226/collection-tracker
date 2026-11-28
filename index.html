@@ -334,7 +334,7 @@ body:has(.mo.show,.sheet.show,#cr[style*=flex]) :is(.top,.chips,.bar,#fpn){z-ind
 </div>
 <div class="nav"><div class="pill"><button id="vs" aria-label="櫃子"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M4 9.2h16M4 14.8h16"/></svg><span>收藏</span></button><button id="vg" aria-label="想買"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5S3.5 15 3.5 8.9A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 8.5 1.9C20.5 15 12 20.5 12 20.5z"/></svg><span>想買</span></button><button class="plus" id="add" aria-label="新增"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>新增</span></button><button id="vc" aria-label="月曆"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16M8.5 3.5v3M15.5 3.5v3"/></svg><span>月曆</span></button><button id="vf" aria-label="朋友的商品"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.4-3.4 2.7-5.2 5.5-5.2s5.1 1.8 5.5 5.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M16.5 14.2c2.4 0 3.8 1.6 4.1 4"/></svg><span>朋友</span></button><button id="vl" hidden aria-label="列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button></div></div>
 <div id="arp"><div class="box" id="arb"></div></div><div id="toast"></div>
-<div class="sheet" id="sheet"><div class="box"><button data-n="have"><b>已買到了</b><small>門市、日本現場、自己去買的</small></button><button data-n="pre"><b>預購／喊單</b><small>還沒到貨，等收貨</small></button><button data-n="wish"><b>想買</b><small>先記起來，之後再決定</small></button><button data-n="file"><b>📄 匯入檔案新增商品</b><small>Excel、CSV、JSON、PDF、Word、文字都可以</small></button><button id="tlt" class="tlt"><b>🧰 整理工具</b><small>合併、找重複、找紙袋、批次刪除 ▾</small></button><div id="tlb" class="tlb" hidden><button data-n="merge"><b>🔗 合併現有訂單</b></button><button data-n="rcpt"><b>🧾 合併同一張收據</b></button><button data-n="bag"><b>🛍 找紙袋／袋子品項</b></button><button data-n="dup"><b>🔍 找重複的商品</b></button><button data-n="del"><b>🗑 批次刪除訂單</b></button></div></div></div><div class="mo" id="mg" style="z-index:7"></div><div class="mo" id="fl" style="z-index:4"></div><input type="file" id="bulkf" accept=".json,.csv,.tsv,.xlsx,.xlsm,.xls,.ods,.docx,.pdf,.txt,.md,.html,.htm,.eml,application/pdf,text/*,image/*" multiple hidden>
+<div class="sheet" id="sheet"><div class="box"><button data-n="have"><b>已買到了</b><small>門市、日本現場、自己去買的</small></button><button data-n="pre"><b>預購／喊單</b><small>還沒到貨，等收貨</small></button><button data-n="wish"><b>想買</b><small>先記起來，之後再決定</small></button><button data-n="imp"><b>📥 匯入商品</b><small>截圖／表格／更新現有商品／還原備份</small></button><div id="impb" class="tlb" hidden><button data-n="ai"><b>✨ AI 智慧新增</b><small>截圖、照片、PDF、文字：辨識後讓你確認再存</small></button><button data-n="bat"><b>📊 批次新增</b><small>Excel、CSV、JSON：先預覽再新增</small></button><button data-n="upd"><b>🔄 更新現有商品</b><small>用 JSON 修改已有訂單或換圖片</small></button><button data-n="rst"><b>♻️ 還原備份</b><small>用備份檔還原（會先確認）</small></button></div></div></div><div class="mo" id="mg" style="z-index:7"></div><div class="mo" id="fl" style="z-index:4"></div><input type="file" id="bulkf" accept=".json,.csv,.tsv,.xlsx,.xlsm,.xls,.ods,.docx,.pdf,.txt,.md,.html,.htm,.eml,application/pdf,text/*,image/*" multiple hidden>
 <div id="selbar"><button id="selx">取消</button><span id="selmsg"></span><button id="selcat">改分類</button><button id="seldel">刪除</button></div><div class="sheet" id="catsh" style="z-index:9"><div class="box" id="catbx"></div></div><div class="mo" id="dv"></div><div class="mo" id="mo"></div><div class="mo" id="so2"></div><div class="mo" id="dupm" style="z-index:7"></div>
 
 <script>
@@ -638,7 +638,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v444</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v445</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const f=g.querySelector('.gi');if(f&&f.scrollWidth>f.clientWidth+1)g.classList.add('lg')}
@@ -1277,6 +1277,7 @@ function drawSet(){
     <button class="btn" id="syup">⬆ 上傳到雲端</button><button class="btn" id="sydn">⬇ 從雲端下載</button>${GH().t?'<button class="btn" id="qrcfg">📱 顯示設定 QR（用來接新裝置）</button>':''}${GH().t?'<button class="btn" id="cpcfg">🔗 複製設定連結（傳給自己的另一台裝置）</button>':''}
     <div class="fr"><span>新裝置：貼上設定連結</span><input id="cfglink" placeholder="貼上從另一台複製的連結" autocomplete="off"></div><button class="btn" id="apcfg">套用設定連結並下載</button>${lsGet('prevAt')?'<button class="btn" id="syrs">↩ 還原下載前的資料</button>':''}
     <div class="msg">換手機或資料不見時，貼上同一把金鑰再按「下載」就能還原。開啟自動同步後，改完資料幾秒會自動上傳，打開 app 時會自動拿雲端最新的。如果兩支手機都有沒同步的修改，會停下來讓你選，不會自己蓋掉。金鑰只存在這支手機。</div></div>
+  <div class="cd"><h3>整理與維護</h3><button class="btn" data-n="merge">🔗 合併現有訂單</button><button class="btn" data-n="rcpt">🧾 合併同一張收據</button><button class="btn" data-n="bag">🛍 找紙袋／袋子品項</button><button class="btn" data-n="dup">🔍 找重複的商品</button><button class="btn" data-n="del">🗑 批次刪除訂單</button></div>
   <div class="cd"><h3>資料安全</h3>${safeCard()}</div>
   <div class="cd"><h3>備份</h3><div class="msg" style="margin:0 0 8px">${lastBk()?'上次備份：'+Math.floor((Date.now()-lastBk())/864e5)+' 天前':'還沒備份過'}（超過 7 天首頁會提醒）</div><button class="btn" id="ex">匯出備份</button><button class="btn" id="im">匯入備份</button><button class="btn" id="exl">匯出文字版（不含圖片，給 Claude 看用）</button><input type="file" id="imf" accept=".json" hidden>
     <div class="msg">資料只存在這支手機。匯出時選「儲存到檔案」→ iCloud Drive，換手機或資料不見時用「匯入備份」就能還原。</div></div>`;
@@ -1285,7 +1286,7 @@ $('eye').onclick=()=>{S.hide=!S.hide;save();render()};
 document.addEventListener('click',e=>{const kt=e.target.closest('[data-ktog]');if(kt&&$('stats').contains(kt)){KO=!KO;try{localStorage.setItem('kopen',KO?'1':'0')}catch(x){}render();return}const c=e.target.closest('[data-cf]');if(c&&($('stats').contains(c)||$('fpn').contains(c))){const v=c.dataset.cf;charF=(charF===v?'':v);render();return}const k=e.target.closest('[data-kf]');if(k&&$('stats').contains(k)){const v=k.dataset.kf;kindF=(kindF===v?'':v);render()}});
 {const SOP=()=>{try{return JSON.parse(lsGet('setOpen')||'{}')}catch(e){return{}}};
 const foldSet=()=>{const o=SOP();SO.querySelectorAll('.cd').forEach(c=>{const h=c.querySelector('h3');if(!h)return;const t=h.textContent.trim();const open=t in o?o[t]:/同步|備份|雲端/.test(t);c.classList.toggle('fold',!open)})};
-const GRPS=[['分類・角色',/^(收藏櫃名稱|自訂分類|標籤|角色|收藏櫃不顯示)/],['記帳設定',/^(購買來源|朋友代買|我的暱稱|隱藏總投入|刷卡|匯率)/],['資料・備份',/^(賣出對帳|商品圖|☁|雲端|備份)/]];
+const GRPS=[['分類・角色',/^(收藏櫃名稱|自訂分類|標籤|角色|收藏櫃不顯示)/],['記帳設定',/^(購買來源|朋友代買|我的暱稱|隱藏總投入|刷卡|匯率)/],['資料・備份',/^(賣出對帳|商品圖|☁|雲端|備份|整理與維護|資料安全)/]];
 const GO=()=>{try{return JSON.parse(lsGet('setGrp')||'{}')}catch(e){return{}}};
 const grpSet=()=>{const o=GO(),cs=[...SO.querySelectorAll(':scope>.cd')];GRPS.forEach(([n,re])=>{const L=cs.filter(c=>re.test(((c.querySelector('h3')||{}).textContent||'').trim()));if(!L.length)return;const g=document.createElement('div');g.className='gp'+(o[n]?'':' shut');g.innerHTML='<div class="gh" data-g="'+n+'"><h2>'+n+'</h2></div><div class="gb"></div>';L[0].before(g);L.forEach(c=>g.querySelector('.gb').appendChild(c))})};
 const ds0=drawSet;drawSet=function(){ds0();foldSet();grpSet()};
@@ -1326,6 +1327,7 @@ SO.addEventListener('click',e=>{
   if(b.id==='autokind'){const M=[['扭蛋',/扭蛋|轉蛋|蛋|盲盒|盒玩/],['徽章',/徽章|胸章|別針/],['公仔',/公仔|景品|模型|figure/i],['娃娃',/娃娃|玩偶|吊飾|絨|毛絨|玩偶/]];let n=0;items.forEach(o=>o.items.forEach(it=>{if(it.kind)return;const m=M.find(x=>x[1].test(it.name||''));if(m&&KD().includes(m[0])){it.kind=m[0];n++}}));save();render();alert('已幫 '+n+' 個品項貼上標籤，其餘可在品項編輯頁自己選。');return}
   if(b.id==='addcat'){const v=$('newcat').value.trim();if(v&&!S.cats.includes(v)){S.cats.push(v);save();drawSet()}}
   if(b.id==='im')$('imf').click();
+  if(['merge','rcpt','bag','dup','del'].includes(b.dataset.n)){SO.classList.remove('show');runTool(b.dataset.n);return}
   if(b.id==='ex')doBackup();
   if(b.id==='exl')doLite();
   if(b.id==='bgall')bgAll();
@@ -1853,13 +1855,18 @@ const SY={},tk=()=>fMode?'f':view,rsY=k=>requestAnimationFrame(()=>window.scroll
 function setView(v){SY[tk()]=scrollY;fMode=false;$('vf').classList.remove('on');view=v;try{localStorage.setItem('view',v)}catch(e){}Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===v));render();rsY(v)}
 $('vg').onclick=()=>setView('grid');$('vl').onclick=()=>setView('list');$('vs').onclick=()=>setView('shelf');$('vc').onclick=()=>setView('cal');
 $('vf').onclick=()=>{SY[tk()]=scrollY;fMode=!fMode;flTab='all';Object.values(VB).forEach(id=>$(id).classList.toggle('on',!fMode&&VB[view]===id));$('vf').classList.toggle('on',fMode);render();rsY(tk())};
-$('add').onclick=()=>{$('tlb').hidden=true;$('sheet').classList.add('show')};
+function runTool(n){
+  if(n==='rcpt'){mgMode='rcpt';rcInit()}else if(n==='bag'){mgMode='bag';bgInit()}else if(n==='dup'){mgMode='dup';dupInit()}else if(n==='del'){mgMode='del';mgSel=[];mgQ='';mgNoImg=false}else{mgMode='';mgSel=[];mgQ=''}
+  drawMg();$('mg').classList.add('show')}
+let IMPM='';
+$('add').onclick=()=>{$('impb').hidden=true;$('sheet').classList.add('show')};
 $('sheet').addEventListener('click',e=>{
-  if(e.target.closest('#tlt')){const t=$('tlb');t.hidden=!t.hidden;return}
   const b=e.target.closest('[data-n]');
   if(!b){if(e.target.id==='sheet')$('sheet').classList.remove('show');return}
+  if(b.dataset.n==='imp'){const t=$('impb');t.hidden=!t.hidden;return}
   $('sheet').classList.remove('show');
-  if(b.dataset.n==='file'){$('bulkf').click();return}
+  if(['ai','bat','upd'].includes(b.dataset.n)){IMPM=b.dataset.n;$('bulkf').accept=({ai:'image/*,.pdf,.docx,.txt,.md,.html,.htm,.eml',bat:'.csv,.tsv,.xlsx,.xlsm,.xls,.ods,.json',upd:'.json'})[IMPM];$('bulkf').multiple=IMPM==='ai';$('bulkf').click();return}
+  if(b.dataset.n==='rst'){$('imf').click();return}
   if(b.dataset.n==='rcpt'){mgMode='rcpt';rcInit();drawMg();$('mg').classList.add('show');return}
   if(b.dataset.n==='bag'){mgMode='bag';bgInit();drawMg();$('mg').classList.add('show');return}
   if(b.dataset.n==='dup'){mgMode='dup';dupInit();drawMg();$('mg').classList.add('show');return}
@@ -1919,7 +1926,7 @@ async function bulkImport(files){
   if(roBlock())return;
   const f=files[0],nm=(f.name||'').toLowerCase();let add=null;
   try{
-    if(files.length===1&&/\.json$/.test(nm)){const d=JSON.parse(await f.text()),a=Array.isArray(d)?d:d.items;if(!Array.isArray(a))throw new Error('JSON 裡找不到商品清單');if(d&&d.patch===true){patchImport(d);return}if(d&&d.imgOnly===true){imgOnlyImport(a);return}add=a.filter(x=>x&&(x.items||x.name)).map(mig)}
+    if(files.length===1&&/\.json$/.test(nm)){const d=JSON.parse(await f.text()),a=Array.isArray(d)?d:d.items;if(!Array.isArray(a))throw new Error('JSON 裡找不到商品清單');if(IMPM==='bat'&&d&&(d.patch===true||d.imgOnly===true)){toast('這是「更新現有商品」用的檔案，請改選「更新現有商品」',5000);return}if(IMPM==='upd'&&!(d&&(d.patch===true||d.imgOnly===true))){toast('這個檔案不是更新用的（缺少 patch／imgOnly 標記）。要新增商品請選「批次新增」',6000);return}if(d&&d.patch===true){patchImport(d);return}if(d&&d.imgOnly===true){imgOnlyImport(a);return}add=a.filter(x=>x&&(x.items||x.name)).map(mig)}
     else if(files.length===1&&/\.(csv|tsv)$/.test(nm)){add=rowsToOrders(csvRows((await fileText(f)).replace(/^﻿/,'')))}
     else if(files.length===1&&/\.(xlsx|xlsm|xls|ods)$/.test(nm)){await loadJs('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});add=[];for(const sn of wb.SheetNames)add=add.concat(rowsToOrders(XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,blankrows:false,raw:false})))}
   }catch(e){alert('讀檔失敗：'+String(e&&e.message||e).slice(0,100));return}
