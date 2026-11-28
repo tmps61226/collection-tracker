@@ -413,14 +413,21 @@ async function mkThumb(blob,mime){let bm=null,w=0,h=0,src=null;
 /* 把一張 data URL 圖片放進圖片庫，回傳參照。格式特殊、重新編碼後不能完全還原的，就不轉、原樣保留 */
 async function imgPut(v){if(typeof v!=='string'||!v.startsWith('data:')||v.length<=400)return v;const m=DURL.exec(v.slice(0,300));if(!m)return v;
   const b64=v.slice(m[0].length);if(!b64.length||b64.length%4||!B64RE.test(b64))return v;
-  const bytes=new Uint8Array(await (await fetch(v)).arrayBuffer());if(u8b64(bytes)!==b64)return v;
+  /* 可逆檢查：base64 只有最後 4 個字可能有不同寫法；最後 4 個字解開再編回去必須一樣，位元組數也要對 */
+  const tail=b64.slice(-4);let canon=false;try{canon=btoa(atob(tail))===tail}catch(e){}if(!canon)return v;
+  const pad=tail.endsWith('==')?2:tail.endsWith('=')?1:0,want=b64.length/4*3-pad;
+  const bytes=new Uint8Array(await (await fetch(v)).arrayBuffer());if(bytes.length!==want)return v;
   const sha=hexOf(await crypto.subtle.digest('SHA-256',bytes)),ref='img:'+sha;if(BMX.has(sha))return ref;
-  const mime=m[1].toLowerCase(),hd=new TextEncoder().encode('blob '+bytes.length+'\0'),gb=new Uint8Array(hd.length+bytes.length);gb.set(hd);gb.set(bytes,hd.length);
-  const gs=hexOf(await crypto.subtle.digest('SHA-1',gb)),ext=mime.includes('png')?'png':mime.includes('webp')?'webp':'jpg';
-  const meta={sha,mime,pre:v.slice(0,m[0].length-1),bytes:bytes.length,n:b64.length,h:h64(b64),hv:h64(v),lv:v.length,cn:h53(v)+v.length.toString(36)+'.'+ext,gs,t:Date.now()};meta.pid=meta.h+':'+meta.n;
+  const mime=m[1].toLowerCase(),ext=mime.includes('png')?'png':mime.includes('webp')?'webp':'jpg';
+  const meta={sha,mime,pre:v.slice(0,m[0].length-1),bytes:bytes.length,n:b64.length,h:h64(b64),hv:h64(v),lv:v.length,cn:h53(v)+v.length.toString(36)+'.'+ext,t:Date.now()};meta.pid=meta.h+':'+meta.n;
   const blob=new Blob([bytes],{type:mime});let th=null;try{th=await mkThumb(blob,mime)}catch(e){}if(th){meta.w=th.w;meta.ht=th.h;meta.th=1}
   const ok=await blobSelfTest();const thv=th?(ok?th.blob:await th.blob.arrayBuffer()):null;
-  await kvTx(st=>{st.put(ok?blob:bytes.buffer,'B:'+sha);if(thv)st.put(thv,'T:'+sha);st.put(meta,'BM:'+sha)});BMX.set(sha,meta);return ref}
+  await kvTx(st=>{st.put(ok?blob:bytes.buffer,'B:'+sha);if(thv)st.put(thv,'T:'+sha);st.put(meta,'BM:'+sha)});
+  /* 寫完讀回來核對位元組（SHA-256） */
+  const rb=await kvGetS('B:'+sha),rbb=asBlob(rb,mime);if(!rbb||rbb.size!==bytes.length||hexOf(await crypto.subtle.digest('SHA-256',await rbb.arrayBuffer()))!==sha){try{await kvTx(st=>{st.delete('B:'+sha);st.delete('T:'+sha);st.delete('BM:'+sha)})}catch(e){}throw new Error('圖片存進手機後讀回來核對不一致')}
+  BMX.set(sha,meta);return ref}
+/* 核對圖片庫裡這張圖的位元組（SHA-256），不轉成字串 */
+async function imgVerify(ref){const sha=ref.slice(4),m=BMX.get(sha);const b=await imgBlob(ref,'f');if(!m||!b||b.size!==m.bytes)return false;return hexOf(await crypto.subtle.digest('SHA-256',await b.arrayBuffer()))===sha}
 async function imgLoadIndex(){BMX.clear();const d=await db();await new Promise((res,rej)=>{const t=d.transaction('kv'),st=t.objectStore('kv');t.oncomplete=res;t.onabort=()=>rej(t.error);const cq=st.openCursor(IDBKeyRange.bound('BM:','BM:￿'));cq.onsuccess=()=>{const c=cq.result;if(c){if(isRec(c.value)&&c.value.sha)BMX.set(c.value.sha,c.value);c.continue()}}})}
 async function imgBlob(v,kind){if(!isRef(v))return null;const sha=v.slice(4),m=BMX.get(sha);let x=kind==='t'&&m&&m.th?await kvGetS('T:'+sha):undefined;let mime=x?((m&&/png|webp|gif|svg/.test(m.mime))?'image/png':'image/jpeg'):(m&&m.mime);if(x===undefined)x=await kvGetS('B:'+sha);return x===undefined?null:asBlob(x,mime||(m&&m.mime))}
 const MISSIMG='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" fill="#eee"/><text x="40" y="46" font-size="14" text-anchor="middle" fill="#999">缺圖</text></svg>');
@@ -451,6 +458,8 @@ async function ingestList(L){if(!IMGON)return 0;let n=0;const one=async(m,k)=>{c
   for(const o of L){if(!isRec(o))continue;for(const it of (Array.isArray(o.items)?o.items:[]))if(isRec(it)&&isRec(it.img)){await one(it.img,'s');await one(it.img,'o')}for(const m of (Array.isArray(o.imgs)?o.imgs:[]))if(isRec(m)){await one(m,'s');await one(m,'o')}}return n}
 /* 指紋：長字串（圖片）用完整內容雜湊，以字串本身為鍵快取 */
 let HC=new Map(),HCn=new Map();
+/* 多段字串依序算雜湊＝把它們接起來再算（不必真的接成一個大字串） */
+const h64m=(...L)=>{let h1=2166136261,h2=0x9747b28c;for(const t of L)for(let i=0;i<t.length;i++){const c=t.charCodeAt(i);h1=Math.imul(h1^c,16777619);h2=Math.imul(h2^c,0x5bd1e995);h2^=h2>>>13}return (h1>>>0).toString(16).padStart(8,'0')+(h2>>>0).toString(16).padStart(8,'0')};
 const h64=t=>{let h1=2166136261,h2=0x9747b28c;for(let i=0;i<t.length;i++){const c=t.charCodeAt(i);h1=Math.imul(h1^c,16777619);h2=Math.imul(h2^c,0x5bd1e995);h2^=h2>>>13}return (h1>>>0).toString(16).padStart(8,'0')+(h2>>>0).toString(16).padStart(8,'0')};
 const strFp=v=>{let r=HC.get(v);if(r===undefined)r=v.length+'|'+h64(v);HCn.set(v,r);return r};
 const fpOf=o=>JSON.stringify(o,(k,v)=>typeof v==='string'&&v.length>400?strFp(v):v);
@@ -1838,7 +1847,7 @@ async function syncDown(auto){
     /* 本機已有同名圖片：只有和雲端這個版本的檔案內容（git blob SHA）一致才直接用 */
     const local=packData().imgs,byCn=new Map();BMX.forEach(m=>byCn.set(m.cn,m));const got={};let done=0;
     await pool(names,4,async n=>{const ts=TS.get('img/'+n),x=IM[n];let val=null;
-      const lm=byCn.get(n);if(IMGON&&lm&&lm.gs===ts&&(!x||(x.h===lm.h&&x.n===lm.n&&x.mime===lm.mime)))val='img:'+lm.sha;
+      const lm=byCn.get(n);if(IMGON&&lm&&(!x||(x.h===lm.h&&x.n===lm.n&&x.mime===lm.mime))){if(!lm.gs){const bb=await imgBlob('img:'+lm.sha,'f');if(bb)lm.gs=await gitSha(new Uint8Array(await bb.arrayBuffer()))}if(lm.gs===ts)val='img:'+lm.sha}
       else if(local[n]&&local[n].pay!=null){const p=local[n].pay;if((await gitSha(b64u8(p)))===ts&&(!x||(h64(p)===x.h&&p.length===x.n)))val='data:'+mimeOf(n)+';base64,'+p}
       if(val==null){let buf=null,er=null;for(let k=0;k<3&&!buf;k++){try{buf=new Uint8Array(await (await gh('/contents/img/'+n+'?ref='+head,'GET',null,true)).arrayBuffer())}catch(e){er=e;if(e.status&&e.status!==403&&e.status!==429)break}}
         if(!buf)throw (er&&er.status===404)?new Error('雲端缺少圖片 '+n+'，已停止下載，資料沒有改動'):(er||new Error('圖片下載失敗'));
@@ -1912,16 +1921,19 @@ async function migRun(){if(MIGBUSY)return;if(K!==K0||IMGON){toast('已經是新�
       if(old.length){const gen=newGen();await kvTx(st2=>{const P=[];old.forEach(k=>P.push(new Promise(r=>{const q=st2.get(k);q.onsuccess=()=>{st2.put(q.result,'R:'+gen+':'+k);if(k.startsWith('n:'))st2.delete(k);r()}})));const rq=st2.get('rescues');rq.onsuccess=()=>{const R=Array.isArray(rq.result)?rq.result:[];R.push({gen,at:Date.now(),why:'重新升級前、上一次升級的資料',n:old.filter(k=>k.startsWith('n:')).length,kind:'rescue'});st2.put(R,'rescues')}})}
       await kvTx(s=>s.put(st,'mig'))}
     const done=new Set(st.done);IMGON=true;
+    /* 舊架構啟動時把全部圖片讀進了記憶體；升級時用不到，先放掉（畫面被升級進度蓋住；中途停止或失敗都會重新開啟） */
+    items=[];FP.clear();hcSweep();hcSweep();
     for(let i=0;i<ids.length;i++){const id=ids[i];if(done.has(id))continue;
-      if(MIGSTOP){migUI('');toast('已暫停升級（做了 '+done.size+'／'+ids.length+' 筆）。下次到設定按「升級儲存方式」可以繼續。',8000);return}
+      if(MIGSTOP){migUI('');alert('已暫停升級（做了 '+done.size+'／'+ids.length+' 筆）。下次到設定按「升級儲存方式」可以繼續。\n\napp 會重新開啟。');location.reload();return}
       if(i%5===0&&(await legacySig())!==sig0)throw new Error('舊資料在升級途中被改過（可能開了舊版）。已停止，舊資料沒有被動到，請關掉舊版後重新升級');
       const src=await kvGetS('o:'+id);if(!isRec(src)||src.id!==id||!Array.isArray(src.items))throw new Error('第 '+(i+1)+' 筆舊資料讀不到或損壞，已停止（舊資料沒有被動到）');
-      const o=JSON.parse(JSON.stringify(src));await ingestList([o]);
-      if(fpOf(await expandOrder(o))!==fpOf(src))throw new Error('第 '+(i+1)+' 筆轉換後核對不一致，已停止（舊資料沒有被動到）');
-      done.add(id);st.done=[...done];await kvTx(s=>{s.put(o,'n:'+id);s.put(st,'mig')});
+      const want=fpNC(src),o=src;await ingestList([o]);
+      if(fpRep(o)!==want)throw new Error('第 '+(i+1)+' 筆轉換後核對不一致，已停止（舊資料沒有被動到）');
+      done.add(id);st.done=[...done];await kvTx(s=>{s.put(o,'n:'+id);s.put(st,'mig')});if(i%8===7)await new Promise(r=>setTimeout(r,30));
       migUI('正在處理 '+(i+1)+' / '+ids.length+' 筆（圖片放進圖片庫，並逐張讀回核對）',(i+1)/ids.length/2,true)}
     /* 全部再核對一次：新的每一筆換回原本的圖片後，必須和舊資料完全相同 */
-    const fps=[];for(let i=0;i<ids.length;i++){const L=await kvGetS('o:'+ids[i]),N=await kvGetS('n:'+ids[i]);if(!isRec(N)||fpOf(await expandOrder(N))!==fpOf(L))throw new Error('最後核對第 '+(i+1)+' 筆不一致，已停止（舊資料沒有被動到，可以重新升級）');fps.push(fpOf(N));
+    const fps=[];for(let i=0;i<ids.length;i++){const L=await kvGetS('o:'+ids[i]),N=await kvGetS('n:'+ids[i]);if(!isRec(N)||fpRep(N)!==fpNC(L))throw new Error('最後核對第 '+(i+1)+' 筆不一致，已停止（舊資料沒有被動到，可以重新升級）');
+      const refs=[];JSON.stringify(N,(k,v)=>{if(isRef(v))refs.push(v);return v});for(const r of refs)if(!(await imgVerify(r)))throw new Error('最後核對第 '+(i+1)+' 筆的圖片位元組不一致，已停止（舊資料沒有被動到）');fps.push(fpOf(N));
       if(i%5===0)migUI('最後核對 '+(i+1)+' / '+ids.length+' 筆',.5+(i+1)/ids.length/2,false)}
     /* 切換：一個很短的交易；切換前再確認舊資料沒被改過 */
     const d=await db();await new Promise((res,rej)=>{const tx=d.transaction('kv','readwrite'),s=tx.objectStore('kv');let why=null;tx.oncomplete=res;tx.onabort=()=>rej(why||tx.error||new Error('切換中斷'));
@@ -1929,7 +1941,7 @@ async function migRun(){if(MIGBUSY)return;if(K!==K0||IMGON){toast('已經是新�
         if(sig!==sig0){why=new Error('舊資料在最後一刻被改過，已停止');tx.abort();return}
         const nm=Object.assign(metaOf(1,ids,chOf(fps),shOf(set)),{img:1});s.put(ids,'nids');if(set!==undefined)s.put(set,'nset');s.put(nm,'nmeta');s.put({ns:'n',at:Date.now(),src:sig0,from:'v471',n:ids.length,ms:Date.now()-t0},'act');s.delete('mig')}});
     migUI('完成，重新開啟中…',1,false);lsSet('migDone',String(Date.now()));setTimeout(()=>location.reload(),600)
-  }catch(e){console.error(e);IMGON=false;migUI('');alert('⚠ 升級沒有完成：'+((e&&e.message)||'錯誤')+'\n\n舊資料完全沒有被改動，app 會照舊使用。'+(/空間|Quota/i.test(String(e&&(e.name+e.message)))?'\n看起來是手機空間不夠，清出空間後可以再試一次（做好的部分會保留）。':''))}
+  }catch(e){console.error(e);IMGON=false;migUI('');alert('⚠ 升級沒有完成：'+((e&&e.message)||'錯誤')+'\n\n舊資料完全沒有被改動，app 會重新開啟、照舊使用。'+(/空間|Quota/i.test(String(e&&(e.name+e.message)))?'\n看起來是手機空間不夠，清出空間後可以再試一次（做好的部分會保留）。':''));if(!items.length)location.reload()}
   finally{MIGBUSY=false;if(WLOCK==='升級儲存方式')WLOCK=''}}
 /* 切回舊的儲存方式：只是把指標拿掉；新的資料（含升級後的修改）留著，可以再切回來 */
 async function migBack(){if(K!==KN){toast('目前已經是舊的儲存方式');return}if(syncBusy||WLOCK||MUTREV!==COMMITREV){toast('有工作進行中，請稍後再試');return}
@@ -2001,7 +2013,10 @@ const BKT={full:'完整備份（含去背前原圖）',display:'一般備份（�
 const bkRep=mode=>mode!=='display'?undefined:(k,v)=>k==='o'&&typeof v==='string'&&(v.startsWith('data:')||isRef(v))?undefined:v;
 /* 指紋：圖片參照用「還原成 data URL 後」的長度與雜湊（存在圖片資訊裡），所以參照和 data URL 算出來一樣 */
 const refFp=v=>{const m=BMX.get(v.slice(4));return m?m.lv+'|'+m.hv:v};
-const fpRep=(o,rep)=>JSON.stringify(o,(k,v)=>{if(rep)v=rep(k,v);return isRef(v)?refFp(v):typeof v==='string'&&v.length>400?strFp(v):v});
+/* 不快取版本：備份、還原、遷移處理大量圖片字串時用，避免把每張圖的字串留在快取裡（記憶體會一直累積） */
+const strFpNC=v=>v.length+'|'+h64(v);
+const fpNC=o=>JSON.stringify(o,(k,v)=>typeof v==='string'&&v.length>400?strFpNC(v):v);
+const fpRep=(o,rep)=>JSON.stringify(o,(k,v)=>{if(rep)v=rep(k,v);return isRef(v)?refFp(v):typeof v==='string'&&v.length>400?strFpNC(v):v});
 /* 備份檔裡的大小：參照會換成完整的 data URL */
 const bkSize=(o,rep)=>{let x=0;const s=JSON.stringify(o,(k,v)=>{if(rep)v=rep(k,v);if(isRef(v)){const m=BMX.get(v.slice(4));if(m)x+=m.lv-v.length}return v});return u8len(s)+x};
 const stOf=()=>JSON.stringify(S,(k,v)=>/^(gk|ghTok)$/.test(k)?undefined:v);
@@ -2146,13 +2161,18 @@ async function readBackup(FL,opt){opt=opt||{};const warn=[];
   if(ms.reduce((a,m)=>a+(m.count||0),0)!==m0.orders&&m0.orders!=null)throw new Error('筆數不對：各卷合計和備份記錄不一樣');
   H.sort((x,y)=>x.m.part-y.m.part);
   const fps=[],ids=[],keys=new Set(),out=[],bad=[],msgs=[],ext={n:0},seen=new Set();let S0,total=0;
-  for(const h of H){let d;try{d=JSON.parse(await h.f.text())}catch(e){throw new Error('「'+h.f.name+'」不是正確的備份檔（無法讀取）')}
+  for(const h of H){let d,txt;try{txt=await h.f.text();d=JSON.parse(txt)}catch(e){throw new Error('「'+h.f.name+'」不是正確的備份檔（無法讀取）')}
     const m=d.manifest;if(!isRec(m)||m.hash!==h.m.hash||m.part!==h.m.part)throw new Error('第 '+h.m.part+' 卷的 manifest 不一致');
     const L=raw?d.raw:d.items,st0=raw?d.rescue:d.settings;d=null;
     if(!Array.isArray(L))throw new Error('第 '+m.part+' 卷沒有資料');if(m.count!==L.length)throw new Error('第 '+m.part+' 卷筆數不對（應有 '+m.count+'，讀到 '+L.length+'）');
     if(m.part!==1&&st0!==undefined)throw new Error('第 '+m.part+' 卷格式不對');
-    if(f3){const st=m.part===1?JSON.stringify(st0):'';if(m.part===1&&!isRec(st0))throw new Error('第 1 卷缺少'+(raw?'保存區資訊':'設定資料'));if(h64(manCore(m)+'|'+JSON.stringify(L)+'|'+st)!==m.hash)throw new Error('第 '+m.part+' 卷內容損壞或被改過（包括設定與圖片）')}
+    if(f3){const st=m.part===1?JSON.stringify(st0):'';if(m.part===1&&!isRec(st0))throw new Error('第 1 卷缺少'+(raw?'保存區資訊':'設定資料'));
+      /* 直接用檔案裡那一段文字算檢查碼（不必再把整卷重新組成字串）；格式不是標準寫法時才退回重新組字串 */
+      const key=raw?',"raw":':',"items":',i0=txt.indexOf(key),endK=raw?',"rescue":':',"settings":',e0=m.part===1?txt.lastIndexOf(endK):txt.length-1;
+      let okH=i0>0&&e0>i0&&h64m(manCore(m),'|',txt.slice(i0+key.length,e0),'|',st)===m.hash;if(!okH)okH=h64m(manCore(m),'|',JSON.stringify(L),'|',st)===m.hash;
+      if(!okH)throw new Error('第 '+m.part+' 卷內容損壞或被改過（包括設定與圖片）')}
     else if(m.hash&&fnv64(JSON.stringify(L))!==m.hash)throw new Error('第 '+m.part+' 卷內容損壞或被改過');
+    txt=null;
     if(m.part===1)S0=st0;
     for(let k=0;k<L.length;k++){const o=L[k];L[k]=null;total++;fps.push(fpRep(o));
       if(raw){if(!Array.isArray(o)||o.length!==2||typeof o[0]!=='string')throw new Error('原始資料格式錯誤');if(keys.has(o[0]))throw new Error('原始資料裡有重複的鍵（'+o[0].slice(0,20)+'）');keys.add(o[0]);ids.push(o[0]);
