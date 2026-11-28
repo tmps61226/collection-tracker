@@ -1650,7 +1650,7 @@ async function autoPull(){if(!READY||RO||!autoOn()||syncBusy||!lsGet('syncSha')|
     if(isDirty()){toast('雲端有較新的資料，但這支手機也有還沒上傳的修改。請到設定選「上傳」或「下載」',6000);return}
     await syncDown(true)}catch(e){}}
 async function syncUp(auto){
-  if(auto!==true)auto=false;if(RO||!READY){if(!auto)roBlock();return}if(syncBusy){if(auto)schedAuto();return}if(SAVEST==='saving'){try{await putChain}catch(e){}}let rescueUp=false;if(SAVEST==='fail'||MUTREV!==COMMITREV){if(auto)return;if(!confirm('手機存檔目前是失敗狀態。\n現在上傳的會是「畫面上、還沒存進手機」的資料，當作緊急救援用（雲端紀錄會標成救援）。\n確定要上傳嗎？'))return;rescueUp=true}if(!auto)grabCfg();const g=GH();if(!g.t){if(!auto)toast('請先貼上金鑰');return}
+  if(auto!==true)auto=false;if(RO||!READY){if(!auto)roBlock();return}if(syncBusy){if(auto)schedAuto();else toast('正在同步中，請等一下再按');return}if(SAVEST==='saving'){try{await putChain}catch(e){}}let rescueUp=false;if(SAVEST==='fail'||MUTREV!==COMMITREV){if(auto)return;if(!confirm('手機存檔目前是失敗狀態。\n現在上傳的會是「畫面上、還沒存進手機」的資料，當作緊急救援用（雲端紀錄會標成救援）。\n確定要上傳嗎？'))return;rescueUp=true}if(!auto)grabCfg();const g=GH();if(!g.t){if(!auto)toast('請先貼上金鑰');return}
   const tt=(m,ms)=>{if(!auto)toast(m,ms)};clearTimeout(autoT);
   syncBusy=true;try{
     tt('連線中…',0);let {br,head}=await repoHead(),base=null,have=new Set();
@@ -1681,7 +1681,7 @@ async function replaceAll(L,S2,rescueWhy,okMsg){if(WLOCK){roBlock();return false
   WLOCK='';items=L;S=S2;COMMITREV=MUTREV;SAVEST='ok';lsSet('unsaved','0');lsSet('dirty','1');lsSet('lastSave',String(Date.now()));if(svfOn)saveFailUI(false);
   const wasRO=RO;RO=false;ROWHY='';ROMETA=false;roBanner();renderCats();render();if(SO.classList.contains('show'))drawSet();if(okMsg)toast(okMsg,5000);if(wasRO)setTimeout(()=>{autoPull()},1500);return true}
 async function syncDown(auto){
-  if(auto!==true)auto=false;if(syncBusy)return;if(!auto)grabCfg();const g=GH();if(!g.t){if(!auto)toast('請先貼上金鑰');return}
+  if(auto!==true)auto=false;if(syncBusy){if(!auto)toast('正在同步中，請等一下再按');return}if(!auto)grabCfg();const g=GH();if(!g.t){if(!auto)toast('請先貼上金鑰');return}
   if(!READY||(RO&&auto))return;syncBusy=true;const rev0=MUTREV;try{
     if(RO&&!confirm('這支手機的資料沒有完整讀進來。從雲端下載可以救回資料（讀不完整的舊資料會留在手機裡，不會被刪除），要繼續嗎？'))return;
     if(!auto)toast('連線中…',0);const {head}=await repoHead();if(!head){toast('雲端還沒有資料，請先在主要的手機按「上傳」',4500);return}
