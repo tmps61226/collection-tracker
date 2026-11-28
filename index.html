@@ -268,7 +268,7 @@ button[data-ct],button[data-kt],button[data-cht]{color:var(--ac)!important}
 .it .gotl:has(input:checked){border-color:var(--sb);box-shadow:none}
 .it .sellc:has(input:checked){border-color:#e3cd86}
 .ith{background:var(--tile);width:64px;height:64px;border-radius:18px}
-.it{padding-top:38px}.it .x{top:10px;padding:6px 8px}.it .x.cp{right:56px}
+.it{padding-top:12px}.it .ixb{display:flex;flex-direction:column;flex:none;gap:2px}.it .ixb .x{position:static;padding:4px 4px;font-size:13px}.it .ir input[data-k=name]{min-width:0;flex:1}
 .btn{background:#fffdf9}
 
 details.adv{margin:4px 0}details.adv>summary{cursor:pointer;color:var(--ac);font-size:14px;padding:10px 0;list-style:none;display:flex;justify-content:space-between}
@@ -649,7 +649,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div>${paRow(o,single?[it]:o.items)}<button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v453</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div>${paRow(o,single?[it]:o.items)}<button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v454</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function paRow(o,L){const un=L.filter(i=>sq(i)<(+i.qty||1)),anySold=L.some(i=>sq(i)>0)||o.status==='sold',B=[];
@@ -744,8 +744,8 @@ function drawEd(){
 </div>
   <div class="cd"><h3>來源</h3>${sel('類型','src',srcOpts())}${storeRow()}${fr('連結','link','url','https://')}${fr('購買日期','buyDate','date')}<div class="fr"><span>發售年月</span><input data-f="rel" type="month" value="${esc((cur.rel||'').slice(0,7))}"></div></div>
   <div class="cd"><h3>品項</h3>
-    ${cur.items.map((it,i)=>`<div class="it"><button class="x cp" data-cp="${i}">複製</button><button class="x" data-del="${i}">刪除</button>
-      <div class="ir"><div class="ith" data-ip="${i}">${it.img?`<img loading="lazy" decoding="async" src="${it.img.s}">`:'📷'}</div><input data-i="${i}" data-k="name" placeholder="品名" value="${esc(it.name)}"></div> 
+    ${cur.items.map((it,i)=>`<div class="it">
+      <div class="ir"><div class="ith" data-ip="${i}">${it.img?`<img loading="lazy" decoding="async" src="${it.img.s}">`:'📷'}</div><input data-i="${i}" data-k="name" placeholder="品名" value="${esc(it.name)}"><span class="ixb"><button class="x cp" data-cp="${i}">複製</button><button class="x" data-del="${i}">刪除</button></span></div> 
 ${it.img?`<div class="itools">${it.img.o?`<button class="btn" data-iun="${i}">還原</button><button class="btn" data-icl="${i}">🧹清殘影</button>`:`<button class="btn" data-ibg="${i}">✂️去背</button>`}<button class="btn" data-icr="${i}">✂裁切</button><button class="btn" data-ipst="${i}">📋貼上去背</button><button class="btn" data-irm="${i}">移除</button></div>`:''}
       ${cur.status==='pre'?`<label class="gotl"><input type="checkbox" data-got="${i}" ${it.got?'checked':''}> 這個品項已到貨</label>`:''}
       <input data-i="${i}" data-k="note" placeholder="這個品項的備註（選填）" value="${esc(it.note||'')}" style="width:100%;margin:2px 0 6px">
@@ -1303,6 +1303,7 @@ function drawSet(){
     <button class="btn" id="syup">⬆ 上傳到雲端</button><button class="btn" id="sydn">⬇ 從雲端下載</button>${GH().t?'<button class="btn" id="qrcfg">📱 顯示設定 QR（用來接新裝置）</button>':''}${GH().t?'<button class="btn" id="cpcfg">🔗 複製設定連結（傳給自己的另一台裝置）</button>':''}
     <div class="fr"><span>新裝置：貼上設定連結</span><input id="cfglink" placeholder="貼上從另一台複製的連結" autocomplete="off"></div><button class="btn" id="apcfg">套用設定連結並下載</button>${lsGet('prevAt')?'<button class="btn" id="syrs">↩ 還原下載前的資料</button>':''}
     <div class="msg">換手機或資料不見時，貼上同一把金鑰再按「下載」就能還原。開啟自動同步後，改完資料幾秒會自動上傳，打開 app 時會自動拿雲端最新的。如果兩支手機都有沒同步的修改，會停下來讓你選，不會自己蓋掉。金鑰只存在這支手機。</div></div>
+  <div class="cd"><h3>AI 辨識</h3><div class="fr"><span>Gemini Key</span><input id="sgk" type="password" autocomplete="off" placeholder="貼上免費金鑰" value="${esc(localStorage.getItem('gk')||'')}"></div><div class="msg">截圖自動填表、AI 智慧新增會用到。金鑰只存在這支手機，不會放進備份檔。</div></div>
   <div class="cd"><h3>整理與維護</h3><button class="btn" data-n="merge">🔗 合併現有訂單</button><button class="btn" data-n="rcpt">🧾 合併同一張收據</button><button class="btn" data-n="bag">🛍 找紙袋／袋子品項</button><button class="btn" data-n="dup">🔍 找重複的商品</button><button class="btn" data-n="del">🗑 批次刪除訂單</button></div>
   <div class="cd"><h3>資料安全</h3>${safeCard()}</div>
   <div class="cd"><h3>備份</h3><div class="msg" style="margin:0 0 8px">${lastBk()?'上次備份：'+Math.floor((Date.now()-lastBk())/864e5)+' 天前':'還沒備份過'}（超過 7 天首頁會提醒）</div><button class="btn" id="ex">匯出備份</button><button class="btn" id="im">匯入備份</button><button class="btn" id="exl">匯出文字版（不含圖片，給 Claude 看用）</button><input type="file" id="imf" accept=".json" hidden>
@@ -1312,9 +1313,10 @@ $('eye').onclick=()=>{S.hide=!S.hide;save();render()};
 document.addEventListener('click',e=>{const kt=e.target.closest('[data-ktog]');if(kt&&$('stats').contains(kt)){KO=!KO;try{localStorage.setItem('kopen',KO?'1':'0')}catch(x){}render();return}const c=e.target.closest('[data-cf]');if(c&&($('stats').contains(c)||$('fpn').contains(c))){const v=c.dataset.cf;charF=(charF===v?'':v);render();return}const k=e.target.closest('[data-kf]');if(k&&$('stats').contains(k)){const v=k.dataset.kf;kindF=(kindF===v?'':v);render()}});
 {const SOP=()=>{try{return JSON.parse(lsGet('setOpen')||'{}')}catch(e){return{}}};
 const foldSet=()=>{const o=SOP();SO.querySelectorAll('.cd').forEach(c=>{const h=c.querySelector('h3');if(!h)return;const t=h.textContent.trim();const open=t in o?o[t]:/同步|備份|雲端/.test(t);c.classList.toggle('fold',!open)})};
-const GRPS=[['分類・角色',/^(收藏櫃名稱|自訂分類|標籤|角色|收藏櫃不顯示)/],['記帳設定',/^(購買來源|朋友代買|我的暱稱|隱藏總投入|刷卡|匯率)/],['資料・備份',/^(賣出對帳|商品圖|☁|雲端|備份|整理與維護|資料安全)/]];
+const GRPS=[['外觀與顯示',/^(收藏櫃名稱|收藏櫃不顯示|隱藏總投入)/],['分類與標籤',/^(自訂分類|標籤|角色|購買來源|我的暱稱)/],['金額與交易',/^(刷卡|匯率|賣出對帳|朋友代買)/],['AI 辨識設定',/^AI 辨識/],['同步與備份',/^(☁|雲端|備份|資料安全)/],['整理與維護',/^(整理與維護|商品圖)/]];
+SO.addEventListener('input',e=>{if(e.target.id==='sgk')try{localStorage.setItem('gk',e.target.value.trim())}catch(x){}});
 const GO=()=>{try{return JSON.parse(lsGet('setGrp')||'{}')}catch(e){return{}}};
-const grpSet=()=>{const o=GO(),cs=[...SO.querySelectorAll(':scope>.cd')];GRPS.forEach(([n,re])=>{const L=cs.filter(c=>re.test(((c.querySelector('h3')||{}).textContent||'').trim()));if(!L.length)return;const g=document.createElement('div');g.className='gp'+(o[n]?'':' shut');g.innerHTML='<div class="gh" data-g="'+n+'"><h2>'+n+'</h2></div><div class="gb"></div>';L[0].before(g);L.forEach(c=>g.querySelector('.gb').appendChild(c))})};
+const grpSet=()=>{const o=GO(),cs=[...SO.querySelectorAll(':scope>.cd')];GRPS.forEach(([n,re])=>{const L=cs.filter(c=>re.test(((c.querySelector('h3')||{}).textContent||'').trim()));if(!L.length)return;const g=document.createElement('div');g.className='gp'+(o[n]?'':' shut');g.innerHTML='<div class="gh" data-g="'+n+'"><h2>'+n+'</h2></div><div class="gb"></div>';SO.appendChild(g);L.forEach(c=>g.querySelector('.gb').appendChild(c))})};
 const de0=drawEd;drawEd=function(){de0();document.querySelectorAll('#mo .it').forEach(it=>{const sl=it.querySelector('select[data-k="proxy"]'),row=sl&&sl.closest('.fr'),box=row&&row.querySelector('.pk'),lb=it.querySelector('.sellc');if(!box||!lb||box.parentElement.classList.contains('pkw'))return;const w=document.createElement('div');w.className='pkw';box.parentNode.insertBefore(w,box);w.append(box,lb)});document.querySelectorAll('#mo .cd').forEach(c=>{const h=c.querySelector('h3');if(h&&h.textContent.trim()==='截圖自動填表'&&!EDAIO)c.classList.add('fold')})};
 $('mo').addEventListener('click',e=>{const h=e.target.closest('.cd>h3');if(h&&h.textContent.trim()==='截圖自動填表'){EDAIO=!EDAIO;h.parentElement.classList.toggle('fold')}});
 const ds0=drawSet;drawSet=function(){ds0();foldSet();grpSet()};
@@ -1963,9 +1965,13 @@ async function bulkImport(files){
     else if(files.length===1&&/\.(xlsx|xlsm|xls|ods)$/.test(nm)){await loadJs('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});add=[];for(const sn of wb.SheetNames)add=add.concat(rowsToOrders(XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,blankrows:false,raw:false})))}
   }catch(e){alert('讀檔失敗：'+String(e&&e.message||e).slice(0,100));return}
   if(add===null){/* PDF／Word／文字／圖片：交給 AI 讀 */openEd();if(guardOK())doShot([...files]);return}
-  const have=new Set(items.map(x=>x.id));add=add.filter(o=>!have.has(o.id));
+  const have=new Set(items.map(x=>x.id)),n0=add.length;add=add.filter(o=>!have.has(o.id));const sameId=n0-add.length;
+  const bad=add.filter(o=>!Array.isArray(o.items)||!o.items.some(i=>i&&String(i.name||'').trim()));add=add.filter(o=>!bad.includes(o));
+  const nk=o=>o.items.map(i=>String(i.name||'').trim().toLowerCase()).join('|');const exN=new Set(items.map(nk));const dup=add.filter(o=>exN.has(nk(o)));
   if(!add.length){alert('沒有讀到可以新增的商品（或都已經新增過了）。\n表格第一列請放欄位名稱，例如：品名、數量、單價、幣別、通路、分類、備註');return}
-  if(!confirm('要新增 '+add.length+' 筆商品嗎？（不會動到你現有的資料）'))return;
+  const pv=add.slice(0,5).map(o=>'・'+o.items.map(i=>i.name).join('、').slice(0,30)+(o.items[0]&&o.items[0].price?'　'+o.items[0].price:'')).join('\n');
+  if(!confirm('讀到 '+n0+' 筆：\n可新增 '+add.length+' 筆'+(dup.length?'（其中 '+dup.length+' 筆跟現有商品同名，可能重複）':'')+(bad.length?'\n沒有品名、已略過 '+bad.length+' 筆':'')+(sameId?'\n已匯入過、已略過 '+sameId+' 筆':'')+'\n\n前幾筆：\n'+pv+(add.length>5?'\n…':'')+'\n\n要新增嗎？（不會動到你現有的資料）'))return;
+  if(dup.length&&dup.length<add.length&&confirm('要略過同名的 '+dup.length+' 筆嗎？\n按「確定」略過、按「取消」全部新增')){add=add.filter(o=>!dup.includes(o))}
   items=items.concat(add);save();renderCats();render();toast('已新增 '+add.length+' 筆')}
 $('bulkf').addEventListener('change',e=>{const fs=[...e.target.files];e.target.value='';if(fs.length)bulkImport(fs)});
 
