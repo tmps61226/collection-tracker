@@ -469,7 +469,7 @@ function render(){
   const m=n=>'NT$'+Math.round(n).toLocaleString();
   const ym=today().slice(0,7),mi=st.filter(o=>(o.buyDate||'').startsWith(ym)&&o.status!=='wish');
   const rec5=[];[...items].sort((a,b)=>(b.buyDate||'').localeCompare(a.buyDate||'')).forEach(o=>{o.items.forEach(it=>{if(it.img&&rec5.length<5)rec5.push(it.img.s)});if(o.imgs&&o.imgs[o.cover]&&rec5.length<5&&!o.items.some(i=>i.img))rec5.push(o.imgs[o.cover].s)});
-  $('stats').innerHTML=`<div class="mini">${[['總投入',S.hide?HID:m(inv)],['待付尾款',m(pend)],['預購中',st.filter(o=>o.status==='pre').length+' 件'],['售出回血',m(rec)]].map(x=>`<div><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}</div>`;
+  $('stats').innerHTML=`<div class="mini">${[['總投入',S.hide?HID:m(inv)],['待付尾款',m(pend)],['預購中',st.filter(o=>o.status==='pre').length+' 筆'],['售出回血',m(rec)]].map(x=>`<div><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}</div>`;
   {const fc=$('fc').value,tot={},pre={};let nk=0,nkp=0;items.forEach(o=>{if(o.status==='wish')return;o.items.forEach(it=>{const c=ic(o,it);if(ip(o,it)==='1')return;if(fc==='all'?(S.hid||[]).includes(c):c!==fc)return;const q=+it.qty||1,k=it.kind||'',g=got(o,it);if(!g&&o.status!=='pre')return;if(!k){g?nk+=q:nkp+=q;return}if(g)tot[k]=(tot[k]||0)+q;else pre[k]=(pre[k]||0)+q})});
    const ks=[...new Set([...KD(),...Object.keys(tot),...Object.keys(pre)])].filter(k=>tot[k]||pre[k]||kindF===k);const chip=(k,h,p,lab)=>`<button class="kc${kindF===k&&k?' on':''}" data-kf="${esc(k)}">${esc(lab||k)} <b>${h}</b>${p?`<small>+${p}</small>`:''}</button>`;
    KH=(ks.length||nk||nkp)?`<div class="kchips">${ks.map(k=>chip(k,tot[k]||0,pre[k]||0)).join('')}${nk||nkp?chip('',nk,nkp,'未標籤'):''}</div>`:''}
@@ -524,7 +524,7 @@ function render(){
   else{const isP1=c=>c.o.status==='pre'&&c.st!=='have'&&!c.tag,isP=c=>c.grp?c.grp.some(isP1):isP1(c);const ev=c=>(c.grp?c.grp.filter(isP1):[c]).reduce((m,x)=>{const e=x.o.eta||'';return e>m?e:m},''),pc=cells.filter(isP).map((c,i)=>[c,i]).sort((x,y)=>ev(y[0]).localeCompare(ev(x[0]))||x[1]-y[1]).map(x=>x[0]);cells.splice(0,cells.length,...pc,...cells.filter(c=>!isP(c)));{const so0=c=>c.grp?c.grp.every(m=>m.tag==='已售出'):c.tag==='已售出';cells.splice(0,cells.length,...cells.filter(c=>!so0(c)),...cells.filter(so0))}}
   if(imgQ){const sc=new Map(cells.map(c=>[c,imScore(c)]));cells.sort((a,b)=>sc.get(b)-sc.get(a));const k=cells.filter(c=>sc.get(c)>=.2).length;cells.splice(Math.min(12,Math.max(3,k)))}
   window.NAV=cells;
-  $('dt').textContent+=' · 共 '+cells.length+' 件';
+  $('dt').textContent+=' · '+(HT()?'漢頓 ':'')+'共 '+cells.length+' 款';
   const im=c=>c.img?`<img loading="lazy" decoding="async" src="${c.img}" alt="">`:'<span style="font:12px var(--mono);color:var(--mu)">無圖片</span>';
   if(fMode){$('main').innerHTML=flBody();return}
   const vw=view;
@@ -618,7 +618,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v440</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div><button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v441</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function fitGrid(){const g=DV.querySelector('.dgr');if(!g)return;g.classList.remove('lg');const f=g.querySelector('.gi');if(f&&f.scrollWidth>f.clientWidth+1)g.classList.add('lg')}
