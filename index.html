@@ -625,7 +625,7 @@ function render(){
   if(imgQ){const sc=new Map(cells.map(c=>[c,imScore(c)]));cells.sort((a,b)=>sc.get(b)-sc.get(a));const k=cells.filter(c=>sc.get(c)>=.2).length;cells.splice(Math.min(12,Math.max(3,k)))}
   window.NAV=cells;
   {const pc=c=>c.grp?c.grp.reduce((a,x)=>a+(x.q||0),0):(c.q||c.o.items.reduce((a,i)=>a+(+i.qty||1),0));const shown=cells.reduce((a,c)=>a+pc(c),0),all=items.filter(o=>o.status!=='wish').reduce((a,o)=>a+o.items.reduce((b,i)=>b+(+i.qty||1),0),0);
-   $('dt').textContent='收藏 '+all+' 件'+(shown!==all?' · 目前顯示 '+shown+' 件'+(HT()?'（櫃子只放漢頓）':''):'')}
+   $('dt').textContent='收藏 '+all+' 件'+(shown!==all?' · 目前顯示 '+shown+' 件'+(HT()?'（漢頓）':''):'')}
   const im=c=>c.img?`<img loading="lazy" decoding="async" src="${c.img}" alt="">`:'<span style="font:12px var(--mono);color:var(--mu)">無圖片</span>';
   if(fMode){$('main').innerHTML=flBody();return}
   const vw=view;
@@ -2328,8 +2328,8 @@ function flBody(){
    <div class="flc">${!got(x.o,x.it)?'<i class="fs pre">預購中</i>':''}<span class="sg"><button data-fp="${x.o.id}|${x.ix}" data-v="0" class="u${fpdOf(x.o,x.it)==='0'?' on':''}">未付款</button><button data-fp="${x.o.id}|${x.ix}" data-v="1" class="${fpdOf(x.o,x.it)==='1'||(fpdOf(x.o,x.it)!=='0'&&fpdOf(x.o,x.it)!=='g')?'on':''}">已付款</button><button data-fp="${x.o.id}|${x.ix}" data-v="g" class="${fpdOf(x.o,x.it)==='g'?'on gf':''}">🎁送禮</button></span>${got(x.o,x.it)?`<span class="sg"><button data-fg="${x.o.id}|${x.ix}" data-v="0" class="u${x.it.giv?'':' on'}">未交貨</button><button data-fg="${x.o.id}|${x.ix}" data-v="1" class="${x.it.giv?' on':''}">已交貨</button></span>`:''}</div></div>`};const dn=g[f].filter(x=>x.st==='given'),ac=g[f].filter(x=>x.st!=='given'),fold=dn.length>0&&flTab!=='given';return ac.map(card).join('')+(dn.length?(flTab==='given'||!fold?dn.map(card).join(''):`<div class="fdn" data-fdn="${esc(f)}">${FOPEN.has(f)?'▾':'▸'} 已完成 ${dn.length} 件${FOPEN.has(f)?'（點一下收起）':'（點一下展開）'}</div>${FOPEN.has(f)?dn.map(card).join(''):''}`):'')})()}</div>`).join('')||'<div class="empty">沒有符合的商品<br><small>把品項的歸屬設為「幫朋友買」就會出現在這裡</small></div>'}</div>`}
 function frSum(A){const m=v=>'NT$'+Math.round(v).toLocaleString();let due=0,rec=0,un=0,over=0,hold=0,unk=0;
   A.forEach(x=>{const st=fpdOf(x.o,x.it),q=+x.it.qty||1,pa=+x.it.fpa||0;if(got(x.o,x.it)&&!x.it.giv)hold+=q;if(st==='g')return;due+=x.nt;
-    if(st!=='0'&&st!=='1'){unk+=q;if(pa){rec+=pa;over+=Math.max(0,pa-x.nt)}return}const r=st==='0'?pa:(pa||x.nt);rec+=r;un+=Math.max(0,x.nt-r);over+=Math.max(0,r-x.nt)});
-  return `<div class="frs"><span>應收 <b>${m(due)}</b></span><span>實收 <b>${m(rec)}</b></span><span class="${un?'r':''}">未收 <b>${m(un)}</b></span>${over?`<span>溢收 <b>${m(over)}</b></span>`:''}<span>待交 <b>${hold} 件</b></span>${unk?`<span>付款未記錄 <b>${unk} 件</b></span>`:''}</div>`}
+    if(st!=='0'&&st!=='1')unk+=q;const r=st==='0'?pa:(pa||x.nt);rec+=r;un+=Math.max(0,x.nt-r);over+=Math.max(0,r-x.nt)});
+  return `<div class="frs"><span>應收 <b>${m(due)}</b></span><span>實收 <b>${m(rec)}</b></span><span class="${un?'r':''}">未收 <b>${m(un)}</b></span>${over?`<span>溢收 <b>${m(over)}</b></span>`:''}<span>待交 <b>${hold} 件</b></span>${unk?`<span>沒記錄付款 <b>${unk} 件</b>（照畫面當作已付）</span>`:''}</div>`}
 function drawFl(){$('fl').innerHTML=`<div class="mh"><button id="flx">完成</button><b>朋友的商品</b><span style="width:48px"></span></div>`+flBody()}
 $('fl').addEventListener('click',e=>{const t=e.target.closest('button');if(!t){const r=e.target.closest('[data-fo]');if(r){const [id,ix]=r.dataset.fo.split('|');flRet=true;$('fl').classList.remove('show');openDetail(id,+ix)}return}
   if(t.id==='flx'){$('fl').classList.remove('show');render();return}
