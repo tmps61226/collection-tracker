@@ -1,4 +1,4 @@
-const C='ct-v468';
+const C='ct-v469';
 /* 快取名稱綁定本 app 的路徑（scope），只清自己的舊快取 */
 const P='ct@'+new URL(self.registration.scope).pathname+'@',K=P+C;
 self.addEventListener('install',e=>{self.skipWaiting()});

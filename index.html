@@ -399,7 +399,10 @@ const idsHash=ids=>h64(ids.join('\n'));
 const FP=new Map();let sharded=false,putChain=Promise.resolve();
 function uniqIds(){const seen=new Set();items.forEach(o=>{if(!o.id||seen.has(o.id))o.id='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);seen.add(o.id)})}
 class ConflictErr extends Error{}
-const metaOf=(rev,ids)=>({rev,t:Date.now(),n:ids.length,ih:idsHash(ids)});
+/* 版本記錄：筆數、ID 清單雜湊、全部訂單內容雜湊（ch）、設定雜湊（sh）。舊版 v442 改了內容（就算筆數沒變）下次打開也查得出來 */
+const chOf=fps=>h64(fps.join('\n')),shOf=s=>h64(JSON.stringify(s===undefined?null:s));
+const metaOf=(rev,ids,ch,sh)=>({rev,t:Date.now(),n:ids.length,ih:idsHash(ids),ch,sh});
+const newGen=()=>'g'+((crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2));
 /* 一次交易寫入：變動的訂單、刪除、索引、設定、版本號同一個交易，任何一步失敗整筆取消 */
 async function putShards(){
   if(!READY)throw new Error('資料還沒讀取完成');uniqIds();const d=await db();
@@ -412,25 +415,30 @@ async function putShards(){
       mrev=MUTREV;const cur=new Map();for(const o of items)cur.set(o.id,fpOf(o));
       for(const o of items)if(FP.get(o.id)!==cur.get(o.id))st.put(o,'o:'+o.id);
       for(const id of FP.keys())if(!cur.has(id))st.delete('o:'+id);
-      const ids=items.map(o=>o.id);st.put(ids,'oids');st.put(S,'settings');newRev=(m.rev||0)+1;meta=metaOf(newRev,ids);st.put(meta,'meta');if(!sharded)st.delete('items');nextFP=cur;
+      const ids=items.map(o=>o.id);st.put(ids,'oids');st.put(S,'settings');newRev=(m.rev||0)+1;meta=metaOf(newRev,ids,chOf(ids.map(id=>cur.get(id))),shOf(S));st.put(meta,'meta');if(!sharded)st.delete('items');nextFP=cur;
     }catch(e){why=e;try{t.abort()}catch(x){}}}})}
-/* 整份取代（還原、雲端下載、救援）：同一個交易。救援時先把手機裡原本的資料（含損壞的）整份複製到「R:代號:」保存區，再寫新資料；空間不夠就整筆取消 */
-async function commitAll(L,S2,o){o=o||{};const d=await db();const gen=o.rescue?'g'+Date.now().toString(36):null;
+/* 整份取代（還原、雲端下載、救援）：同一個交易。
+   o.rescue：先把手機裡原本的資料（含損壞的、舊格式、所有分片）整份複製到「R:代號:」保存區，再寫新資料。
+   o.keep：另外把指定的內容（例如下載時沒對上的原圖、有問題被隔離的訂單）原樣存進另一個保存區。空間不夠就整筆取消 */
+async function commitAll(L,S2,o){o=o||{};const d=await db();const gen=o.rescue?newGen():null,kgen=o.keep&&o.keep.entries&&o.keep.entries.length?newGen():null;
   return await new Promise((res,rej)=>{let t;try{t=d.transaction('kv','readwrite')}catch(e){rej(e);return}const st=t.objectStore('kv');let why=null,newRev=0,cur=null,meta=null,mrev=MUTREV;
-    t.oncomplete=()=>{FP.clear();cur.forEach((v,k)=>FP.set(k,v));BASEREV=newRev;LOADMETA=JSON.stringify(meta);COMMITREV=Math.max(COMMITREV,mrev);sharded=true;hcSweep();res({rev:newRev,gen})};t.onabort=()=>rej(why||t.error||new Error('寫入中斷'));
+    t.oncomplete=()=>{FP.clear();cur.forEach((v,k)=>FP.set(k,v));BASEREV=newRev;LOADMETA=JSON.stringify(meta);COMMITREV=Math.max(COMMITREV,mrev);sharded=true;hcSweep();res({rev:newRev,gen,kgen})};t.onabort=()=>rej(why||t.error||new Error('寫入中斷'));
     const fail=e=>{why=e;try{t.abort()}catch(x){}};
     const mq=st.get('meta');mq.onerror=()=>{};mq.onsuccess=()=>{try{const m=mq.result;
       if(o.rescue){if(JSON.stringify(m===undefined?null:m)!==LOADMETA){fail(new ConflictErr('另一個視窗或分頁在這段時間改過資料，為了不蓋掉它，已停止救援。請關掉其他視窗後重新整理再試。'));return}}
       else if(((m&&m.rev)||0)!==BASEREV){fail(new ConflictErr('另一個視窗或分頁已經改過資料'));return}
+      const reg=[];
       const write=()=>{try{cur=new Map();const ids=new Set();for(const x of L){if(!isRec(x)||typeof x.id!=='string'||!x.id||ids.has(x.id))throw new Error('訂單編號重複或缺少');ids.add(x.id);cur.set(x.id,fpOf(x));st.put(x,'o:'+x.id)}
+          if(kgen){o.keep.entries.forEach(([k,v])=>st.put(v,'R:'+kgen+':'+k));reg.push({gen:kgen,at:Date.now(),why:o.keep.why||'另外保存',n:o.keep.entries.length,kind:'keep'})}
           const kq=st.getAllKeys(IDBKeyRange.bound('o:','o:\uffff'));kq.onsuccess=()=>{try{for(const k of kq.result)if(!ids.has(k.slice(2)))st.delete(k);
-            const il=L.map(x=>x.id);st.put(il,'oids');st.put(S2,'settings');newRev=Math.max((m&&m.rev)||0,BASEREV)+1;meta=metaOf(newRev,il);st.put(meta,'meta');st.delete('items')}catch(e){fail(e)}}}catch(e){fail(e)}};
+            const il=L.map(x=>x.id);st.put(il,'oids');st.put(S2,'settings');newRev=Math.max((m&&m.rev)||0,BASEREV)+1;meta=metaOf(newRev,il,chOf(il.map(id=>cur.get(id))),shOf(S2));st.put(meta,'meta');st.delete('items');
+            if(reg.length){const rq=st.get('rescues');rq.onsuccess=()=>{try{const R=Array.isArray(rq.result)?rq.result:[];st.put(R.concat(reg),'rescues')}catch(e){fail(e)}}}}catch(e){fail(e)}}}catch(e){fail(e)}};
       if(!o.rescue){write();return}
-      /* 先複製原本全部的訂單分片、索引、設定、版本到保存區 */
+      /* 先複製原本全部的訂單分片（含損壞的）、索引、設定、版本、舊格式資料到保存區 */
       let n=0;const cq=st.openCursor(IDBKeyRange.bound('o:','o:\uffff'));cq.onerror=()=>{};
       cq.onsuccess=()=>{try{const c=cq.result;if(c){st.put(c.value,'R:'+gen+':'+c.key);n++;c.continue();return}
         ['oids','settings','meta','items'].forEach(k=>{const q=st.get(k);q.onsuccess=()=>{if(q.result!==undefined)st.put(q.result,'R:'+gen+':'+k)}});
-        const rq=st.get('rescues');rq.onsuccess=()=>{try{const R=Array.isArray(rq.result)?rq.result:[];R.push({gen,at:Date.now(),why:o.rescue,n});st.put(R,'rescues');write()}catch(e){fail(e)}}}catch(e){fail(e)}};
+        reg.push({gen,at:Date.now(),why:o.rescue,n,kind:'rescue'});write()}catch(e){fail(e)}};
     }catch(e){fail(e)}}})}
 const idbPut=()=>(putChain=putChain.catch(()=>{}).then(putShards));
 const isRec=o=>o&&typeof o==='object'&&!Array.isArray(o);
@@ -446,14 +454,16 @@ async function loadItems(){
   const bad=m=>{const e=new Error(m);e.bad=1;return e};let out=[];
   try{const R=await loadAll(),meta=R.meta,s=R.settings,ids=R.oids;LOADMETA=JSON.stringify(meta===undefined?null:meta);
     if(meta!==undefined&&!(isRec(meta)&&typeof meta.rev==='number'))throw bad('版本資訊格式錯誤');BASEREV=meta?meta.rev:0;
-    if(s!==undefined&&!isRec(s))throw bad('設定格式錯誤');
-    if(ids===undefined){if(R.items!==undefined){if(!Array.isArray(R.items))throw bad('舊格式資料錯誤');out=R.items.filter(isRec);if(out.length!==R.items.length)throw bad('舊格式資料有損壞')}
+    if(s!==undefined&&(!isRec(s)||vSettings(s,'legacy').length))throw bad('設定格式錯誤（'+(isRec(s)?vSettings(s,'legacy')[0]:'不是物件')+'）');
+    if(ids===undefined){if(R.items!==undefined){if(!Array.isArray(R.items))throw bad('舊格式資料錯誤');out=R.items.filter(o=>!vOrder(o,0,'hard').hard.length);if(out.length!==R.items.length)throw bad('舊格式資料有損壞')}
       else{if(R.okeys.length)throw bad('找不到訂單索引，但手機裡還有訂單資料');if(meta)throw bad('找不到訂單索引')}}
     else{if(!Array.isArray(ids))throw bad('訂單索引格式錯誤');if(ids.some(x=>typeof x!=='string'||!x))throw bad('訂單索引內容錯誤');if(new Set(ids).size!==ids.length)throw bad('訂單索引有重複');
-      sharded=true;let miss=0,wrong=0;for(const id of ids){const o=R.recs.get(id);if(o===undefined){miss++;continue}if(!isRec(o)||o.id!==id||!Array.isArray(o.items)){wrong++;continue}out.push(o);FP.set(o.id,fpOf(o))}
+      sharded=true;let miss=0,wrong=0;for(const id of ids){const o=R.recs.get(id);if(o===undefined){miss++;continue}if(!isRec(o)||o.id!==id||vOrder(o,out.length,'hard').hard.length){wrong++;continue}out.push(o);FP.set(o.id,fpOf(o))}
       const ks=new Set(ids);ORPHANS=R.okeys.filter(k=>!ks.has(k.slice(2))).length;
       window.LOADMISS=miss+wrong;if(miss||wrong)throw bad((miss?'有 '+miss+' 筆讀不到':'')+(wrong?(miss?'、':'')+wrong+' 筆內容不對':''));
-      if(meta&&typeof meta.n==='number'&&(meta.n!==ids.length||(meta.ih&&meta.ih!==idsHash(ids)))){ROMETA=true;throw bad('訂單清單和上次存檔的記錄對不上（上次 '+meta.n+' 筆，現在 '+ids.length+' 筆）')}}
+      if(meta&&typeof meta.n==='number'&&(meta.n!==ids.length||(meta.ih&&meta.ih!==idsHash(ids)))){ROMETA=true;throw bad('訂單清單和上次存檔的記錄對不上（上次 '+meta.n+' 筆，現在 '+ids.length+' 筆）')}
+      if(meta&&meta.ch&&meta.ch!==chOf(ids.map(id=>FP.get(id)))){ROMETA=true;throw bad('訂單內容和上次存檔的記錄對不上（筆數一樣，但內容被別的程式改過）')}
+      if(meta&&meta.sh&&meta.sh!==shOf(s)){ROMETA=true;throw bad('設定內容和上次存檔的記錄對不上')}}
     hcSweep();return {items:out,settings:s,ok:true};
   }catch(e){RO=true;ROWHY=e.bad?e.message:'手機儲存空間讀取失敗（'+((e&&e.name)||'錯誤')+'）';console.error(e);return {items:out,settings:undefined,ok:false}}
 }
@@ -462,9 +472,24 @@ function roBanner(){let e=$('rob');if(!RO){if(e)e.remove();return}if(!e){e=docum
   e.innerHTML='<b>⚠ 唯讀保護中</b><span></span><div><button data-rob="set">去設定救回資料</button>'+(ROMETA?'<button data-rob="meta">我剛用過舊版本，確認繼續</button>':'')+'</div>';e.querySelector('span').textContent=ROWHY+'。為了不蓋掉原本的資料，現在不能修改、匯入或上傳。'+(ROMETA?'如果你剛剛用過舊版（v442），清單筆數改變是正常的，可以按「確認繼續」；如果沒有，請先救回資料。':'');
   e.onclick=ev=>{const b=ev.target.closest('[data-rob]');if(!b)return;if(b.dataset.rob==='meta'){metaAccept();return}drawSet();SO.classList.add('show');const h=[...SO.querySelectorAll('.cd h3')].find(x=>/資料安全/.test(x.textContent));if(h){const g=h.closest('.gp');if(g)g.classList.remove('shut');h.parentElement.classList.remove('fold');h.scrollIntoView({block:'start'})}}}
 /* 使用者確認剛用過舊版：重新讀一次（這次接受目前的清單），並寫入新的版本記錄 */
-async function metaAccept(){if(!confirm('確定剛剛用過舊版本嗎？\n確認後會以手機裡現在的清單為準繼續使用。\n如果你沒有用過舊版，請按取消，改用設定裡的救回功能。'))return;
-  try{const R=await loadAll();const ids=R.oids;if(!Array.isArray(ids)||ids.some(id=>!isRec(R.recs.get(id))))throw new Error('清單仍有讀不到的資料');
-    await new Promise((res,rej)=>kvTx(st=>st.put(metaOf(((R.meta&&R.meta.rev)||0)+1,ids),'meta')).then(res,rej));location.reload()}catch(e){toast('⚠ 沒辦法繼續：'+e.message,8000)}}
+/* 「剛用過舊版」：先說明差異 → 同一個交易裡：核對版本沒被別的分頁改過、把現在手機裡的原始資料整份保存、逐筆核對索引與分片（含格式）、才寫新版本記錄 */
+async function metaAccept(){let R;try{R=await loadAll()}catch(e){toast('⚠ 讀取失敗：'+e.message,8000);return}
+  const ids=Array.isArray(R.oids)?R.oids:[],m=R.meta||{},ks=new Set(ids),orph=(R.okeys||[]).filter(k=>!ks.has(k.slice(2))).length;
+  if(!confirm('確定剛剛用過舊版本（v442）嗎？\n\n上次新版存檔：'+(m.n??'?')+' 筆\n現在手機裡的清單：'+ids.length+' 筆'+(orph?'\n不在清單裡的訂單資料：'+orph+' 筆（會保留）':'')+'\n\n確認後：\n・會先把手機裡現在的原始資料整份保存到「保存下來的舊資料」\n・再逐筆檢查，每一筆都能正常讀取才會繼續\n・舊版可能用舊的付款／成本算法改過資料，不保證完全無損\n・請不要同時開舊版和新版\n\n如果你沒有用過舊版，請按取消，改用設定裡的救回功能。'))return;
+  const gen=newGen();
+  try{const d=await db();await new Promise((res,rej)=>{const t=d.transaction('kv','readwrite'),st=t.objectStore('kv');let why=null;const fail=e=>{why=e;try{t.abort()}catch(x){}};
+    t.oncomplete=()=>res();t.onabort=()=>rej(why||t.error||new Error('寫入中斷'));
+    const mq=st.get('meta');mq.onsuccess=()=>{try{const m2=mq.result;if(JSON.stringify(m2===undefined?null:m2)!==LOADMETA){fail(new ConflictErr('另一個視窗或分頁剛改過資料，已停止。請關掉其他視窗後重新整理'));return}
+      const recs=new Map();let n=0;const cq=st.openCursor(IDBKeyRange.bound('o:','o:\uffff'));
+      cq.onsuccess=()=>{try{const c=cq.result;if(c){st.put(c.value,'R:'+gen+':'+c.key);recs.set(c.key.slice(2),c.value);n++;c.continue();return}
+        const oq=st.get('oids'),sq2=st.get('settings');sq2.onsuccess=()=>{try{const ids2=oq.result,s2=sq2.result;
+          ['oids','settings','meta','items'].forEach(k=>{const q=st.get(k);q.onsuccess=()=>{if(q.result!==undefined)st.put(q.result,'R:'+gen+':'+k)}});
+          if(!Array.isArray(ids2)||ids2.some(x=>typeof x!=='string'||!x)||new Set(ids2).size!==ids2.length)throw new Error('訂單清單本身有問題');
+          const fps=[];ids2.forEach((id,k)=>{const o=recs.get(id);if(!isRec(o)||o.id!==id)throw new Error('清單裡第 '+(k+1)+' 筆讀不到');const P=vOrder(o,k,'hard');if(P.hard.length)throw new Error(P.hard[0]);fps.push(fpOf(o))});
+          if(s2!==undefined&&vSettings(s2,'legacy').length)throw new Error(vSettings(s2,'legacy')[0]);
+          const rq=st.get('rescues');rq.onsuccess=()=>{try{const L=Array.isArray(rq.result)?rq.result:[];L.push({gen,at:Date.now(),why:'確認用過舊版前的資料',n,kind:'rescue'});st.put(L,'rescues');
+            st.put(metaOf((((m2&&typeof m2.rev==='number')?m2.rev:0))+1,ids2,chOf(fps),shOf(s2)),'meta')}catch(e){fail(e)}}}catch(e){fail(e)}}}catch(e){fail(e)}};
+    }catch(e){fail(e)}}});location.reload()}catch(e){toast('⚠ 沒辦法繼續（資料沒有改動）：'+e.message,9000)}}
 /* 唯讀／讀取中／套用中：畫面上所有會改資料的按鈕都擋下（只放行「本身就是」瀏覽、關閉、救援用的元素） */
 const RO_OK='.fpl label,#vs,#vg,#vc,#vf,#vl,.vt button,#chips button,#fpt button,#fmore,#sbtn,#q,#fc,#so,#hs,#hsl,#hsw,#hh,#hpx,#isbtn,#hcol,#dcx,#gear,#sx,#im,#imf,#sydn,[data-snap],#ex,#exl,#bkv,#bkvf,[data-rg],#ghtok,#ghrepo,#autosync,.gh,.cd>h3,#arx,.arl,#flx,#fl [data-ft],[data-kf],[data-cf],[data-ktog],#rob button,#svf button,#uswarn button,[data-bkp],[data-bkc],[data-svf],#bkps';
 const ACT='button,input,select,textarea,label,a,[data-pa],[data-fp],[data-fg],[data-ard],[data-arg],[data-h],[data-hi],[data-hide],[data-fq],[data-fr]';
@@ -487,7 +512,7 @@ async function save(opt){opt=opt||{};
   finally{SAVING--}
   if(ok&&MUTREV===COMMITREV){SAVEST='ok';saveFail=0;lsSet('unsaved','0');lsSet('lastLocalOk',String(Date.now()));if(svfOn)saveFailUI(false);schedAuto()}else if(!ok){SAVEST='fail';saveFail++;TQfail=true}
   if(!SAVING){const q=TQ;TQ=null;if(!TQfail&&q&&q.length){const [t,ms]=q[q.length-1];toast(t,ms)}}
-  if(ok&&opt.undo){const sid=opt.undo;setTimeout(()=>undoToast(opt.undoMsg||'整理完成，不滿意可以復原',()=>restorePrev(sid)),600)}
+  if(ok&&opt.undo){const sid=opt.undo,mu=MUTREV;setTimeout(()=>undoToast(opt.undoMsg||'整理完成，不滿意可以復原',()=>restorePrev(sid,mu)),600)}
   return ok}
 
 /* partial sales: items carry sq (units sold) and sp (TWD revenue) */
@@ -537,8 +562,8 @@ const EYE=['<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wi
 const HID='＊＊＊';
 const ic=(o,it)=>(it&&it.cat)||o.cat||'';
 const fnameOf=c=>{const it=fitOf(c);return it?(it.fn||((c.o.src==='朋友幫買'&&c.o.seller)?c.o.seller:'朋友')):'朋友'};
-function fTop(){const L=flList(),T=[['all','全部'],['unpaid','未付款'],['paid','已付款'],['notgiven','未交貨'],['given','已交貨']],cnt=k=>L.filter(FLF[k]).length,LG=frLedger(L),owe=Math.round(LG.un),hold=LG.hold;
-  return `<div class="fsm" style="margin:10px 12px"><div><small>還沒收到的錢</small><b>NT$${owe.toLocaleString()}</b></div><div><small>待交給朋友</small><b>${hold} 件</b></div></div><div class="flt" style="margin:0 12px 6px">${T.map(([k,n])=>`<button data-ft="${k}" class="${flTab===k?'on':''}">${n} ${cnt(k)}</button>`).join('')}</div>`}
+function fTop(){const L=flList(),{T,cnt}=frTabs(L),LG=frLedger(L),owe=Math.round(LG.un),hold=LG.hold;
+  return `<div class="fsm" style="margin:10px 12px"><div><small>還沒收到的錢</small><b>NT$${owe.toLocaleString()}</b></div><div><small>待交給朋友</small><b>${hold} 件</b></div></div><div class="flt" style="margin:0 12px 6px">${T.map(([k,n])=>`<button data-ft="${k}" class="${flTab===k?'on':''}">${n} ${cnt(k)} 件</button>`).join('')}</div>`}
 const fitOf=c=>{const o=c.o;return c.ix>=0?o.items[c.ix]:(o.items.length===1?o.items[0]:null)};
 function fchips(c){const it=fitOf(c);if(!it||ip(c.o,it)!=='1')return '';const k=c.o.id+'|'+(c.ix>=0?c.ix:0),fp=fpdOf(c.o,it),pd=fp!=='0',gt=got(c.o,it);
   return `<div class="fch"><i class="fn">${esc(fnameOf(c))}</i>${gt?'':'<i class="fs pre">預購中</i>'}<button data-fq="${k}" class="${pd?'on':'off'}">${fp==='g'?'🎁 送禮':pd?'已付款':'未付款'}</button>${gt?`<button data-fr="${k}" class="${it.giv?'on':'off'}">${it.giv?'已交貨':'未交貨'}</button>`:''}</div>`}
@@ -756,7 +781,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div>${paRow(o,single?[it]:o.items)}<button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v468</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div>${paRow(o,single?[it]:o.items)}<button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v469</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function paRow(o,L){const un=L.filter(i=>sq(i)<(+i.qty||1)),anySold=L.some(i=>sq(i)>0)||o.status==='sold',B=[];
@@ -988,7 +1013,7 @@ MO.addEventListener('click',ev=>{
   if(id==='addimg')$('imgf').click();
   if(id==='pstc'){pasteCut(cur.imgs[cur.cover],b);return}
   if(id==='zm'){const m=cur.imgs[cur.cover];busyBtn(b,'⏳ 處理中…');trimImg(m.s).then(t=>{const same=t===m.s;m.s=t;drawEd();toast(same?'這張圖已經沒有多餘空白了':'✓ 已放大主體')});return}
-  if(id==='mrg'){const n=mergeDups(cur);drawEd();toast('已合併，數量已加總（共少了 '+n+' 列）');return}
+  if(id==='mrg'){const r=mergeDups(cur);drawEd();if(r.skip.length)alert((r.n?'已合併 '+r.n+' 列（數量、金額都加總）。\n\n':'')+'下面這些名字一樣，但內容不一樣，為了不弄亂帳目沒有合併：\n'+r.skip.join('\n'));else toast(r.n?'已合併，數量和金額已加總（共少了 '+r.n+' 列）':'沒有可以合併的重複品項');return}
   if(id==='crc'){openCrop(cur.imgs[cur.cover]);return}
   if(id==='bgord'){bgOrder();return}
   if(id==='bg'){busyBtn(b,'⏳ 去背中…');doBg(cur.imgs[cur.cover])}
@@ -1464,13 +1489,18 @@ SO.addEventListener('change',e=>{
   if(t.id==='imf'&&t.files[0]){const FL=[...t.files];t.value='';(async()=>{let r;try{r=await readBackup(FL)}catch(e){alert('⚠ 沒有還原：'+e.message+'\n\n現有資料沒有被動到。');return}
     if(r.patch){if(roBlock())return;patchImport(r.patch);return}if(r.imgOnly){if(roBlock())return;imgOnlyImport(r.items);return}
     if(!READY){toast('資料還在讀取中，請稍等');return}
+    if(r.raw){if(WLOCK){roBlock();return}if(!confirm('這是「救援保存區的原始資料」（'+r.raw.length+' 個原始鍵，'+r.manifest.parts+' 個檔）。\n要把它放回設定裡的「保存下來的舊資料」嗎？\n現有資料完全不會改變；放回後可以再決定要不要換回。'))return;
+      try{await rawImport(r);drawSet();SO.classList.add('show');toast('✓ 已放回保存區（現有資料沒有改變）',5000)}catch(e){alert('⚠ 沒有放回：'+((e&&e.message)||'寫入失敗')+'\n\n現有資料沒有被動到。')}return}
+    /* 有問題的訂單：只能用「救援模式」還原＝正常的還原、有問題的原樣另外保存到救援保存區（不丟掉） */
+    let keep=null;if(r.badCount){if(!confirm('這份備份裡有 '+r.badCount+' 個問題：\n'+r.badMsgs.slice(0,4).join('\n')+(r.badCount>4?'\n…':'')+'\n\n可以用「救援模式」還原：正常的 '+r.items.length+' 筆照常還原，有問題的 '+r.bad.length+' 筆'+(r.badSettings!==undefined?'和設定':'')+'原樣另外保存到設定裡的「保存下來的舊資料」，不會丟掉。\n\n要用救援模式還原嗎？（按取消就什麼都不做）'))return;
+      keep={why:'還原備份時有問題、另外保存的資料',entries:r.bad.map(b=>['q:'+b.k,b.o]).concat(r.badSettings!==undefined?[['q:settings',r.badSettings]]:[])}}
     const its=r.items,S2=Object.assign(JSON.parse(JSON.stringify(S)),r.settings&&r.settings.cats?r.settings:{}),when=r.manifest&&r.manifest.t?new Date(r.manifest.t).toLocaleString('zh-TW')+' 的':'',W=r.warn.length?'\n\n注意：\n'+r.warn.join('\n'):'';
     const L=its.map(mig);{const seen=new Set();L.forEach(o=>{if(!o.id||seen.has(o.id))o.id='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);seen.add(o.id)})}
     if(r.merge){if(roBlock())return;const have=new Set(items.map(x=>x.id)),add=L.filter(x=>!have.has(x.id));if(!add.length){alert('這些資料都已經匯入過了');return}if(confirm('要「加入」'+add.length+' 筆資料嗎？（不會動到你現有的資料）')){if(!writable(true))return;items=items.concat(add);renderCats();render();if(!(await save()))return;drawSet();toast('已加入 '+add.length+' 筆')}return}
-    if(RO){if(!confirm('目前是唯讀保護中。要用'+when+'備份救回資料嗎？（'+its.length+' 筆）\n手機裡原本的資料（包括讀不完整的）會先整份保存起來，之後仍可從設定匯出。'+W))return;await replaceAll(L,S2,'用備份救回','✓ 已用備份救回 '+L.length+' 筆，唯讀保護已解除');return}
+    if(RO){if(!confirm('目前是唯讀保護中。要用'+when+'備份救回資料嗎？（'+its.length+' 筆）\n手機裡原本的資料（包括讀不完整的）會先整份保存起來，之後仍可從設定匯出。'+W))return;await replaceAll(L,S2,'用備份救回','✓ 已用備份救回 '+L.length+' 筆，唯讀保護已解除',keep);return}
     if(confirm('用'+when+'備份還原 '+its.length+' 筆，會「取代」目前的 '+items.length+' 筆資料，確定嗎？\n（還原前會先留一份快照，可以復原）'+W)){
       const sid=await putPrev('restore');if(!sid)return snapFail();
-      if(await replaceAll(L,S2,'','✓ 已還原 '+L.length+' 筆'))setTimeout(()=>undoToast('已還原備份，不滿意可以復原',()=>restorePrev(sid)),800)}
+      if(await replaceAll(L,S2,'','✓ 已還原 '+L.length+' 筆'+(keep?'（有問題的 '+keep.entries.length+' 筆已另外保存）':''),keep)){const mu=MUTREV;setTimeout(()=>undoToast('已還原備份，不滿意可以復原',()=>restorePrev(sid,mu)),800)}}
     else{const have=new Set(items.map(x=>x.id)),add=L.filter(x=>!have.has(x.id));if(add.length&&confirm('改成只「加入」目前沒有的 '+add.length+' 筆？（不會動到現有資料）')){if(!writable(true))return;items=items.concat(add);renderCats();render();if(!(await save()))return;drawSet();toast('已加入 '+add.length+' 筆')}}})()}
 });
 SO.addEventListener('click',e=>{
@@ -1539,10 +1569,13 @@ function h53(s){let a=0xdeadbeef,b=0x41c6ce57;for(let i=0;i<s.length;i++){const 
 function packData(){const imgs={};const json=JSON.stringify({v:1,savedAt:Date.now(),items,settings:S},(k,v)=>{if(v&&typeof v==='object'&&typeof v.o==='string'&&v.o.startsWith('data:')&&!v.c)return{...v,c:1};if(typeof v==='string'&&v.startsWith('data:')){if(k==='o')return undefined;const m=/^data:([^;,]+);base64,/.exec(v);if(!m)return v;const ext=m[1].includes('png')?'png':m[1].includes('webp')?'webp':'jpg',n=h53(v)+v.length.toString(36)+'.'+ext;imgs[n]=v.slice(m[0].length);return'@img:'+n}return v});return{json,imgs}}
 const MIME={png:'image/png',webp:'image/webp',jpg:'image/jpeg'};
 const b64=s=>btoa(unescape(encodeURIComponent(s)));
+/* 同步期間凍結倉庫與金鑰（GHX），中途改設定不會讓請求跑到別的倉庫；逾時涵蓋整個回應內容 */
+let GHX=null;
 async function gh(path,method,body,raw){
-  const g=GH();let r;
+  const g=GHX||GH();let r;
   const ac=new AbortController(),tmo=setTimeout(()=>ac.abort(),raw?90000:30000);
-  try{r=await fetch('https://api.github.com/repos/'+g.r+path,{signal:ac.signal,method:method||'GET',cache:'no-store',headers:Object.assign({Authorization:'Bearer '+g.t,Accept:raw?'application/vnd.github.raw+json':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},body?{'Content-Type':'application/json'}:{}),body:body?JSON.stringify(body):undefined})}catch(e){clearTimeout(tmo);throw new Error(e&&e.name==='AbortError'?'連線逾時':'連不上網路')}if(!raw)clearTimeout(tmo);
+  try{r=await fetch('https://api.github.com/repos/'+g.r+path,{signal:ac.signal,method:method||'GET',cache:'no-store',headers:Object.assign({Authorization:'Bearer '+g.t,Accept:raw?'application/vnd.github.raw+json':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},body?{'Content-Type':'application/json'}:{}),body:body?JSON.stringify(body):undefined});
+    const buf=await r.arrayBuffer();clearTimeout(tmo);r=new Response(buf.byteLength||![204,205,304].includes(r.status)?buf:null,{status:r.status,statusText:r.statusText,headers:r.headers})}catch(e){clearTimeout(tmo);throw new Error((e&&e.name==='AbortError')||ac.signal.aborted?'連線逾時':'連不上網路')}
   if(!r.ok&&!(raw===2)){const c=r.status;const e=new Error(c===401?'金鑰無效或已過期':c===403?'金鑰沒有權限（Contents 要選 Read and write）':c===404?'找不到倉庫，或金鑰沒選到這個倉庫':'GitHub 回應錯誤 '+c);e.status=c;throw e}
   return r}
 const ghj=async(p,m,b)=>(await gh(p,m,b)).json();
@@ -1563,16 +1596,17 @@ const snapSlot=k=>k==='sync'?'sync':'op';
 async function putPrev(kind){if(!writable())return false;kind=kind||'op';const slot=snapSlot(kind);
   try{const d=await db(),sid='s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),fresh=[];
     await new Promise((res,rej)=>{let t;try{t=d.transaction('kv','readwrite')}catch(e){rej(e);return}const st=t.objectStore('kv');let why=null;t.oncomplete=()=>res();t.onabort=()=>rej(why||t.error||new Error('快照寫入中斷'));const fail=e=>{why=e;try{t.abort()}catch(x){}};
-      const q=st.get('snaps');q.onsuccess=()=>{const kq=st.getAllKeys(IDBKeyRange.bound('P:','P:\uffff'));kq.onsuccess=()=>{try{
+      const mq=st.get('meta');mq.onsuccess=()=>{const m=mq.result;if(((m&&m.rev)||0)!==BASEREV)fail(new ConflictErr('另一個視窗或分頁已經改過資料，快照取消'))};
+      const q=st.get('snaps');q.onsuccess=()=>{if(why)return;const kq=st.getAllKeys(IDBKeyRange.bound('P:','P:\uffff'));kq.onsuccess=()=>{if(why)return;try{
         const SN=isRec(q.result)?q.result:{},have=new Set(kq.result),ids=[],keys=[];
         for(const o of items){const k='P:'+h64(fpOf(o));ids.push(o.id);keys.push(k);if(!have.has(k)){st.put(o,k);have.add(k);fresh.push(k)}}
-        SN[slot]={v:2,sid,kind,t:Date.now(),n:ids.length,ids,keys,settings:S};
+        SN[slot]={v:2,sid,kind,t:Date.now(),n:ids.length,ids,keys,settings:S,stH:shOf(S),rev:BASEREV};
         const keep=new Set([].concat(...Object.values(SN).filter(isRec).map(x=>x.keys||[])));for(const k of kq.result)if(!keep.has(k))st.delete(k);
         st.put(SN,'snaps');
         if(slot==='sync'){const lk=st.getAllKeys(IDBKeyRange.bound('p:','p:\uffff'));lk.onsuccess=()=>{lk.result.forEach(k=>st.delete(k));['pids','pmeta','pfp','prev'].forEach(k=>st.delete(k))}}
       }catch(e){fail(e)}}}});
     const SN=await kvGetS('snaps'),m=SN&&SN[slot],ks=new Set(await kvKeysS());
-    if(!m||m.sid!==sid||m.n!==items.length||m.ids.length!==m.n||m.keys.length!==m.n||new Set(m.ids).size!==m.n||m.keys.some(k=>!ks.has(k)))throw new Error('快照核對不一致');
+    if(!m||m.sid!==sid||m.n!==items.length||m.ids.length!==m.n||m.keys.length!==m.n||new Set(m.ids).size!==m.n||m.keys.some(k=>!ks.has(k))||shOf(m.settings)!==m.stH)throw new Error('快照核對不一致');
     for(const k of fresh){const r=await kvGetS(k);if(!isRec(r)||'P:'+h64(fpOf(r))!==k)throw new Error('快照內容核對不一致')}
     lsSet('prevAt',String(Date.now()));lsSet('prevKind',kind);return sid}catch(e){console.error(e);return false}}
 /* 讀快照：逐筆核對編號、筆數、內容雜湊；任何不符就不還原 */
@@ -1583,7 +1617,8 @@ async function readSnap(want){const SN=await kvGetS('snaps');let m=null;
   if(!m&&(want==='legacy'||!want)){const p=await kvGetS('pmeta');if(p){const ids=await kvGetS('pids');if(!Array.isArray(ids)||new Set(ids).size!==ids.length||(p.n!=null&&p.n!==ids.length))throw new Error('舊快照清單損壞');const list=[];for(const id of ids){const o=await kvGetS('p:'+id);if(!isRec(o)||o.id!==id||!Array.isArray(o.items))throw new Error('舊快照第 '+(list.length+1)+' 筆讀不到或損壞');list.push(o)}return {m:{kind:p.kind||'sync',t:p.t,settings:p.settings,sid:p.sid},list}}return null}
   if(!m)return null;
   if(!Array.isArray(m.ids)||!Array.isArray(m.keys)||m.ids.length!==m.n||m.keys.length!==m.n||new Set(m.ids).size!==m.n)throw new Error('快照清單損壞');
-  const list=[];for(let i=0;i<m.n;i++){const r=await kvGetS(m.keys[i]);if(!isRec(r)||r.id!==m.ids[i]||!Array.isArray(r.items)||'P:'+h64(fpOf(r))!==m.keys[i])throw new Error('快照第 '+(i+1)+' 筆讀不到或內容損壞');list.push(r)}
+  if(m.stH!==undefined&&shOf(m.settings)!==m.stH)throw new Error('快照的設定內容損壞');
+  const list=[];for(let i=0;i<m.n;i++){const r=await kvGetS(m.keys[i]);if(!isRec(r)||r.id!==m.ids[i]||!Array.isArray(r.items)||'P:'+h64(fpOf(r))!==m.keys[i]||vOrder(r,i,'hard').hard.length)throw new Error('快照第 '+(i+1)+' 筆讀不到或內容損壞');list.push(r)}
   return {m,list}}
 async function snapList(){const out=[];try{const SN=await kvGetS('snaps');if(isRec(SN))['sync','op'].forEach(k=>{if(isRec(SN[k]))out.push({slot:k,kind:SN[k].kind,t:SN[k].t,n:SN[k].n})});if(!out.some(x=>x.slot==='sync')){const p=await kvGetS('pmeta');if(p)out.push({slot:'legacy',kind:p.kind||'sync',t:p.t,n:p.n})}}catch(e){}return out}
 const snapFail=()=>{toast('⚠ 操作前的快照建立失敗，為了安全已取消，資料沒有被動到',7000);return false};
@@ -1650,39 +1685,51 @@ async function autoPull(){if(!READY||RO||!autoOn()||syncBusy||!lsGet('syncSha')|
     if(isDirty()){toast('雲端有較新的資料，但這支手機也有還沒上傳的修改。請到設定選「上傳」或「下載」',6000);return}
     await syncDown(true)}catch(e){}}
 async function syncUp(auto){
-  if(auto!==true)auto=false;if(RO||!READY){if(!auto)roBlock();return}if(syncBusy){if(auto)schedAuto();else toast('正在同步中，請等一下再按');return}if(SAVEST==='saving'){try{await putChain}catch(e){}}let rescueUp=false;if(SAVEST==='fail'||MUTREV!==COMMITREV){if(auto)return;if(!confirm('手機存檔目前是失敗狀態。\n現在上傳的會是「畫面上、還沒存進手機」的資料，當作緊急救援用（雲端紀錄會標成救援）。\n確定要上傳嗎？'))return;rescueUp=true}if(!auto)grabCfg();const g=GH();if(!g.t){if(!auto)toast('請先貼上金鑰');return}
+  if(auto!==true)auto=false;if(RO||!READY){if(!auto)roBlock();return}if(syncBusy){if(auto)schedAuto();else toast('正在同步中，請等一下再按');return}if(WLOCK){if(!auto)roBlock();return}
+  try{await putChain}catch(e){}
+  /* 這個分頁的內容是不是手機裡最新的版本？（別的分頁改過、或同步過，這邊就是舊的，不准上傳） */
+  {let m;try{m=await kvGetS('meta')}catch(e){if(!auto)toast('⚠ 讀不到手機裡的版本記錄，先不上傳',6000);return}if(((m&&m.rev)||0)!==BASEREV){if(!auto)toast('⚠ 另一個分頁或視窗已經改過資料，這個分頁的內容是舊的，為了不把舊資料傳上去已停止。請重新整理後再同步',9000);return}}
+  let rescueUp=false;if(SAVEST==='fail'||MUTREV!==COMMITREV){if(auto)return;if(!confirm('手機存檔目前是失敗狀態。\n現在上傳的會是「畫面上、還沒存進手機」的資料，當作緊急救援用（雲端紀錄會標成救援）。\n確定要上傳嗎？'))return;rescueUp=true}if(!auto)grabCfg();const g=GH();if(!g.t){if(!auto)toast('請先貼上金鑰');return}
   const tt=(m,ms)=>{if(!auto)toast(m,ms)};clearTimeout(autoT);
-  syncBusy=true;try{
+  syncBusy=true;GHX={t:g.t,r:g.r};const rg0=REPGEN;try{
     tt('連線中…',0);let {br,head}=await repoHead(),base=null,have=new Set();
     if(!head){const r=await ghj('/contents/README.md','PUT',{message:'init',content:b64('收藏櫃雲端資料')});head=r.commit.sha;base=r.commit.tree.sha;have.add('README.md')}
     else{const c=await ghj('/git/commits/'+head);base=c.tree.sha;const t=await ghj('/git/trees/'+base+'?recursive=1');(t.tree||[]).forEach(x=>have.add(x.path))}
     if(have.has('data.json')&&!shaKnown(head)&&auto){toast('雲端有較新的資料，請到設定選「上傳」或「下載」處理',6000);return}
     if(have.has('data.json')&&!shaKnown(head)&&!confirm('雲端的資料比這支手機上次同步的更新（可能在別的裝置改過）。\n繼續上傳會蓋掉雲端那份，確定嗎？\n（想拿雲端的，請按取消，改用「從雲端下載」）')){toast('已取消');return}
     if(!rescueUp&&(SAVEST!=='ok'||MUTREV!==COMMITREV)){if(!auto)toast('剛剛有新的修改還在存檔，等一下再上傳',4000);else schedAuto();return}
-    const t0=Date.now(),rev0=MUTREV,{json,imgs}=packData();const need=Object.keys(imgs).filter(n=>!have.has('img/'+n)),tree=[];let done=0;
+    {const m=await kvGetS('meta');if(((m&&m.rev)||0)!==BASEREV){tt('⚠ 另一個分頁剛改過資料，已停止上傳，請重新整理',8000);return}}
+    const t0=Date.now(),rev0=MUTREV,base0=BASEREV,{json,imgs}=packData();const need=Object.keys(imgs).filter(n=>!have.has('img/'+n)),tree=[];let done=0;
     await pool(need,4,async n=>{const r=await ghj('/git/blobs','POST',{content:imgs[n],encoding:'base64'});tree.push({path:'img/'+n,mode:'100644',type:'blob',sha:r.sha});tt('上傳圖片 '+(++done)+'/'+need.length+'…',0)});
     const bl=await ghj('/git/blobs','POST',{content:b64(json),encoding:'base64'});tree.push({path:'data.json',mode:'100644',type:'blob',sha:bl.sha});
     const nt=await ghj('/git/trees','POST',{base_tree:base,tree}),cm=await ghj('/git/commits','POST',{message:(rescueUp?'RESCUE upload (not saved on phone) ':'sync ')+new Date().toISOString(),tree:nt.sha,parents:[head]});
     lsSet('syncPend',cm.sha);await ghj('/git/refs/heads/'+br,'PATCH',{sha:cm.sha});
-    lsSet('syncSha',cm.sha);lsSet('syncPend','');lsSet('lastSync',String(t0));if(!rescueUp&&MUTREV===rev0&&MUTREV===COMMITREV&&SAVEST==='ok')lsSet('dirty','0');else{lsSet('dirty','1');if(!rescueUp)schedAuto()}lsSet('lastBackup',String(Date.now()));lsSet('ghBr',br);
+    /* 只有「上傳的版本＝手機裡現在的版本」而且倉庫、金鑰沒換過，才算同步完成 */
+    const gNow=GH(),sameRepo=gNow.r===g.r&&gNow.t===g.t;let mNow=null;try{mNow=await kvGetS('meta')}catch(e){}
+    const same=!rescueUp&&MUTREV===rev0&&MUTREV===COMMITREV&&SAVEST==='ok'&&BASEREV===base0&&REPGEN===rg0&&((mNow&&mNow.rev)||0)===base0;
+    if(sameRepo){lsSet('syncSha',cm.sha);lsSet('syncPend','');lsSet('lastSync',String(t0));lsSet('ghBr',br)}
+    if(same&&sameRepo)lsSet('dirty','0');else{lsSet('dirty','1');if(!rescueUp&&sameRepo)schedAuto()}
     toast(auto?'☁️ 已自動同步':'✓ 已上傳到雲端（'+items.length+' 筆，新增 '+need.length+' 張圖）',auto?1800:3500);renderBk();if(SO.classList.contains('show'))drawSet()
-  }catch(e){lsSet('dirty','1');toast((auto?'自動同步失敗：':'同步失敗：')+e.message,5000)}finally{syncBusy=false}}
-async function restorePrev(want){let r;
+  }catch(e){lsSet('dirty','1');toast((auto?'自動同步失敗：':'同步失敗：')+e.message,5000)}finally{syncBusy=false;GHX=null}}
+async function restorePrev(want,mutAt){let r;
   try{r=await readSnap(want)}catch(e){toast('⚠ 快照不完整（'+e.message+'），已停止還原，現有資料沒有被動到',8000);return false}
   if(r&&r.gone){toast('這次操作的快照已經被後來同一類的操作取代，無法用這個按鈕復原。可到設定看目前保留的快照。',8000);return false}
   if(!r){toast('沒有可還原的快照');return false}
   if(!READY||WLOCK){roBlock();return false}const p=r.m,list=r.list;
-  if(!confirm('還原成 '+new Date(p.t).toLocaleString('zh-TW')+(SNAPK[p.kind]?'（'+SNAPK[p.kind]+'）':'')+' 的快照（'+list.length+' 筆）？\n之後做的修改會不見。'+(RO?'\n\n目前是唯讀保護中：手機裡原本的資料（包括讀不完整的）會先整份保存起來，之後仍可從設定匯出。':''))) return false;
+  /* 快照之後又改過資料（或從設定頁還原，不知道之後改了什麼）→ 先把現在的資料整份保存起來 */
+  const later=mutAt===undefined||MUTREV!==mutAt,diff=(()=>{const a=new Map(list.map(o=>[o.id,fpOf(o)]));let add=0,chg=0,del=0;items.forEach(o=>{if(!a.has(o.id))add++;else if(a.get(o.id)!==fpOf(o))chg++});list.forEach(o=>{if(!items.some(x=>x.id===o.id))del++});return {add,chg,del}})();
+  if(!confirm('還原成 '+new Date(p.t).toLocaleString('zh-TW')+(SNAPK[p.kind]?'（'+SNAPK[p.kind]+'）':'')+' 的快照（'+list.length+' 筆）？\n和現在比：'+diff.chg+' 筆內容不同、'+diff.add+' 筆是之後新增的（會不見）、'+diff.del+' 筆會加回來。'+(mutAt!==undefined&&MUTREV!==mutAt?'\n\n⚠ 這次操作之後你又改過資料，復原會把那些修改一起取消。':'')+(later||RO?'\n\n現在手機裡的資料會先整份保存到「保存下來的舊資料」，之後仍可換回。':''))) return false;
   const L=list.map(mig),S2=Object.assign(JSON.parse(JSON.stringify(S)),isRec(p.settings)&&p.settings.cats?JSON.parse(JSON.stringify(p.settings)):{});
-  return await replaceAll(L,S2,RO?'用快照救回':'',RO?'✓ 已用快照救回資料，唯讀保護已解除':'✓ 已還原')}
+  return await replaceAll(L,S2,RO?'用快照救回':later?'快照還原前的資料':'',RO?'✓ 已用快照救回資料，唯讀保護已解除':'✓ 已還原')}
 /* 整份取代的共用流程：鎖住所有修改 → 一次交易寫入（救援時先保存舊資料）→ 成功才換上新資料 */
-async function replaceAll(L,S2,rescueWhy,okMsg){if(WLOCK){roBlock();return false}WLOCK='寫入資料';
-  try{await commitAll(L,S2,rescueWhy?{rescue:rescueWhy}:{})}catch(e){console.error(e);WLOCK='';toast('⚠ 沒有寫進手機（'+((e&&e.message)||'錯誤')+'），原本的資料和設定都沒有改變',9000);return false}
+let REPGEN=0;
+async function replaceAll(L,S2,rescueWhy,okMsg,keep){if(WLOCK){roBlock();return false}if(syncBusy){toast('正在和雲端同步，請等同步完成再做',5000);return false}WLOCK='寫入資料';
+  try{const o={};if(rescueWhy)o.rescue=rescueWhy;if(keep)o.keep=keep;await commitAll(L,S2,o);REPGEN++}catch(e){console.error(e);WLOCK='';toast('⚠ 沒有寫進手機（'+((e&&e.message)||'錯誤')+'），原本的資料和設定都沒有改變',9000);return false}
   WLOCK='';items=L;S=S2;COMMITREV=MUTREV;SAVEST='ok';lsSet('unsaved','0');lsSet('dirty','1');lsSet('lastSave',String(Date.now()));if(svfOn)saveFailUI(false);
   const wasRO=RO;RO=false;ROWHY='';ROMETA=false;roBanner();renderCats();render();if(SO.classList.contains('show'))drawSet();if(okMsg)toast(okMsg,5000);if(wasRO)setTimeout(()=>{autoPull()},1500);return true}
 async function syncDown(auto){
   if(auto!==true)auto=false;if(syncBusy){if(!auto)toast('正在同步中，請等一下再按');return}if(!auto)grabCfg();const g=GH();if(!g.t){if(!auto)toast('請先貼上金鑰');return}
-  if(!READY||(RO&&auto))return;syncBusy=true;const rev0=MUTREV;try{
+  if(!READY||(RO&&auto))return;if(WLOCK){if(!auto)roBlock();return}syncBusy=true;GHX={t:g.t,r:g.r};const rev0=MUTREV;try{
     if(RO&&!confirm('這支手機的資料沒有完整讀進來。從雲端下載可以救回資料（讀不完整的舊資料會留在手機裡，不會被刪除），要繼續嗎？'))return;
     if(!auto)toast('連線中…',0);const {head}=await repoHead();if(!head){toast('雲端還沒有資料，請先在主要的手機按「上傳」',4500);return}
     let text;try{text=await(await gh('/contents/data.json?ref='+head,'GET',null,true)).text()}catch(e){if(e.status===404){toast('雲端還沒有資料，請先在主要的手機按「上傳」',4500);return}throw e}
@@ -1695,18 +1742,39 @@ async function syncDown(auto){
       else{let buf,er;for(let t=0;t<3&&!buf;t++){try{buf=new Uint8Array(await Promise.race([(async()=>(await gh('/contents/img/'+n+'?ref='+head,'GET',null,true)).arrayBuffer())(),new Promise((_,j)=>setTimeout(()=>j(new Error('逾時')),25000))]))}catch(e){er=e;if(e.status&&e.status!==403&&e.status!==429)break}}if(!buf)throw er||new Error('圖片下載失敗');let s='';for(let i=0;i<buf.length;i+=8192)s+=String.fromCharCode.apply(null,buf.subarray(i,i+8192));got[n]='data:'+MIME[ext]+';base64,'+btoa(s)}
       if(!auto)toast('下載圖片 '+(++done)+'/'+names.length+'…',0)});
     const full=JSON.parse(text,(k,v)=>typeof v==='string'&&v.startsWith('@img:')?got[v.slice(5)]:v);
-    const lc=new Map();items.forEach(o=>o.items.forEach((it,ix)=>{if(it.img&&(it.img.o||it.img.c))lc.set(o.id+'|'+ix,it.img)}));
-    if(!Array.isArray(full.items)||full.items.some(o=>!isRec(o)||!Array.isArray(o.items)))throw new Error('雲端資料格式不對');
+    if(!Array.isArray(full.items))throw new Error('雲端資料格式不對');
+    /* 雲端資料用同一套驗證：結構壞掉的不能套用；其他問題自動下載就停止，手動下載可用救援模式（有問題的另外保存） */
+    const V=vList(full.items,'full'),se=full.settings===undefined?[]:vSettings(full.settings,'legacy');let keepE=[];
+    if(V.bad.length||se.length){const hardN=V.bad.filter(b=>vOrder(b.o,b.k,'hard').hard.length).length;
+      if(auto){toast('雲端資料有 '+(V.bad.length+se.length)+' 個格式問題，為了安全沒有自動下載。請到設定按「從雲端下載」查看',8000);return}
+      if(!confirm('雲端資料有 '+(V.bad.length+se.length)+' 個問題'+(hardN?'（其中 '+hardN+' 筆結構損壞）':'')+'：\n'+V.msgs.concat(se).slice(0,4).join('\n')+'\n\n要用「救援模式」下載嗎？正常的 '+V.ok.length+' 筆照常下載，有問題的原樣另外保存到「保存下來的舊資料」。'))return;
+      keepE=V.bad.map(b=>['q:'+b.k,b.o]).concat(se.length?[['q:settings',full.settings]]:[])}
     if(MUTREV!==rev0){toast('下載期間這支手機有新的修改，為了不蓋掉它，已取消套用雲端資料。兩邊的資料都還在，請先上傳或稍後再下載。',9000);return}
-    const oldItems=items,oldS=S;let L=full.items.map(mig);L.forEach(o=>o.items.forEach((it,ix)=>{const m=it.img,l=lc.get(o.id+'|'+ix);if(m&&l&&l.s===m.s&&!m.o&&!m.c)m.c=1}));let S2=Object.assign(JSON.parse(JSON.stringify(S)),full.settings&&full.settings.cats?full.settings:{});
+    const oldItems=items,oldS=S;let L=V.ok.map(mig);
+    /* 雲端不存去背前原圖：用圖片內容配對，把這支手機的原圖接回去；對不上的原圖另外保存，不丟 */
+    const KO=keepOrig(items,L);if(KO.lost.length){if(auto){toast('雲端資料裡有 '+KO.lost.length+' 張這支手機的去背前原圖對不上（可能換過圖），為了不弄丟原圖，沒有自動下載。請到設定按「從雲端下載」',9000);return}
+      if(!confirm('這支手機有 '+KO.lost.length+' 張去背前原圖，在雲端版本裡找不到對應的商品圖（可能已經換圖或刪除）。\n下載後這些原圖會原樣保存到「保存下來的舊資料」，不會刪掉。要繼續嗎？'))return;
+      KO.lost.forEach((x,i)=>keepE.push(['orig:'+i,x]))}
+    let S2=Object.assign(JSON.parse(JSON.stringify(S)),full.settings&&full.settings.cats?full.settings:{});
     items=L;S=S2;try{dedupChars();dedupChars();L=items;S2=S}finally{items=oldItems;S=oldS}
     const seen=new Set();L.forEach(o=>{if(!o.id||seen.has(o.id))o.id='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);seen.add(o.id)});
     if(MUTREV!==rev0||MUTREV!==COMMITREV){toast('這支手機有還沒存好或剛改的資料，為了不蓋掉它，已取消套用雲端資料。',9000);return}
-    WLOCK='套用雲端資料';try{await commitAll(L,S2,RO?{rescue:'從雲端下載救回'}:{})}catch(e){throw new Error('下載的資料沒有寫進手機（'+((e&&e.message)||'錯誤')+'），原本的資料和設定都沒有改變，也沒有更新同步記號')}finally{WLOCK=''}
-    items=L;S=S2;COMMITREV=MUTREV;lsSet('unsaved','0');const wasRO=RO;RO=false;ROWHY='';ROMETA=false;roBanner();if(svfOn)saveFailUI(false);SAVEST='ok';lsSet('lastLocalOk',String(Date.now()));
-    lsSet('syncSha',head);lsSet('lastBackup',String(Date.now()));
+    WLOCK='套用雲端資料';try{const co=RO?{rescue:'從雲端下載救回'}:{};if(keepE.length)co.keep={why:'雲端下載時另外保存（原圖或有問題的資料）',entries:keepE};await commitAll(L,S2,co)}catch(e){throw new Error('下載的資料沒有寫進手機（'+((e&&e.message)||'錯誤')+'），原本的資料和設定都沒有改變，也沒有更新同步記號')}finally{WLOCK=''}
+    items=L;S=S2;REPGEN++;COMMITREV=MUTREV;lsSet('unsaved','0');const wasRO=RO;RO=false;ROWHY='';ROMETA=false;roBanner();if(svfOn)saveFailUI(false);SAVEST='ok';lsSet('lastLocalOk',String(Date.now()));
+    if(GH().r===g.r)lsSet('syncSha',head);
     lsSet('lastSync',String(Date.now()+1));lsSet('dirty','0');clearTimeout(autoT);renderCats();render();renderBk();if(SO.classList.contains('show'))drawSet();toast(auto?'☁️ 已更新成雲端最新資料':'✓ 已從雲端下載 '+items.length+' 筆（下載前的資料有留一份，可在設定還原）',auto?2500:4500)
-  }catch(e){if(!auto)toast('下載失敗：'+e.message,5000)}finally{syncBusy=false}}
+  }catch(e){if(!auto)toast('下載失敗：'+e.message,5000)}finally{syncBusy=false;GHX=null}}
+/* 原圖配對：用展示圖的內容（base64 雜湊）找本機的原圖。同一張展示圖對到不同原圖時，只接受「同一筆訂單、同一個位置」的；還是分不出來就不接，列為沒對上 */
+const pidOf=v=>{if(typeof v!=='string')return '';const i=v.indexOf(',');return i<0?'':h64(v.slice(i+1))+':'+(v.length-i-1)};
+function keepOrig(oldL,newL){const recs=[],by=new Map();
+  oldL.forEach(o=>{(o.items||[]).forEach((it,ix)=>{const m=it&&it.img;if(isRec(m)&&typeof m.o==='string'&&m.o)recs.push({oid:o.id,kind:'it',ix,name:it.name||'',s:m.s,o:m.o,c:m.c,used:0})});(o.imgs||[]).forEach((m,ix)=>{if(isRec(m)&&typeof m.o==='string'&&m.o)recs.push({oid:o.id,kind:'im',ix,s:m.s,o:m.o,c:m.c,used:0})})});
+  recs.forEach(r=>{const k=pidOf(r.s);if(!k)return;r.k=k;(by.get(k)||by.set(k,[]).get(k)).push(r)});
+  /* 只接回「上傳那台標記過有原圖（c:1）」的位置，本來沒有原圖的品項不會被接上別人的原圖 */
+  const pick=(oid,kind,ix,m)=>{if(!isRec(m)||m.o||!m.s||!m.c)return;const C=(by.get(pidOf(m.s))||[]).filter(x=>x.kind===kind);if(!C.length)return;
+    let r=C.find(x=>x.oid===oid&&x.kind===kind&&x.ix===ix)||(C.filter(x=>x.oid===oid&&x.kind===kind).length===1?C.find(x=>x.oid===oid&&x.kind===kind):null);
+    if(!r&&new Set(C.map(x=>x.o)).size===1)r=C[0];if(!r)return;m.o=r.o;if(r.c===undefined)delete m.c;else m.c=r.c;C.filter(x=>x.o===r.o).forEach(x=>x.used=1)};
+  newL.forEach(o=>{(o.items||[]).forEach((it,ix)=>pick(o.id,'it',ix,it&&it.img));(o.imgs||[]).forEach((m,ix)=>pick(o.id,'im',ix,m))});
+  return {lost:recs.filter(r=>!r.used).map(r=>({oid:r.oid,kind:r.kind,ix:r.ix,name:r.name,s:r.s,o:r.o}))}}
 
 /* data safety center */
 function safeCard(){const lo=+lsGet('lastLocalOk')||0,ls=+lsGet('lastSync')||0,dirty=lsGet('dirty')==='1',tm=t=>t?new Date(t).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'尚無';
@@ -1718,18 +1786,35 @@ function safeCard(){const lo=+lsGet('lastLocalOk')||0,ls=+lsGet('lastSync')||0,d
 async function fillSafe(){const sb=$('snapbox'),rb=$('rgbox');if(!sb||!rb)return;const tm=t=>new Date(t).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
   const L=await snapList();sb.innerHTML=L.map(x=>`<button class="btn" data-snap="${x.slot}">↩ 還原到${SNAPK[x.kind]||'快照'}（${tm(x.t)}，${x.n} 筆）</button>`).join('');
   let R=[];try{R=await kvGetS('rescues')}catch(e){}R=Array.isArray(R)?R:[];
-  rb.innerHTML=R.length?'<div class="msg" style="margin:8px 0 4px">救援時保存下來的舊資料（原封不動，包括當時讀不完整的部分）：</div>'+R.map(x=>`<div class="msg" style="margin:6px 0 2px">${tm(x.at)}・${esc(x.why||'')}・${x.n} 筆分片</div><button class="btn" data-rg="exp|${x.gen}">匯出這份舊資料</button><button class="btn" data-rg="res|${x.gen}">換回這份舊資料</button><button class="btn" data-rg="del|${x.gen}">刪除這份（釋放空間）</button>`).join(''):''}
-async function readGen(gen){const ks=(await kvKeysS()).filter(k=>typeof k==='string'&&k.startsWith('R:'+gen+':'));const ids=await kvGetS('R:'+gen+':oids'),st=await kvGetS('R:'+gen+':settings');const recs=new Map();for(const k of ks){if(k.startsWith('R:'+gen+':o:')){const v=await kvGetS(k);recs.set(k.slice(('R:'+gen+':o:').length),v)}}
-  const order=Array.isArray(ids)?ids.filter(id=>recs.has(id)):[];const extra=[...recs.keys()].filter(id=>!order.includes(id));const L=[...order,...extra].map(id=>recs.get(id)).filter(o=>isRec(o)&&Array.isArray(o.items));return {L,st:isRec(st)?st:undefined,bad:recs.size-L.length}}
-async function genAct(act,gen){if(act==='exp'){const g=await readGen(gen);const P=bkPlan('rescue',{list:g.L,st:JSON.stringify(g.st||{})});let f;try{f=await bkPart(P,0)}catch(e){toast('⚠ '+e.message,7000);return}f=new File([f],'collection-RESCUE-saved-'+gen+'.json',{type:'application/json'});await bkDeliver(f,'救援保存的舊資料');return}
-  if(act==='del'){if(RO){roBlock();return}if(!confirm('刪除這份保存下來的舊資料？刪除後就救不回來了。'))return;try{const ks=(await kvKeysS()).filter(k=>typeof k==='string'&&k.startsWith('R:'+gen+':'));await kvTx(st=>{ks.forEach(k=>st.delete(k))});const R=(await kvGetS('rescues'))||[];await kvTx(st=>st.put(R.filter(x=>x.gen!==gen),'rescues'));toast('已刪除');drawSet()}catch(e){toast('⚠ 刪除失敗：'+e.message)}return}
-  if(act==='res'){const g=await readGen(gen);if(!g.L.length){toast('這份舊資料裡沒有可用的訂單');return}if(!confirm('換回這份舊資料（'+g.L.length+' 筆'+(g.bad?'，另有 '+g.bad+' 筆損壞無法使用':'')+'）？\n目前手機裡的資料也會先整份保存起來，之後仍可換回。'))return;
-    const S2=Object.assign(JSON.parse(JSON.stringify(S)),g.st&&g.st.cats?g.st:{});await replaceAll(g.L.map(mig),S2,'換回舊資料','✓ 已換回保存的舊資料')}}
+  rb.innerHTML=R.length?'<div class="msg" style="margin:8px 0 4px">保存下來的舊資料（原封不動，包括當時讀不完整的部分）：</div>'+R.map(x=>`<div class="msg" style="margin:6px 0 2px">${tm(x.at)}・${esc(x.why||'')}・${x.n} 筆${x.ver?'・✓ 已確認匯出檔一致':x.exp?'・已匯出（還沒檢查）':''}</div><button class="btn" data-rg="exp|${x.gen}">匯出這份舊資料</button><button class="btn" data-rg="res|${x.gen}">換回這份舊資料</button><button class="btn" data-rg="del|${x.gen}">刪除這份（釋放空間）</button>`).join(''):''}
+/* 換回用：從保存區整理出「可用的訂單」，同時列出缺的、壞的（壞的留在保存區，不刪） */
+async function readGen(gen){const R=await rawRead(gen),M=new Map(R.entries);const ids=M.get('oids'),st=M.get('settings'),recs=new Map();
+  for(const [k,v] of R.entries)if(k.startsWith('o:'))recs.set(k.slice(2),v);
+  let src=[],miss=[],legacy=false;
+  if(Array.isArray(ids)){ids.forEach(id=>{if(typeof id==='string'&&recs.has(id))src.push(recs.get(id));else miss.push(String(id))});[...recs.keys()].filter(id=>!ids.includes(id)).forEach(id=>src.push(recs.get(id)))}
+  else if(recs.size)src=[...recs.values()];
+  else if(Array.isArray(M.get('items'))){src=M.get('items');legacy=true}
+  const V=vList(src,'hard');const se=st===undefined?[]:vSettings(st,'legacy');
+  return {L:V.ok,bad:V.bad,miss,st:se.length?undefined:st,badSettings:se,legacy,rec:R.rec,keys:R.entries.length,orig:R.entries.filter(e=>e[0].startsWith('orig:')).length,q:R.entries.filter(e=>e[0].startsWith('q:')).length}}
+async function genAct(act,gen){
+  if(act==='exp'){let R;try{R=await rawRead(gen)}catch(e){toast('⚠ 讀不到這份保存區：'+e.message,7000);return}const P=rawPlan(gen,R);
+    if(P.parts.length===1){const f=rawPart(P,0);const r=await bkDeliver(f,BKT.raw);bkDone(r,1,'raw',P);return}BKP=P;drawBkps();return}
+  if(act==='del'){if(WLOCK){roBlock();return}const R=await rescueList(),x=R.find(r=>r.gen===gen);if(!x){toast('找不到這份保存區');return}
+    if(!x.ver){alert('還不能刪除：請先「匯出這份舊資料」，再到「檢查備份檔」把匯出的檔案（全部卷）一起選起來檢查。\n檢查確認和手機裡的保存區完全一致後，才能刪除。');return}
+    if(!confirm('刪除這份保存下來的舊資料？\n（已確認匯出的檔案和它完全一致；刪除後手機裡就沒有這份了，只剩匯出的檔案）'))return;
+    try{const d=await db();await new Promise((res,rej)=>{const t=d.transaction('kv','readwrite'),st=t.objectStore('kv');t.oncomplete=()=>res();t.onabort=()=>rej(t.error||new Error('刪除中斷'));
+      const P='R:'+gen+':';const kq=st.getAllKeys(IDBKeyRange.bound(P,P+'￿'));kq.onsuccess=()=>{kq.result.forEach(k=>st.delete(k));const q=st.get('rescues');q.onsuccess=()=>{const L=Array.isArray(q.result)?q.result:[];st.put(L.filter(r=>r.gen!==gen),'rescues')}}});
+      toast('已刪除');drawSet()}catch(e){toast('⚠ 刪除失敗（整份都還在）：'+e.message,7000)}return}
+  if(act==='res'){let g;try{g=await readGen(gen)}catch(e){toast('⚠ 讀不到這份保存區：'+e.message,7000);return}
+    if(!g.L.length){alert('這份保存區裡沒有可以直接換回的訂單'+(g.bad.length?'（有 '+g.bad.length+' 筆損壞）':'')+(g.orig?'（裡面是 '+g.orig+' 張去背前原圖）':'')+'。\n可以按「匯出這份舊資料」把原始內容整份存成檔案。');return}
+    const msg='換回這份保存區的資料？\n\n可用的訂單：'+g.L.length+' 筆'+(g.legacy?'（舊格式）':'')+(g.miss.length?'\n清單裡有、但保存區裡沒有的：'+g.miss.length+' 筆（換回後會少這些）':'')+(g.bad.length?'\n損壞、不能用的：'+g.bad.length+' 筆（例：'+g.bad[0].why[0]+'）':'')+(g.badSettings.length?'\n設定損壞，會保留目前的設定':'')+'\n\n損壞的部分仍會留在這份保存區裡，不會刪除；目前手機裡的資料也會先整份保存起來。';
+    if(!confirm(msg))return;
+    const S2=Object.assign(JSON.parse(JSON.stringify(S)),g.st&&g.st.cats?g.st:{});await replaceAll(g.L.map(mig),S2,'換回保存區之前的資料','✓ 已換回 '+g.L.length+' 筆'+(g.bad.length||g.miss.length?'（缺 '+g.miss.length+'、壞 '+g.bad.length+' 筆，原始內容仍在保存區）':''))}}
 /* 上次關閉前沒存好的提醒 */
 function usWarn(){if(lsGet('unsaved')!=='1')return;let e=$('uswarn');if(!e){e=document.createElement('div');e.id='uswarn';document.body.appendChild(e)}e.innerHTML='<b>⚠ 上次關閉 app 前，有修改沒有確認存進手機</b><span>那次的修改可能沒有保存。請檢查一下最近改的資料。</span><div><button data-us="ok">知道了</button></div>';e.onclick=ev=>{if(ev.target.closest('[data-us]')){lsSet('unsaved','0');e.remove()}}}
 /* backup */
 const BK_DAYS=7;
-function lastBk(){return Math.max(+lsGet('lastBackup')||0,lastSync())}
+function lastBk(){return +lsGet('lastBackup')||0}
 async function doLite(){
   const name='collection-lite-'+today()+'.json',blob=new Blob([JSON.stringify({items,settings:S},(k,v)=>(k==='img'||k==='imgs'||k==='o'||(typeof v==='string'&&v.startsWith('data:')))?undefined:v)],{type:'application/json'});
   try{const f=new File([blob],name,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'收藏櫃文字版'});return}}catch(e){if(e&&e.name==='AbortError')return}
@@ -1742,8 +1827,8 @@ async function doLite(){
 let BK_LIM=150e6;
 const u8len=t=>{let n=0;for(let i=0;i<t.length;i++){const c=t.charCodeAt(i);n+=c<128?1:c<2048?2:(c>=0xD800&&c<0xDC00)?(i++,4):3}return n};
 const fnv64=h64;
-const BKT={full:'完整備份（含去背前原圖）',display:'一般備份（不含去背前原圖）',rescue:'救援備份（不完整）'};
-const bkRep=mode=>mode==='full'?undefined:(k,v)=>k==='o'&&typeof v==='string'&&v.startsWith('data:')?undefined:v;
+const BKT={full:'完整備份（含去背前原圖）',display:'一般備份（不含去背前原圖）',rescue:'救援備份（不完整）',raw:'救援保存區原始資料'};
+const bkRep=mode=>mode!=='display'?undefined:(k,v)=>k==='o'&&typeof v==='string'&&v.startsWith('data:')?undefined:v;
 const fpRep=(o,rep)=>JSON.stringify(o,(k,v)=>{if(rep)v=rep(k,v);return typeof v==='string'&&v.length>400?strFp(v):v});
 const stOf=()=>JSON.stringify(S,(k,v)=>/^(gk|ghTok)$/.test(k)?undefined:v);
 const MANK=['app','fmt','type','set','part','parts','count','orders','t','setHash','ih','stHash'];
@@ -1753,7 +1838,7 @@ function bkPlan(mode,src){const rep=bkRep(mode),set=String(Date.now())+Math.rand
   list.forEach((o,i)=>{const n=u8len(JSON.stringify(o,rep))+1;if(n+over>BK_LIM){if(cur.length){parts.push(cur);cur=[];sz=0}parts.push([o.id]);big.push(title(o).slice(0,16)+'（'+Math.ceil(n/1e6)+' MB）');return}if(cur.length&&sz+n+over>BK_LIM){parts.push(cur);cur=[];sz=0}cur.push(o.id);sz+=n});if(cur.length||!parts.length)parts.push(cur);
   return {mode,rep,set,parts,st,list,live:!src,ids,fps:new Map(ids.map((id,i)=>[id,fps[i]])),setHash:h64(fps.join('\n')+'\n'+st),ih:idsHash(ids),stHash:h64(st),n:list.length,t:Date.now(),mut:MUTREV,rev:BASEREV,big,incomplete:mode==='rescue',state:[]}}
 async function bkCheck(P){if(!P.live)return true;if(P.list!==items||MUTREV!==P.mut||items.length!==P.n||items.some((o,i)=>o.id!==P.ids[i]))return false;try{await putChain}catch(e){}if(MUTREV!==P.mut)return false;let m;try{m=await kvGetS('meta')}catch(e){return P.mode==='rescue'}if(((m&&m.rev)||0)!==BASEREV&&P.mode!=='rescue')return false;return true}
-async function bkPart(P,i){if(!(await bkCheck(P))){P.void=true;throw new Error('資料在分卷途中改過，這一組備份已作廢，請重新匯出')}
+async function bkPart(P,i){if(P.raw)return rawPart(P,i);if(!(await bkCheck(P))){P.void=true;throw new Error('資料在分卷途中改過，這一組備份已作廢，請重新匯出')}
   const ids=new Set(P.parts[i]),L=P.list.filter(o=>ids.has(o.id));for(const o of L)if(fpRep(o,P.rep)!==P.fps.get(o.id)){P.void=true;throw new Error('「'+title(o).slice(0,14)+'」在分卷途中改過，這一組備份已作廢，請重新匯出')}
   const arr='['+L.map(o=>JSON.stringify(o,P.rep)).join(',')+']',st=i===0?P.st:'';
   const man={app:'collection-tracker',fmt:3,type:P.mode,label:BKT[P.mode],set:P.set,part:i+1,parts:P.parts.length,count:L.length,orders:P.n,t:P.t,setHash:P.setHash,ih:P.ih,stHash:P.stHash,incomplete:P.incomplete||undefined,note:'不含 Gemini／GitHub 金鑰'};
@@ -1768,6 +1853,7 @@ async function doBackup(mode){
   if((RO||SAVEST==='fail'||MUTREV!==COMMITREV)&&mode!=='rescue'){if(!confirm((RO?'目前是唯讀保護中，資料可能不完整。':'目前有修改還沒存進手機。')+'\n只能匯出「救援備份（不完整）」，還原時會特別提醒。要匯出嗎？'))return false;mode='rescue'}
   try{await putChain}catch(e){}
   let P;try{P=bkPlan(mode)}catch(e){toast('⚠ 沒辦法產生備份：'+e.message,9000);return false}lsSet('bkGen',String(Date.now()));
+  {const V=vList(P.list,'full');if(V.bad.length&&!confirm('手機裡有 '+V.bad.length+' 筆資料格式有問題，例如：\n'+V.msgs[0]+'\n\n備份照樣會產生（這些也會原樣存進去），但還原時這幾筆會用「救援模式」另外保存，不會直接放回清單。要繼續備份嗎？'))return false}
   if(P.big.length&&!confirm('有 '+P.big.length+' 筆訂單的圖片特別大，會各自單獨放一個檔：\n'+P.big.slice(0,5).join('\n')+'\n\n這些檔案比較大，存檔可能比較久。要繼續嗎？'))return false;
   if(P.parts.length===1){let f;try{f=await bkPart(P,0)}catch(e){toast('⚠ 備份檔產生失敗：'+((e&&e.message)||'可能是手機記憶體不足'),8000);return false}const r=await bkDeliver(f,BKT[mode]);f=null;bkDone(r,1,mode);return r!=='cancel'}
   BKP=P;drawBkps();return true}
@@ -1778,58 +1864,127 @@ const BKS={shared:'✓ 已交給分享選單',download:'↓ 已下載（未確�
 function drawBkps(){const e=$('bkps')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'bkps'}));const P=BKP,n=P.parts.length,all=P.parts.every((_,i)=>P.state[i]==='shared');
   e.innerHTML='<div class="box"><b>'+(P.void?'⚠ 這一組備份已作廢':'備份分成 '+n+' 個檔')+'</b><small class="m">'+(P.void?'分卷途中資料有改動，已存的檔案和還沒存的檔案不是同一個時間的資料，不能一起還原。請按「完成」後重新匯出。':'資料太大，一個檔放不下。請一個一個按，每個都選「儲存到檔案」存在同一個資料夾。還原時要把這 '+n+' 個檔一起選。存檔途中請不要修改資料。')+'</small>'+(P.void?'':P.parts.map((x,i)=>'<button data-bkp="'+i+'">'+(P.state[i]?BKS[P.state[i]]+' · ':'')+'儲存第 '+(i+1)+' 個檔（'+x.length+' 筆）</button>').join(''))+'<button data-bkp="close">'+(all||P.void?'完成':'稍後再說')+'</button></div>';e.classList.add('show');
   e.onclick=async ev=>{const b=ev.target.closest('[data-bkp]');if(!b||b.disabled)return;if(b.dataset.bkp==='close'){e.classList.remove('show');if(P.void){toast('這組備份已作廢，請重新匯出',5000);return}
-      const st=P.parts.map((_,i)=>P.state[i]);if(st.every(x=>x==='shared'))bkDone('shared',n,P.mode);else if(st.every(x=>x==='shared'||x==='download'))bkDone('download',n,P.mode);else toast('還有 '+st.filter(x=>x!=='shared'&&x!=='download').length+' 個檔沒存，這份備份還不完整',5000);return}
+      const st=P.parts.map((_,i)=>P.state[i]);if(st.every(x=>x==='shared'))bkDone('shared',n,P.mode,P);else if(st.every(x=>x==='shared'||x==='download'))bkDone('download',n,P.mode,P);else toast('還有 '+st.filter(x=>x!=='shared'&&x!=='download').length+' 個檔沒存，這份備份還不完整',5000);return}
     const i=+b.dataset.bkp;b.disabled=true;let f;try{f=await bkPart(P,i)}catch(x){toast('⚠ 第 '+(i+1)+' 個檔：'+((x&&x.message)||'產生失敗'),8000);drawBkps();return}const r=await bkDeliver(f,BKT[P.mode]+' '+(i+1)+'/'+n);f=null;if(r!=='cancel'||!P.state[i])P.state[i]=r;drawBkps()}}
-function bkDone(r,n,mode){if(r==='cancel')return;const now=String(Date.now());
-  if(r==='shared'&&mode!=='rescue'){lsSet('bkShared',now);lsSet('lastBackup',now);try{localStorage.removeItem('bkSnooze')}catch(e){}}else if(r==='download')lsSet('bkDl',now);
+function bkDone(r,n,mode,P){if(r==='cancel')return;const now=String(Date.now());
+  if(mode==='raw'){rescueMark(P.gen,{exp:+now,expHow:r}).then(()=>{if(SO.classList.contains('show'))drawSet()}).catch(()=>{});toast((r==='shared'?'✓ 原始資料已交給分享選單':'已開始下載原始資料')+'（'+n+' 個檔）。要刪除手機裡的保存區前，請先到「檢查備份檔」把這幾個檔一起選起來檢查',8000);return}
+  if(r==='shared'&&mode!=='rescue'){lsSet('bkShared',now);lsSet('lastBackup',now);if(mode==='full')lsSet('bkFull',now);try{localStorage.removeItem('bkSnooze')}catch(e){}}else if(r==='download')lsSet('bkDl',now);
   renderBk();if(SO.classList.contains('show'))drawSet();toast(r==='shared'?'✓ 已交給分享選單（'+items.length+' 筆'+(n>1?'，'+n+' 個檔':'')+'）。請確認有選「儲存到檔案」；要確定能還原，可到設定按「檢查備份檔」':'已開始下載備份檔，請確認檔案有存好；這次不算完成備份',6500)}
 function markBk(n){bkDone('shared',n||1,'display')}
-/* 深層檢查：訂單、品項、圖片、設定的格式與合理範圍 */
-const numOk=(v,min,max,allowEmpty)=>(allowEmpty&&(v===''||v==null))||(v!==''&&v!=null&&isFinite(+v)&&+v>=min&&+v<=max);
-const imgPfx=v=>typeof v==='string'&&/^(data:image\/[\w.+-]+[;,]|https?:\/\/|blob:)/.test(v.slice(0,80))&&v.length>15;
-const imgOk=m=>isRec(m)&&imgPfx(m.s)&&(m.o==null||m.o===''||imgPfx(m.o));
-function chkOrder(o,k){const W=t=>{throw new Error('第 '+(k+1)+' 筆訂單'+(isRec(o)&&o.items&&o.items[0]&&o.items[0].name?'「'+String(o.items[0].name).slice(0,12)+'」':'')+t)};
-  if(!isRec(o))W('不是正確的資料');if(o.id!=null&&(typeof o.id!=='string'||!/^[\w.:\-]{1,80}$/.test(o.id)))W('編號不正確');if(o.status!=null&&!['wish','pre','have','sold'].includes(o.status))W('狀態不正確');
-  if(o.items!==undefined){if(!Array.isArray(o.items))W('品項不是清單');o.items.forEach((it,j)=>{const E=t=>W('的第 '+(j+1)+' 個品項'+t);if(!isRec(it))E('是空的或格式錯誤');if(it.name!=null&&typeof it.name!=='string')E('名稱格式錯誤');
-    if(!numOk(it.qty,1,99999,true))E('數量不正確（'+it.qty+'）');if(!numOk(it.price,-1e9,1e9,true))E('價格不正確');if(it.sq!=null&&it.sq!==''&&!(numOk(it.sq,0,99999)&&+it.sq<=(+it.qty||1)))E('售出數量不正確');if(!numOk(it.sp,0,1e9,true))E('賣出金額不正確');
-    if(it.img!=null&&!imgOk(it.img))E('的圖片資料損壞')})}
-  if(o.imgs!=null){if(!Array.isArray(o.imgs))W('圖片清單格式錯誤');o.imgs.forEach(m=>{if(!imgOk(m))W('的明細圖片資料損壞')})}}
-function chkSettings(s){if(s===undefined)return;if(!isRec(s))throw new Error('設定資料損壞');if(s.cats!=null&&!(Array.isArray(s.cats)&&s.cats.every(x=>typeof x==='string')))throw new Error('設定的分類清單損壞');if(s.rates!=null&&!(isRec(s.rates)&&Object.values(s.rates).every(v=>v===''||v==null||(isFinite(+v)&&+v>=0))))throw new Error('設定的匯率損壞')}
-/* 讀取並驗證備份（不會動到資料） */
+/* ===== 共用驗證器（啟動、備份、快照、救援、雲端、匯入都用這一套） =====
+   hard：會讓 app 打不開或算錯的結構錯誤（不是物件、品項是 null、品項不是清單、編號錯）。
+   full：再加上數值、付款、匯率、日期、圖片內容（實際檢查 base64 與圖檔開頭）、設定。
+   外部連結圖片（http/https）不算錯，但會標示「外部引用」，不能算完整備份；blob: 圖片重開後就失效，算錯誤。 */
+const numOk=(v,min,max,allowEmpty)=>(allowEmpty&&(v===''||v==null))||(v!==''&&v!=null&&typeof v!=='boolean'&&isFinite(+v)&&+v>=min&&+v<=max);
+const intOk=(v,min,max,allowEmpty)=>numOk(v,min,max,allowEmpty)&&(v===''||v==null||Number.isInteger(+v));
+const PAYV=['paid','deposit','unpaid','cod',''],DATEK=['buyDate','recvDate','soldDate'];
+const B64RE=/^[A-Za-z0-9+/]*={0,2}$/;
+/* 回傳 ''＝正常圖片、'ext'＝外部連結、其他＝錯誤原因 */
+function imgChk(v){if(typeof v!=='string'||!v)return '不是圖片';
+  if(/^https?:\/\//i.test(v))return 'ext';if(/^blob:/i.test(v))return '是暫時的 blob 連結（重開後就失效）';
+  const m=/^data:(image\/[\w.+-]+)((?:;[\w-]+=[^;,]*)*)(;base64)?,/i.exec(v.slice(0,200));if(!m)return '不是圖片資料';
+  const body=v.slice(m[0].length),mime=m[1].toLowerCase();
+  if(!m[3]){if(mime==='image/svg+xml'){let x='';try{x=decodeURIComponent(body.slice(0,400))}catch(e){return 'SVG 內容損壞'}return /<svg/i.test(x)?'':'SVG 內容損壞'}return '圖片不是 base64 格式'}
+  if(body.length<8||body.length%4!==0||!B64RE.test(body))return '圖片的 base64 內容損壞';
+  let h;try{h=atob(body.slice(0,24))}catch(e){return '圖片的 base64 內容損壞'}const c=i=>h.charCodeAt(i);
+  const sig=(c(0)===0xFF&&c(1)===0xD8)||(c(0)===0x89&&h.slice(1,4)==='PNG')||(h.slice(0,4)==='RIFF'&&h.slice(8,12)==='WEBP')||h.slice(0,3)==='GIF'||(h.slice(4,8)==='ftyp')||/^\s*(<\?xml|<svg|<!--)/i.test(h);
+  return sig?'':'圖片檔案內容不是可辨識的圖片格式'}
+function vImg(m,E,ext){if(!isRec(m)){E('的圖片資料不是正確格式');return}if((m.s==null||m.s==='')&&(m.o==null||m.o===''))return;const a=imgChk(m.s);if(a==='ext')ext.n++;else if(a)E('的圖片'+a);
+  if(m.o!=null&&m.o!==''){const b=imgChk(m.o);if(b==='ext')ext.n++;else if(b)E('的去背前原圖'+b)}}
+/* 一筆訂單的問題清單：{hard:[],full:[]}；ext.n 累計外部連結數 */
+function vOrder(o,k,lvl,ext){ext=ext||{n:0};const P={hard:[],full:[]},lab='第 '+(k+1)+' 筆訂單'+(isRec(o)&&Array.isArray(o.items)&&isRec(o.items[0])&&typeof o.items[0].name==='string'&&o.items[0].name?'「'+o.items[0].name.slice(0,12)+'」':'');
+  const H=t=>P.hard.push(lab+t),F=t=>P.full.push(lab+t);
+  if(!isRec(o)){H('不是正確的資料');return P}
+  if(o.id==null||o.id==='')(lvl==='legacy'?F:H)('缺少編號');else if(typeof o.id!=='string'||!/^[\w.:\-]{1,80}$/.test(o.id))H('編號不正確');
+  if(!Array.isArray(o.items)){H('的品項不是清單');return P}
+  o.items.forEach((it,j)=>{if(!isRec(it))H('的第 '+(j+1)+' 個品項是空的或格式錯誤')});if(P.hard.length||lvl==='hard')return P;
+  if(!o.items.length)F('沒有任何品項');
+  if(o.status!=null&&!['wish','pre','have','sold'].includes(o.status))F('的狀態不正確（'+String(o.status).slice(0,10)+'）');
+  if(o.pay!=null&&!PAYV.includes(o.pay))F('的付款狀態不正確（'+String(o.pay).slice(0,10)+'）');
+  if(o.cur!=null&&o.cur!==''&&!(typeof o.cur==='string'&&/^[A-Z]{3}$/.test(o.cur)))F('的幣別不正確');
+  if(!numOk(o.rate,0,1e6,true))F('的匯率不正確（'+String(o.rate).slice(0,10)+'）');
+  ['ship','deposit','twPaid','fee','feeAmt','fpaid','soldPrice'].forEach(f=>{if(!numOk(o[f],-1e9,1e9,true))F('的金額欄位 '+f+' 不正確')});
+  DATEK.forEach(f=>{if(o[f]!=null&&o[f]!==''&&!(typeof o[f]==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(o[f])&&!isNaN(new Date(o[f]+'T00:00'))))F('的日期 '+f+' 不正確（'+String(o[f]).slice(0,12)+'）')});
+  o.items.forEach((it,j)=>{const E=t=>F('的第 '+(j+1)+' 個品項'+t);if(it.name!=null&&typeof it.name!=='string')E('名稱格式錯誤');
+    if(!intOk(it.qty,1,99999,true))E('數量不正確（'+it.qty+'，必須是 1 以上的整數）');const q=+it.qty||1;
+    if(it.sq!=null&&it.sq!==''&&!(intOk(it.sq,0,99999)&&+it.sq<=q))E('售出數量不正確（'+it.sq+'）');
+    if(!numOk(it.price,-1e9,1e9,true))E('價格不正確');if(!numOk(it.sp,0,1e9,true))E('賣出金額不正確');if(!numOk(it.tx,-1e9,1e9,true))E('退稅金額不正確');if(!numOk(it.fpa,0,1e9,true))E('朋友實付金額不正確');
+    if(it.fpd!=null&&!['','0','1','g'].includes(String(it.fpd)))E('朋友付款狀態不正確');
+    if(it.img!=null)vImg(it.img,E,ext)});
+  if(o.imgs!=null){if(!Array.isArray(o.imgs))F('的圖片清單格式錯誤');else o.imgs.forEach((m,j)=>vImg(m,t=>F('的第 '+(j+1)+' 張明細圖片'+t.replace(/^的圖片/,'')),ext))}
+  return P}
+function vSettings(s,lvl){const E=[];if(s===undefined)return lvl==='legacy'?E:['缺少設定資料'];if(!isRec(s))return ['設定資料損壞'];
+  if(s.cats==null){if(lvl!=='legacy')E.push('設定缺少分類清單')}else if(!(Array.isArray(s.cats)&&s.cats.every(x=>typeof x==='string')))E.push('設定的分類清單損壞');
+  if(s.rates!=null&&!(isRec(s.rates)&&Object.values(s.rates).every(v=>v===''||v==null||(isFinite(+v)&&+v>=0))))E.push('設定的匯率損壞');
+  ['chars','tags','fledger'].forEach(f=>{if(s[f]!=null&&typeof s[f]!=='object')E.push('設定的 '+f+' 損壞')});return E}
+/* 把一份清單分成「可用」與「有問題」（有問題的原樣留著，交給呼叫端隔離，不丟掉） */
+function vList(L,lvl){const ok=[],bad=[],msgs=[],ext={n:0},ids=new Set();(L||[]).forEach((o,k)=>{const P=vOrder(o,k,lvl,ext);let m=P.hard.concat(lvl==='hard'?[]:P.full);
+    if(!m.length&&isRec(o)&&o.id){if(ids.has(o.id))m=['第 '+(k+1)+' 筆訂單的編號和前面重複'];else ids.add(o.id)}
+    if(m.length){bad.push({k,o,why:m});msgs.push(...m)}else ok.push(o)});return {ok,bad,msgs,ext:ext.n}}
+const chkOrder=(o,k)=>{const P=vOrder(o,k,'full');const m=P.hard.concat(P.full);if(m.length)throw new Error(m[0])};
+const chkSettings=s=>{const e=vSettings(s,'full');if(e.length)throw new Error(e[0])};
+/* 讀取並驗證備份（不會動到資料）。
+   回傳 items＝可用的訂單、bad＝有問題的訂單（原樣，還原時另外保存到救援保存區，不丟掉）、raw＝救援保存區的原始資料匯出 */
 async function readBackup(FL){const warn=[],parts=[];let single=null;
   for(const f of FL){let d;try{d=JSON.parse(await f.text())}catch(e){throw new Error('「'+f.name+'」不是正確的備份檔（無法讀取）')}
     if(FL.length===1&&(Array.isArray(d)||!isRec(d)||!d.manifest)){single=d;break}
-    const m=d.manifest;if(!isRec(m))throw new Error('「'+f.name+'」不是分卷備份');parts.push({m,items:d.items,settings:d.settings,name:f.name})}
-  let L,S0,man=null,legacy=false;
-  if(single!==null){const d=single;if(isRec(d)&&(d.patch===true||d.imgOnly===true))return {items:Array.isArray(d.items)?d.items:[],patch:d.patch===true?d:null,imgOnly:d.imgOnly===true,warn,legacy:true};
+    const m=d.manifest;if(!isRec(m))throw new Error('「'+f.name+'」不是分卷備份');const raw=m.type==='raw';parts.push({m,items:raw?d.raw:d.items,settings:raw?d.rescue:d.settings,name:f.name})}
+  let L,S0,man=null,legacy=false,raw=false;
+  if(single!==null){const d=single;if(isRec(d)&&(d.patch===true||d.imgOnly===true))return {items:Array.isArray(d.items)?d.items:[],patch:d.patch===true?d:null,imgOnly:d.imgOnly===true,warn,legacy:true,bad:[]};
     L=Array.isArray(d)?d:isRec(d)?d.items:null;if(!Array.isArray(L))throw new Error('檔案裡找不到商品資料');S0=Array.isArray(d)?undefined:d.settings;legacy=true;warn.push('這是舊格式的備份，沒有完整性資訊：只能確認格式正確，無法確認有沒有缺資料')}
   else{const ms=parts.map(x=>x.m),m0=ms[0];
     if(ms.some(m=>m.app!=='collection-tracker'))throw new Error('有檔案不是收藏櫃的備份');
     if(ms.some(m=>m.set!==m0.set))throw new Error('這幾個檔案不是同一次的備份，請重新選');
-    if((m0.fmt||0)>=3){for(const m of ms){if(!['full','display','rescue'].includes(m.type)||typeof m.set!=='string'||!Number.isInteger(m.parts)||m.parts<1||!Number.isInteger(m.part)||!Number.isInteger(m.count)||m.count<0||!Number.isInteger(m.orders)||m.orders<0||typeof m.t!=='number'||!/^[0-9a-f]{16}$/.test(m.hash||'')||!/^[0-9a-f]{16}$/.test(m.setHash||'')||!/^[0-9a-f]{16}$/.test(m.ih||'')||!/^[0-9a-f]{16}$/.test(m.stHash||''))throw new Error('分卷資訊不完整或格式錯誤（'+(m.part??'?')+'）')}
-      if(ms.some(m=>MANK.filter(k=>k!=='part'&&k!=='count').some(k=>m[k]!==m0[k])))throw new Error('分卷資訊不一致（不是同一組備份）')}
+    if((m0.fmt||0)>=3){for(const m of ms){if(!['full','display','rescue','raw'].includes(m.type)||typeof m.set!=='string'||!Number.isInteger(m.parts)||m.parts<1||!Number.isInteger(m.part)||!Number.isInteger(m.count)||m.count<0||!Number.isInteger(m.orders)||m.orders<0||typeof m.t!=='number'||!/^[0-9a-f]{16}$/.test(m.hash||'')||!/^[0-9a-f]{16}$/.test(m.setHash||'')||!/^[0-9a-f]{16}$/.test(m.ih||'')||!/^[0-9a-f]{16}$/.test(m.stHash||'')||(m.type==='raw'&&!(typeof m.gen==='string'&&m.gen)))throw new Error('分卷資訊不完整或格式錯誤（'+(m.part??'?')+'）')}
+      if(ms.some(m=>MANK.filter(k=>k!=='part'&&k!=='count').some(k=>m[k]!==m0[k])||m.gen!==m0.gen))throw new Error('分卷資訊不一致（不是同一組備份）')}
     else{legacy=true;warn.push('這份備份是較舊的版本產生的，沒有完整的檢查資訊：只能確認格式和卷數，無法確認內容有沒有被改過')}
+    raw=m0.type==='raw';
     const n=m0.parts;if(!Number.isInteger(n)||n<1||ms.some(m=>m.parts!==n))throw new Error('分卷資訊不一致');
     const nums=ms.map(m=>m.part);if(nums.some(x=>!Number.isInteger(x)||x<1||x>n))throw new Error('分卷編號不正確');
     if(new Set(nums).size!==nums.length)throw new Error('同一個分卷選了兩次（第 '+nums.find((x,i)=>nums.indexOf(x)!==i)+' 卷）');
     if(nums.length!==n)throw new Error('分卷不完整：這份備份共有 '+n+' 個檔，你選了 '+nums.length+' 個（缺第 '+[...Array(n)].map((_,i)=>i+1).filter(i=>!nums.includes(i)).join('、')+' 卷）');
     parts.sort((x,y)=>x.m.part-y.m.part);L=[];
-    for(const x of parts){const m=x.m;if(!Array.isArray(x.items))throw new Error('第 '+m.part+' 卷沒有商品資料');if(m.count!=null&&m.count!==x.items.length)throw new Error('第 '+m.part+' 卷筆數不對（應有 '+m.count+'，讀到 '+x.items.length+'）');
+    for(const x of parts){const m=x.m;if(!Array.isArray(x.items))throw new Error('第 '+m.part+' 卷沒有資料');if(m.count!=null&&m.count!==x.items.length)throw new Error('第 '+m.part+' 卷筆數不對（應有 '+m.count+'，讀到 '+x.items.length+'）');
       if(m.part!==1&&x.settings!==undefined)throw new Error('第 '+m.part+' 卷格式不對');
-      if((m0.fmt||0)>=3){const st=m.part===1?JSON.stringify(x.settings):'';if(m.part===1&&!isRec(x.settings))throw new Error('第 1 卷缺少設定資料');if(h64(manCore(m)+'|'+JSON.stringify(x.items)+'|'+st)!==m.hash)throw new Error('第 '+m.part+' 卷內容損壞或被改過（包括設定與圖片）')}
+      if((m0.fmt||0)>=3){const st=m.part===1?JSON.stringify(x.settings):'';if(m.part===1&&!isRec(x.settings))throw new Error('第 1 卷缺少'+(raw?'保存區資訊':'設定資料'));if(h64(manCore(m)+'|'+JSON.stringify(x.items)+'|'+st)!==m.hash)throw new Error('第 '+m.part+' 卷內容損壞或被改過（包括設定與圖片）')}
       else if(m.hash&&fnv64(JSON.stringify(x.items))!==m.hash)throw new Error('第 '+m.part+' 卷內容損壞或被改過');
       for(const o of x.items)L.push(o);x.items=null}
     man=m0;S0=parts[0].settings;if(man.orders!=null&&man.orders!==L.length)throw new Error('筆數不對：應有 '+man.orders+' 筆，只讀到 '+L.length+' 筆');
-    if((m0.fmt||0)>=3){const st=JSON.stringify(S0);if(h64(st)!==man.stHash)throw new Error('設定資料被改過');if(idsHash(L.map(o=>o&&o.id))!==man.ih)throw new Error('訂單清單和備份記錄對不上');
+    if((m0.fmt||0)>=3){const st=JSON.stringify(S0);if(h64(st)!==man.stHash)throw new Error(raw?'保存區資訊被改過':'設定資料被改過');
+      if(raw){if(L.some(e=>!Array.isArray(e)||e.length!==2||typeof e[0]!=='string'))throw new Error('原始資料格式錯誤');if(h64(L.map(e=>e[0]).join('\n'))!==man.ih)throw new Error('原始資料的鍵清單和記錄對不上')}
+      else if(idsHash(L.map(o=>o&&o.id))!==man.ih)throw new Error('訂單清單和備份記錄對不上');
       if(h64(L.map(o=>fpRep(o)).join('\n')+'\n'+st)!==man.setHash)throw new Error('各卷的資料不是同一個時間的版本（可能在分卷途中改過），不能一起還原')}
+    if(raw)return {raw:L,rescue:S0,manifest:man,warn,legacy:false,bad:[],items:[]};
     if(man.incomplete||man.type==='rescue')warn.push('這是「救援備份」，是在資料不完整或存檔失敗時匯出的，可能缺資料')}
-  const errs=[];L.forEach((o,k)=>{try{chkOrder(o,k)}catch(e){errs.push(e.message)}});try{chkSettings(S0)}catch(e){errs.push(e.message)}
-  const ids=L.map(o=>isRec(o)?o.id:null).filter(Boolean);if(new Set(ids).size!==ids.length)errs.push('備份裡有重複的訂單編號');
-  if(errs.length){if(!legacy)throw new Error(errs[0]+(errs.length>1?'（還有 '+(errs.length-1)+' 個問題）':''));warn.push('格式檢查發現 '+errs.length+' 個問題，例如：'+errs[0])}
-  return {items:L,settings:S0,manifest:man,warn,legacy,rescue:!!(man&&(man.incomplete||man.type==='rescue')),badCount:errs.length,merge:isRec(single)&&single.merge===true}}
+  const V=vList(L,legacy?'legacy':'full'),se=vSettings(S0,legacy?'legacy':'full');
+  if(V.ext)warn.push('有 '+V.ext+' 張圖片是外部網址（沒有存在備份裡），網址失效就看不到');
+  return {items:V.ok,bad:V.bad,badMsgs:V.msgs.concat(se),settings:se.length?undefined:S0,badSettings:se.length?S0:undefined,manifest:man,warn,legacy,ext:V.ext,total:L.length,rescue:!!(man&&(man.incomplete||man.type==='rescue')),badCount:V.bad.length+se.length,merge:isRec(single)&&single.merge===true}}
 async function verifyBackup(FL){try{const r=await readBackup(FL);if(r.patch||r.imgOnly){alert('這是更新用的檔案，不是備份');return}
-    if(r.legacy||r.rescue||r.badCount){alert((r.rescue?'⚠ 這是救援備份（不完整），不能當作一般完整備份':'⚠ 這份備份可以讀，但無法確認是完整的')+'\n\n共 '+r.items.length+' 筆\n\n'+r.warn.join('\n'));return}
-    lsSet('bkVerified',String(Date.now()));if(SO.classList.contains('show'))drawSet();alert('✓ 備份檔完整，可以還原\n\n共 '+r.items.length+' 筆，'+(r.manifest.label||r.manifest.type)+'，'+new Date(r.manifest.t).toLocaleString('zh-TW')+'\n（已核對每一卷、設定、圖片和整組的一致性）')}catch(e){alert('⚠ 這份備份不能用：\n'+e.message)}}
+    if(r.raw){const g=r.manifest.gen;let local=null;try{local=await rawRead(g)}catch(e){}
+      const same=local&&h64(local.entries.map(e=>fpRep(e)).join('\n')+'\n'+JSON.stringify(local.rec))===r.manifest.setHash;
+      if(same){await rescueMark(g,{ver:Date.now()});if(SO.classList.contains('show'))drawSet()}
+      alert('✓ 救援保存區的原始資料：結構與內容校驗通過（尚未實際寫入）\n\n共 '+r.raw.length+' 個原始鍵，'+r.manifest.parts+' 個檔'+(same?'\n這份檔案和手機裡的保存區完全一致，現在可以刪除手機裡的這份保存區來釋放空間。':'\n（手機裡沒有對應的保存區，或內容不同）'));return}
+    if(r.legacy||r.rescue||r.badCount||r.ext){alert((r.rescue?'⚠ 這是救援備份（不完整），不能當作一般完整備份':'⚠ 這份備份可以讀，但無法確認是完整的')+'\n\n共 '+r.total+' 筆'+(r.badCount?'，其中 '+r.badCount+' 個問題：\n'+r.badMsgs.slice(0,5).join('\n'):'')+'\n\n'+r.warn.join('\n'));return}
+    lsSet('bkVerified',String(Date.now()));if(r.manifest.type==='full')lsSet('bkVerifiedFull',String(Date.now()));if(SO.classList.contains('show'))drawSet();alert('✓ 結構與內容校驗通過（尚未實際寫入還原）\n\n共 '+r.items.length+' 筆，'+(r.manifest.label||r.manifest.type)+'，'+new Date(r.manifest.t).toLocaleString('zh-TW')+'\n（已核對每一卷、設定、圖片內容和整組的一致性）')}catch(e){alert('⚠ 這份備份不能用：\n'+e.message)}}
+/* ===== 救援保存區 =====
+   每一份保存區＝「R:代號:原本的鍵」，原封不動（含損壞的分片、舊格式資料、原圖）。
+   匯出：一次讀出全部原始鍵（固定版本），可分卷，每卷都能交付；匯入：只放回救援保存區（不動現有資料），之後再決定要不要換回。 */
+async function rescueList(){let R;try{R=await kvGetS('rescues')}catch(e){R=[]}return Array.isArray(R)?R:[]}
+async function rescueMark(gen,patch){await kvTx(st=>{const q=st.get('rescues');q.onsuccess=()=>{const R=Array.isArray(q.result)?q.result:[];const x=R.find(r=>r.gen===gen);if(x){Object.assign(x,patch);st.put(R,'rescues')}}})}
+async function rawRead(gen){const d=await db();return await new Promise((res,rej)=>{let t;try{t=d.transaction('kv')}catch(e){rej(e);return}const P='R:'+gen+':',out=[];let rec=null;
+  t.oncomplete=()=>{if(!rec){rej(new Error('找不到這份保存區'));return}res({entries:out,rec})};t.onabort=()=>rej(t.error||new Error('讀取中斷'));const st=t.objectStore('kv');
+  const rq=st.get('rescues');rq.onsuccess=()=>{const R=Array.isArray(rq.result)?rq.result:[];const x=R.find(r=>r.gen===gen);if(x){rec={gen:x.gen,at:x.at,why:x.why||'',n:x.n,kind:x.kind||'rescue'}}};
+  const cq=st.openCursor(IDBKeyRange.bound(P,P+'￿'));cq.onsuccess=()=>{const c=cq.result;if(c){out.push([c.key.slice(P.length),c.value]);c.continue()}}})}
+function rawPlan(gen,R){const set=String(Date.now())+Math.random().toString(36).slice(2,6),parts=[],big=[];let cur=[],sz=0;const st=JSON.stringify(R.rec),over=u8len(st)+900;
+  R.entries.forEach((e,i)=>{const n=u8len(JSON.stringify(e))+1;if(n+over>BK_LIM){if(cur.length){parts.push(cur);cur=[];sz=0}parts.push([i]);big.push(e[0]+'（'+Math.ceil(n/1e6)+' MB）');return}if(cur.length&&sz+n+over>BK_LIM){parts.push(cur);cur=[];sz=0}cur.push(i);sz+=n});if(cur.length||!parts.length)parts.push(cur);
+  const fps=R.entries.map(e=>fpRep(e));return {mode:'raw',raw:R.entries,gen,set,parts,st,live:false,setHash:h64(fps.join('\n')+'\n'+st),ih:h64(R.entries.map(e=>e[0]).join('\n')),stHash:h64(st),n:R.entries.length,t:Date.now(),big,state:[]}}
+function rawPart(P,i){const L=P.parts[i].map(k=>P.raw[k]),arr='['+L.map(e=>JSON.stringify(e)).join(',')+']',st=i===0?P.st:'';
+  const man={app:'collection-tracker',fmt:3,type:'raw',gen:P.gen,label:BKT.raw,set:P.set,part:i+1,parts:P.parts.length,count:L.length,orders:P.n,t:P.t,setHash:P.setHash,ih:P.ih,stHash:P.stHash,note:'救援保存區原始資料，原封不動（含損壞的部分）。不含金鑰'};
+  man.hash=h64(manCore(man)+'|'+arr+'|'+st);
+  return new File(['{"manifest":'+JSON.stringify(man)+',"raw":'+arr+(i===0?',"rescue":'+st:'')+'}'],'collection-RAW-'+P.gen.slice(1,9)+'-'+today()+(P.parts.length>1?'-'+(i+1)+'of'+P.parts.length:'')+'.json',{type:'application/json'})}
+/* 把原始資料匯出檔放回救援保存區（同一個交易；現有資料完全不動） */
+async function rawImport(r){const gen=newGen(),E=r.raw,info=r.rescue||{};
+  await kvTx(st=>{E.forEach(([k,v])=>st.put(v,'R:'+gen+':'+k));const q=st.get('rescues');q.onsuccess=()=>{const R=Array.isArray(q.result)?q.result:[];R.push({gen,at:Date.now(),why:'從原始資料檔匯入（原本：'+(info.why||'')+'）',n:E.filter(e=>e[0].startsWith('o:')).length,kind:'import',from:r.manifest.gen});st.put(R,'rescues')}});return gen}
 function renderBk(){renderJobs();
   const el=$('bk');if(!el)return;let sn=0;try{sn=+localStorage.getItem('bkSnooze')||0}catch(e){}
   const l=lastBk(),d=l?Math.floor((Date.now()-l)/864e5):999;
@@ -1901,9 +2056,19 @@ async function bgAll(){
   bgAllRun=false;if(SO.classList.contains('show'))drawSet()}
 /* merge duplicate items */
 function dupGroups(o){const m={};o.items.forEach((i,n)=>{const k=[(i.name||'').trim(),+i.price||0,i.cat||'',i.proxy||''].join('|');if(!(i.name||'').trim())return;(m[k]=m[k]||[]).push(n)});return Object.values(m).filter(g=>g.length>1)}
-function mergeDups(o){const g=dupGroups(o);if(!g.length)return 0;const drop=new Set();
-  g.forEach(idx=>{const a=o.items[idx[0]];idx.slice(1).forEach(n=>{const b=o.items[n];a.qty=(+a.qty||1)+(+b.qty||1);a.sq=sq(a)+sq(b);if(+b.sp)a.sp=(+a.sp||0)+(+b.sp);if(!a.img&&b.img)a.img=b.img;drop.add(n)})});
-  o.items=o.items.filter((_,n)=>!drop.has(n));return drop.size}
+/* 同一筆訂單的重複品項：只有「除了數量和金額以外完全一樣」（角色、歸屬、朋友、付款／交貨、到貨、圖片與原圖、售出狀態、分攤…）才合併；
+   數量、售出數、賣出金額、退稅、朋友實付全部加總，合併前後總數守恆；不一樣的不合併、回報原因 */
+const DUPSUM=['qty','sq','sp','tx','fpa'];
+const dupRest=i=>{const x={...i};DUPSUM.forEach(k=>delete x[k]);return JSON.stringify(Object.keys(x).sort().map(k=>[k,x[k]]))};
+const DUPL={proxy:'歸屬',fn:'朋友',fpd:'朋友付款',giv:'交貨',got:'到貨',img:'圖片',ch:'角色',sell:'打算賣',cat:'分類',note:'備註',ap:'分攤',hide:'隱藏',love:'評分'};
+function dupWhy(a,b){const ks=[...new Set([...Object.keys(a),...Object.keys(b)])].filter(k=>!DUPSUM.includes(k)&&JSON.stringify(a[k])!==JSON.stringify(b[k]));return ks.map(k=>DUPL[k]||k).join('、')}
+function mergeDups(o){const g=dupGroups(o);const R={n:0,skip:[]};if(!g.length)return R;const drop=new Set();
+  g.forEach(idx=>{const base=o.items[idx[0]];const same=idx.filter(n=>dupRest(o.items[n])===dupRest(base)),other=idx.filter(n=>!same.includes(n));
+    if(other.length)R.skip.push((base.name||'').slice(0,12)+'（'+dupWhy(base,o.items[other[0]])+'不同）');if(same.length<2)return;
+    const bef={};DUPSUM.forEach(k=>bef[k]=same.reduce((s,n)=>s+(k==='qty'?(+o.items[n].qty||1):k==='sq'?sq(o.items[n]):(+o.items[n][k]||0)),0));
+    const a=base;a.qty=bef.qty;if(bef.sq)a.sq=bef.sq;else delete a.sq;['sp','tx'].forEach(k=>{if(bef[k])a[k]=Math.round(bef[k]*100)/100;else delete a[k]});if(bef.fpa)a.fpa=String(Math.round(bef.fpa*100)/100);else delete a.fpa;
+    same.slice(1).forEach(n=>drop.add(n))});
+  o.items=o.items.filter((_,n)=>!drop.has(n));R.n=drop.size;return R}
 /* home events */
 $('chips').addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(b){$('fs').value=b.dataset.s;render()}});
 $('main').addEventListener('click',e=>{const hb=e.target.closest('[data-hide]');if(hb){e.stopPropagation();const [id,ix]=hb.dataset.hide.split('|'),o=items.find(x=>x.id===id);if(o){const its=+ix>=0?[o.items[+ix]]:o.items,v=!its.every(i=>i.hide);its.forEach(i=>{if(v)i.hide=true;else delete i.hide});save();render();toast(v?'已隱藏，勾選「顯示已隱藏」可找回':'已取消隱藏')}return}
@@ -2321,11 +2486,15 @@ function drawRc(){
   <div style="padding:0 16px 150px"><div class="msg" style="margin:6px 0 10px">${rcG.length?'找到 '+rcG.length+' 組「同一天、同一個來源／店家、同幣別、同付款狀態」卻被分成多筆的訂單。勾選的會各自合併成一筆，不是同一張收據的請取消勾選。':'沒有找到需要合併的訂單。'}</div>
   ${rcG.map((g,i)=>{const on=rcSel.includes(i),f=g[0];return `<label class="mgr${on?' on':''}"><input type="checkbox" data-rc="${i}" ${on?'checked':''}><span class="mgt"><b>${esc(f.seller||f.src||'未填來源')} · ${fmt(f.buyDate)}</b><small>${g.length} 筆 → 1 筆：${esc(g.map(o=>o.items.map(i=>i.name).join('、')).join('、').slice(0,60))}</small></span><span class="mgp">${money(f,g.reduce((a,o)=>a+total(o),0))}</span></label>`}).join('')}</div>
   <div class="mgb"><div class="msg">${rcSel.length?'已選 '+rcSel.length+' 組':'還沒選'}</div><button class="btn mgg" id="rcgo" ${rcSel.length?'':'disabled'}>合併所選的 ${rcSel.length} 組</button></div>`}
-async function doRc(){if(!rcSel.length)return;const n=rcSel.length;if(!confirm('要把 '+n+' 組訂單各自合併成一筆嗎？\n（合併前會先自動備份，可以復原）'))return;
-  const sid=await putPrev('op');if(!sid)return snapFail();const old=items;let L=old.slice(),c=0,skip=0;
-  for(const g of rcSel.map(i=>rcG[i])){const ids=new Set(g.map(o=>o.id)),ch=L.filter(o=>ids.has(o.id));if(ch.length<2){skip++;continue}const mc=mergeCheck(ch,false);if(!mc.m){skip++;continue}const m=mc.m;const at=L.indexOf(ch[0]);L=L.filter(o=>!ids.has(o.id));L.splice(Math.min(at,L.length),0,m);c++}
+/* 同張收據批次合併：先全部預檢，列出「可以合併」和「不能合併（原因）」讓使用者確認；按取消什麼都不動 */
+async function doRc(){if(!rcSel.length)return;
+  const ok=[],no=[];for(const g of rcSel.map(i=>rcG[i])){const ids=new Set(g.map(o=>o.id)),ch=items.filter(o=>ids.has(o.id)),nm=title(g[0]).slice(0,14);if(ch.length<2){no.push(nm+'：只剩一筆');continue}const mc=mergeCheck(ch,false);if(!mc.m){no.push(nm+'：'+mc.why);continue}ok.push({ids,ch})}
+  if(!ok.length){alert('選的 '+rcSel.length+' 組都不能合併（合併會改變成本、付款或退稅）：\n'+no.slice(0,6).join('\n')+'\n\n資料沒有被動到。');return}
+  if(!confirm('可以合併：'+ok.length+' 組'+(no.length?'\n不能合併（會保持原樣）：'+no.length+' 組\n'+no.slice(0,6).join('\n'):'')+'\n\n要合併可以合併的 '+ok.length+' 組嗎？（合併前會先自動備份，可以復原）'))return;
+  const sid=await putPrev('op');if(!sid)return snapFail();let L=items.slice(),c=0;
+  for(const g of ok){const ch=L.filter(o=>g.ids.has(o.id));const mc=mergeCheck(ch,false);if(!mc.m||ch.length!==g.ch.length){toast('⚠ 資料剛剛有變動，已取消（沒有改任何東西）',6000);return}const at=L.indexOf(ch[0]);L=L.filter(o=>!g.ids.has(o.id));L.splice(Math.min(at,L.length),0,mc.m);c++}
   items=L;render();if(!(await save({undo:sid})))return;
-  mgSel=[];$('mg').classList.remove('show');renderCats();render();toast('已合併 '+c+' 組訂單'+(skip?'（'+skip+' 組合併後成本、付款或退稅會改變，沒有合併）':''),3500)}
+  mgSel=[];$('mg').classList.remove('show');renderCats();render();toast('已合併 '+c+' 組訂單'+(no.length?'（'+no.length+' 組沒有合併）':''),3500)}
 function bgInit(){bgL=items.filter(o=>o.status!=='wish'&&o.items.length>1&&o.items.some(i=>!isBag(i.name)&&!i.ap)&&o.items.some(i=>isBag(i.name)&&!i.ap));bgSel=bgL.map(o=>o.id)}
 function drawBag(){
   $('mg').innerHTML=`<div class="mh"><button id="mgx">取消</button><b>找紙袋／袋子</b><span style="width:48px"></span></div>
@@ -2449,7 +2618,10 @@ function frLedger(A){const L={due:0,rec:0,assumed:0,unk:0,un:0,over:0,hold:0,pre
   if(st==='0'){L.rec+=pa;L.un+=Math.max(0,x.nt-pa);L.over+=Math.max(0,pa-x.nt)}
   else if(st==='1'){const r=pa||x.nt;L.rec+=r;L.un+=Math.max(0,x.nt-r);L.over+=Math.max(0,r-x.nt)}
   else{L.unk+=q;if(pa){L.rec+=pa;L.un+=Math.max(0,x.nt-pa);L.over+=Math.max(0,pa-x.nt)}else L.assumed+=x.nt}});return L}
-const FLF={all:()=>true,unpaid:x=>fpdOf(x.o,x.it)==='0'||frPartial(x),paid:x=>{const st=fpdOf(x.o,x.it);return st!=='0'&&st!=='g'&&!frPartial(x)},notgiven:x=>!x.it.giv,given:x=>!!x.it.giv};
+const frUnk=x=>!['0','1','g'].includes(fpdOf(x.o,x.it));
+const FLF={all:()=>true,unpaid:x=>fpdOf(x.o,x.it)==='0'||frPartial(x),paid:x=>fpdOf(x.o,x.it)==='1'&&!frPartial(x),unk:frUnk,notgiven:x=>!x.it.giv,given:x=>!!x.it.giv};
+/* 分頁：一律按「件數」計算（和上面的摘要同一個單位）；沒記錄付款的另外放「付款待確認」，不混進已付款 */
+function frTabs(L){const cnt=k=>L.filter(FLF[k]).reduce((a,x)=>a+(+x.it.qty||1),0);return {cnt,T:[['all','全部'],['unpaid','未付款'],['paid','已付款']].concat(cnt('unk')||flTab==='unk'?[['unk','付款待確認']]:[]).concat([['notgiven','未交貨'],['given','已交貨']])}}
 const FLN={pre:'預購中',unpaid:'還沒付錢',tohand:'待交給',given:'已交給'};
 function flList(){const L=[];items.forEach(o=>{if(o.status==='wish')return;o.items.forEach((it,ix)=>{if(ip(o,it)!=='1')return;L.push({o,it,ix,st:flSt(o,it),nt:Math.round(unitCost(o,it)*(+it.qty||1)),fr:it.fn||((o.src==='朋友幫買'&&o.seller)?o.seller:'朋友')})})});return L}
 const fnorm=x=>String(x||'').toLowerCase().replace(/[^\p{L}\p{N}]/gu,''),fkey=f=>{const D=S.fledger||{};if(D[f])return f;const n=fnorm(f);return n?Object.keys(D).find(k=>fnorm(k)===n):undefined};
@@ -2457,12 +2629,12 @@ const fled=(f,G)=>{const L=(S.fledger||{})[fkey(f)];if(!L||(!L.head&&!(L.entries
   let hd=L.head||'';const sm=L.sum||{};if(G>0&&sm.due!=null&&sm.paid!=null){const n=Math.round(sm.due-sm.paid-G);hd=(n>0?'少收 '+nt(n):n<0?'多收 '+nt(-n):'已結清')+'（應收 '+nt(sm.due)+'，已收 '+nt(sm.paid)+'，送禮扣 '+nt(G)+'）'}
   return `<details class="fled"><summary>結算紀錄・${esc(hd)}</summary>${(L.entries||[]).map(e=>`<div>${esc(fmt(e.d))} 結算：應收 ${nt(e.due)}，已收 ${nt(e.paid)}${e.txt?'（'+esc(e.txt)+'）':''}</div>`).join('')}</details>`};
 function flBody(){
-  const L=flList(),T=[['all','全部'],['unpaid','未付款'],['paid','已付款'],['notgiven','未交貨'],['given','已交貨']],cnt=k=>L.filter(FLF[k]).length;
+  const L=flList(),{T,cnt}=frTabs(L);
   const sh=L.filter(FLF[flTab]||FLF.all),LG=frLedger(L),owe=Math.round(LG.un),hold=LG.hold;
   const RK={pre:0,unpaid:1,tohand:1,given:2},dt=x=>x.o.eta||x.o.recvDate||x.o.buyDate||'';sh.sort((a,b)=>RK[a.st]-RK[b.st]||(RK[a.st]===0?dt(a).localeCompare(dt(b)):dt(b).localeCompare(dt(a))));const g={};sh.forEach(x=>(g[x.fr]=g[x.fr]||[]).push(x));
   return `<div style="padding:0 6px 40px"><div class="fsm"><div><small>還沒收到的錢</small><b>NT$${owe.toLocaleString()}</b></div><div><small>待交給朋友</small><b>${hold} 件</b></div></div>
-  <div class="flt">${T.map(([k,n])=>`<button data-ft="${k}" class="${flTab===k?'on':''}">${n} ${cnt(k)}</button>`).join('')}</div>
-  ${Object.keys(g).sort((x,y)=>Math.min(...g[x].map(z=>RK[z.st]))-Math.min(...g[y].map(z=>RK[z.st]))).map(f=>`<div class="flg"><h4>${esc(f)}</h4>${frSum(L.filter(z=>z.fr===f))}${fled(f,L.filter(z=>z.fr===f&&fpdOf(z.o,z.it)==='g').reduce((t,z)=>t+z.nt,0))}${(()=>{const card=x=>{const im=(x.it.img&&x.it.img.s)||(x.o.imgs&&x.o.imgs[0]&&x.o.imgs[0].s)||'';return `<div class="flr${x.st==='given'?' done':''}" data-fo="${x.o.id}|${x.ix}"><div class="fli">${im?`<img loading="lazy" decoding="async" src="${im}" alt="">`:''}</div><div class="flb"><b>${esc(x.it.name||'（未命名）')}${(+x.it.qty||1)>1?' ×'+(+x.it.qty):''}</b><small>${x.o.status==='pre'&&x.o.eta&&!got(x.o,x.it)?'預計 '+fmt(x.o.eta)+' · ':''}NT$${x.nt.toLocaleString()}${(+x.it.fpa>0&&fpdOf(x.o,x.it)!=='g')?(()=>{const d=Math.round(x.it.fpa-x.nt);return ' · 朋友付 NT$'+Math.round(+x.it.fpa).toLocaleString()+(d>0?'（多收 '+d+'）':d<0?'（少收 '+(-d)+'）':'')})():''}</small></div>
+  <div class="flt">${T.map(([k,n])=>`<button data-ft="${k}" class="${flTab===k?'on':''}">${n} ${cnt(k)} 件</button>`).join('')}</div>
+  ${Object.keys(g).sort((x,y)=>Math.min(...g[x].map(z=>RK[z.st]))-Math.min(...g[y].map(z=>RK[z.st]))).map(f=>`<div class="flg"><h4>${esc(f)}</h4>${frSum(L.filter(z=>z.fr===f))}${fled(f,L.filter(z=>z.fr===f&&fpdOf(z.o,z.it)==='g').reduce((t,z)=>t+z.nt,0))}${(()=>{const card=x=>{const im=(x.it.img&&x.it.img.s)||(x.o.imgs&&x.o.imgs[0]&&x.o.imgs[0].s)||'';return `<div class="flr${x.st==='given'?' done':''}" data-fo="${x.o.id}|${x.ix}"><div class="fli">${im?`<img loading="lazy" decoding="async" src="${im}" alt="">`:''}</div><div class="flb"><b>${esc(x.it.name||'（未命名）')}${(+x.it.qty||1)>1?' ×'+(+x.it.qty):''}</b><small>${x.o.status==='pre'&&x.o.eta&&!got(x.o,x.it)?'預計 '+fmt(x.o.eta)+' · ':''}NT$${x.nt.toLocaleString()}${(+x.it.fpa>0&&fpdOf(x.o,x.it)!=='g')?(()=>{const d=Math.round(x.it.fpa-x.nt);return ' · 朋友付 NT$'+Math.round(+x.it.fpa).toLocaleString()+(d>0?'（多收 '+d+'）':d<0?'（少收 '+(-d)+'）':'')})():''}${frPartial(x)?' · 部分付款':''}${frUnk(x)?' · 付款未記錄（待確認）':''}</small></div>
    <div class="flc">${!got(x.o,x.it)?'<i class="fs pre">預購中</i>':''}<span class="sg"><button data-fp="${x.o.id}|${x.ix}" data-v="0" class="u${fpdOf(x.o,x.it)==='0'?' on':''}">未付款</button><button data-fp="${x.o.id}|${x.ix}" data-v="1" class="${fpdOf(x.o,x.it)==='1'||(fpdOf(x.o,x.it)!=='0'&&fpdOf(x.o,x.it)!=='g')?'on':''}">已付款</button><button data-fp="${x.o.id}|${x.ix}" data-v="g" class="${fpdOf(x.o,x.it)==='g'?'on gf':''}">🎁送禮</button></span>${got(x.o,x.it)?`<span class="sg"><button data-fg="${x.o.id}|${x.ix}" data-v="0" class="u${x.it.giv?'':' on'}">未交貨</button><button data-fg="${x.o.id}|${x.ix}" data-v="1" class="${x.it.giv?' on':''}">已交貨</button></span>`:''}</div></div>`};const dn=g[f].filter(x=>x.st==='given'),ac=g[f].filter(x=>x.st!=='given'),fold=dn.length>0&&flTab!=='given';return ac.map(card).join('')+(dn.length?(flTab==='given'||!fold?dn.map(card).join(''):`<div class="fdn" data-fdn="${esc(f)}">${FOPEN.has(f)?'▾':'▸'} 已完成 ${dn.length} 件${FOPEN.has(f)?'（點一下收起）':'（點一下展開）'}</div>${FOPEN.has(f)?dn.map(card).join(''):''}`):'')})()}</div>`).join('')||'<div class="empty">沒有符合的商品<br><small>把品項的歸屬設為「幫朋友買」就會出現在這裡</small></div>'}</div>`}
 function frSum(A){const m=v=>'NT$'+Math.round(v).toLocaleString(),L=frLedger(A);
   return `<div class="frs"><span>應收 <b>${m(L.due)}</b></span><span>實收 <b>${m(L.rec)}</b></span><span class="${L.un?'r':''}">未收 <b>${m(L.un)}</b></span>${L.over?`<span>溢收 <b>${m(L.over)}</b></span>`:''}<span>待交 <b>${L.hold} 件</b></span>${L.pre?`<span>還沒到貨 <b>${L.pre} 件</b></span>`:''}${L.unk?`<span>沒記錄付款 <b>${L.unk} 件</b>（推定已付 ${m(L.assumed)}，不算進實收）</span>`:''}</div>`}
@@ -2477,13 +2649,14 @@ $('fl').addEventListener('click',e=>{const t=e.target.closest('button');if(!t){c
 
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+/* 背景縮圖：算完一張圖後，確認這張圖還在、內容沒被改過、資料沒被整份換掉，才寫回去 */
 async function autoTrimAll(){
-  let ch=false;
-  for(const o of items){if(!writable())return;
-    for(const it of o.items||[])if(it.img&&!it.img.z){const t=await trimImg(it.img.s);it.img.z=1;ch=true;if(t!==it.img.s)it.img.s=t}
-    for(const m of o.imgs||[])if(m.o&&!m.z){const t=await trimImg(m.s);m.z=1;ch=true;if(t!==m.s)m.s=t}
+  let ch=false;const rg=REPGEN;
+  for(const o of items.slice()){if(!writable()||REPGEN!==rg)return;
+    for(const it of (o.items||[]).slice())if(it&&it.img&&!it.img.z){const m=it.img,s0=m.s;const t=await trimImg(s0);if(!writable()||REPGEN!==rg)return;if(!items.includes(o)||!o.items.includes(it)||it.img!==m||m.s!==s0||m.z)continue;m.z=1;ch=true;if(t!==s0)m.s=t}
+    for(const m of (o.imgs||[]).slice())if(m&&m.o&&!m.z){const s0=m.s;const t=await trimImg(s0);if(!writable()||REPGEN!==rg)return;if(!items.includes(o)||!(o.imgs||[]).includes(m)||m.s!==s0||m.z)continue;m.z=1;ch=true;if(t!==s0)m.s=t}
   }
-  if(ch&&writable()){save();render()}
+  if(ch&&writable()&&REPGEN===rg){await save();render()}
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){autoPull();}else if(autoOn()&&isDirty()&&lsGet('syncSha'))syncUp(true)});
 (async()=>{const LD=await loadItems(),s=LD.settings;if(s&&s.cats)S=Object.assign(S,s);items=(LD.items||[]).map(mig);READY=true;renderCats();usWarn();if(RO)roBanner();else{if(dedupChars()>0)setTimeout(()=>{save().then(ok=>{if(ok)toast('已合併重複的角色',3500)})},800);setTimeout(feeAuto,1500)}try{if(!RO&&!localStorage.getItem('fixCut1')){localStorage.setItem('fixCut1','1');Promise.resolve(fixCut()).then(n=>{if(n){render();toast('已找回 '+n+' 張去背圖的標記',4000)}}).catch(()=>{})}}catch(e){}try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{const h=localStorage.getItem('hp2')||(localStorage.getItem('hp')==='0'?'all':'hide');$('hp').value=h}catch(e){}
