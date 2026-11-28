@@ -210,6 +210,9 @@ html,body{touch-action:manipulation}#dv{z-index:5;max-width:100vw;overflow-x:hid
 .btn:active{transform:scale(.94);background:var(--tx);color:var(--bg)}
 .btn:disabled{opacity:.55}
 .it .btn{background:#fff;border-color:#d9d3c6}
+#svf{position:fixed;left:10px;right:10px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:9998;background:#fbe3dd;color:#8a2a1f;border-radius:18px;padding:12px 14px;font-size:13px;line-height:1.5;box-shadow:0 6px 20px #0002}#svf b{display:block;font-size:14px}#svf div{display:flex;gap:8px;margin-top:8px}#svf button{flex:1;border:0;border-radius:999px;padding:8px;font-weight:700;background:#fff;color:#8a2a1f}
+#rob{position:fixed;left:10px;right:10px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:9997;background:#fff3cd;color:#6b4e00;border-radius:18px;padding:12px 14px;font-size:13px;line-height:1.5;box-shadow:0 6px 20px #0002}#rob b{display:block;font-size:14px}#rob button{margin-top:8px;border:0;border-radius:999px;padding:8px 14px;font-weight:700;background:#fff;color:#6b4e00}
+#bkps{position:fixed;inset:0;background:#0006;display:none;z-index:9996;align-items:flex-end}#bkps.show{display:flex}#bkps .box{width:100%;background:var(--bg);border-radius:26px 26px 0 0;padding:16px 14px calc(18px + env(safe-area-inset-bottom,0px));max-height:80vh;overflow:auto}#bkps .box>b{display:block;font-size:17px;margin:4px 4px 10px}#bkps small.m{display:block;color:var(--mu);font-size:12.5px;margin:-4px 4px 12px;line-height:1.5}#bkps button{display:block;width:100%;text-align:left;border:0;background:var(--card);border-radius:18px;padding:13px 16px;margin-bottom:8px;font-size:14px;color:var(--tx)}#bkps button small{display:block;color:var(--mu);font-size:12px;margin-top:3px}
 #utoast{white-space:nowrap;position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);display:flex;gap:12px;align-items:center;background:#26221e;color:#fff;padding:8px 8px 8px 18px;border-radius:24px;font-size:14px;z-index:20;opacity:0;pointer-events:none;transition:.25s;max-width:92vw}#utoast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}#utoast button{white-space:nowrap;flex:none;border:0;border-radius:999px;background:#8fd3c0;color:#173d33;font-weight:700;padding:7px 14px;font-size:13px}
 #toast{position:fixed;left:50%;bottom:calc(30px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:#26221e;color:#fff;padding:12px 20px;border-radius:24px;font-size:14px;z-index:20;opacity:0;pointer-events:none;transition:.25s;max-width:88vw;text-align:center;box-shadow:0 8px 24px #0005}
 #toast.show{opacity:1;transform:translate(-50%,0)}
@@ -334,13 +337,13 @@ body:has(.mo.show,.sheet.show,#arp.show,#cr[style*=flex]) :is(.top,.chips,.bar,#
 <div class="w">
   <div class="top"><button class="circ" id="gear" aria-label="設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg></button><div><div class="ttl" id="ttl">收藏櫃</div><div class="dtr"><div class="dt" id="dt"></div><button type="button" class="hcol" id="hcol" aria-label="收起或展開上方資訊">▴</button></div></div><button class="circ" id="eye" aria-label="隱藏金額"></button></div>
   <div id="stats"></div>
-  <div class="srw"><input class="sr" id="q" placeholder="搜尋品名、賣家、備註"><button id="isbtn" type="button" aria-label="以圖搜尋"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.3-2h6.4l1.3 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.3"/></svg></button><input type="file" id="isf" accept="image/*" hidden></div><div id="isb"></div>
+  <div class="srw"><input class="sr" id="q" placeholder="搜尋品名、賣家、備註（同義詞也找得到）"><button id="isbtn" type="button" aria-label="以圖搜尋"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.3-2h6.4l1.3 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.3"/></svg></button><input type="file" id="isf" accept="image/*" hidden></div><div id="isb"></div>
   <div id="jb"></div><div id="bk"></div><div id="ar"></div>
   <div class="chips" id="chips"></div>
   <select id="fs" hidden><option value="all">全部</option><option value="pre">預購中</option><option value="have">已到貨</option><option value="sell">要賣的</option><option value="sold">已售出</option></select>
   <div class="bar">
     <select id="fc"></select>
-    <select id="so"><option value="buy">預設（最新在上）</option><option value="eta">預計到貨（晚的在上）</option><option value="price">價格高低</option></select>
+    <select id="so"><option value="buy">購買日（新→舊）</option><option value="recv">到貨日（新→舊）</option><option value="eta">預計到貨（晚→早）</option><option value="price">價格（高→低）</option><option value="pasc">價格（低→高）</option></select>
     <span class="vt"><button type="button" data-vt="s">櫃子</button><button type="button" data-vt="l">列表</button></span><button type="button" id="fmore" class="fmore">篩選<i id="fcnt"></i> <span>▾</span></button>
     <button type="button" id="sbtn" class="sbtn" aria-label="搜尋"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button>
   </div>
@@ -368,36 +371,88 @@ const today=()=>iso(new Date());
 const fmt=s=>{if(!s)return'';const d=new Date(s+'T00:00');return d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate()};
 
 /* storage */
-let dbp;const db=()=>dbp||(dbp=new Promise((res,rej)=>{try{const r=indexedDB.open('collection-tracker',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}}));
-const kvGet=async k=>{try{const d=await db();return await new Promise(r=>{const q=d.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r(undefined)})}catch(e){return undefined}};
-const kvGetS=async k=>{const d=await db();return await new Promise((r,j)=>{const q=d.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>{try{r(q.result)}catch(e){j(e)}};q.onerror=()=>j(q.error||new Error('讀取失敗'));setTimeout(()=>j(new Error('讀取逾時')),20000)})};
-let RO=false,ROWHY='';const roBlock=()=>{if(RO){toast('⚠ 資料沒有完整讀進來，已暫停修改、匯入、刪除和上傳，避免蓋掉原本的資料。請先用備份或雲端還原。',8000);return true}return false};
-let saveFail=0,SAVEST='ok';
-/* 分片儲存：每張訂單單獨存一筆（o:ID），只寫有變動的，避免每次把全部資料（可能數百 MB）一次搬進記憶體而當機 */
+let dbp;
+/* 開啟資料庫：有逾時、blocked、versionchange 處理 */
+const db=()=>dbp||(dbp=new Promise((res,rej)=>{let done=false;const fail=e=>{if(done)return;done=true;clearTimeout(to);dbp=null;rej(e)};const to=setTimeout(()=>fail(new Error('資料庫開啟逾時')),15000);
+  try{const r=indexedDB.open('collection-tracker',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');
+    r.onsuccess=()=>{const d=r.result;if(done){try{d.close()}catch(e){}return}done=true;clearTimeout(to);d.onversionchange=()=>{try{d.close()}catch(e){}dbp=null};res(d)};
+    r.onerror=()=>fail(r.error||new Error('資料庫開啟失敗'));r.onblocked=()=>{}}catch(e){fail(e)}}));
+const kvGet=async k=>{try{return await kvGetS(k)}catch(e){return undefined}};
+/* 嚴格讀取：錯誤、逾時、交易中斷一律 reject，不會被當成「沒資料」 */
+const kvReq=(mk)=>new Promise((r,j)=>{let fin=false;const ok=v=>{if(!fin){fin=true;clearTimeout(to);r(v)}},no=e=>{if(!fin){fin=true;clearTimeout(to);j(e)}};const to=setTimeout(()=>no(new Error('讀取逾時')),20000);
+  db().then(d=>{let t;try{t=d.transaction('kv')}catch(e){no(e);return}t.onabort=()=>no(t.error||new Error('讀取中斷'));const q=mk(t.objectStore('kv'));q.onsuccess=()=>{try{ok(q.result)}catch(e){no(e)}};q.onerror=()=>no(q.error||new Error('讀取失敗'))},no)});
+const kvGetS=k=>kvReq(st=>st.get(k)),kvKeysS=()=>kvReq(st=>st.getAllKeys());
+let RO=false,ROWHY='',READY=false;
+const roBlock=()=>{if(RO){toast('⚠ 資料沒有完整讀進來（'+ROWHY+'），已暫停所有修改。請到設定用「匯入備份」、「從雲端下載」或「還原到上一次快照」救回。',9000);return true}if(!READY){toast('資料還在讀取中，請稍等');return true}return false};
+let saveFail=0,SAVEST='ok',BASEREV=0,MUTREV=0;
+/* 一次交易寫入：有變動的訂單、刪除、索引、設定、版本號全部在同一個 IndexedDB 交易，任何一步失敗整筆取消（不會留下一半新一半舊） */
 const kvTx=(f)=>db().then(d=>new Promise((res,rej)=>{const t=d.transaction('kv','readwrite');f(t.objectStore('kv'));t.oncomplete=()=>res();t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error||new Error('abort'))}));
-const strFp=v=>{const n=v.length;let h=2166136261;const step=Math.max(1,Math.floor(n/64));for(let i=0;i<n;i+=step){h^=v.charCodeAt(i);h=Math.imul(h,16777619)}h^=v.charCodeAt(n-1);h=Math.imul(h,16777619);return n+'|'+v.slice(0,16)+v.slice(-16)+'|'+(h>>>0).toString(36)};
+/* 指紋：長字串（圖片）用完整內容的雙 32 位元雜湊，並以字串本身為鍵快取，同一張圖只算一次 */
+let HC=new Map(),HCn=new Map();
+const strFp=v=>{let r=HC.get(v);if(r===undefined){let h1=2166136261,h2=0x9747b28c;const n=v.length;for(let i=0;i<n;i++){const c=v.charCodeAt(i);h1=Math.imul(h1^c,16777619);h2=Math.imul(h2^c,0x5bd1e995);h2^=h2>>>13}r=n+'|'+(h1>>>0).toString(36)+(h2>>>0).toString(36)}HCn.set(v,r);return r};
 const fpOf=o=>JSON.stringify(o,(k,v)=>typeof v==='string'&&v.length>400?strFp(v):v);
+const hcSweep=()=>{HC=HCn;HCn=new Map()};
 const FP=new Map();let sharded=false,putChain=Promise.resolve();
 function uniqIds(){const seen=new Set();items.forEach(o=>{if(!o.id||seen.has(o.id))o.id='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);seen.add(o.id)})}
+class ConflictErr extends Error{}
 async function putShards(){
-  uniqIds();const cur=new Map(items.map(o=>[o.id,fpOf(o)]));
-  for(const o of items){if(FP.get(o.id)!==cur.get(o.id)){await kvTx(st=>st.put(o,'o:'+o.id));FP.set(o.id,cur.get(o.id))}}
-  const gone=[...FP.keys()].filter(id=>!cur.has(id));
-  await kvTx(st=>{st.put(items.map(o=>o.id),'oids');st.put(S,'settings')});
-  if(gone.length){await kvTx(st=>gone.forEach(id=>st.delete('o:'+id)));gone.forEach(id=>FP.delete(id))}
-  const chk=await kvGetS('oids');if(!Array.isArray(chk)||chk.length!==items.length)throw new Error('寫入後檢查不一致');
-  if(!sharded){sharded=true;await kvTx(st=>st.delete('items'))}
-}
+  if(!READY)throw new Error('資料還沒讀取完成');uniqIds();const d=await db();
+  return await new Promise((res,rej)=>{let t;try{t=d.transaction('kv','readwrite')}catch(e){rej(e);return}
+    const st=t.objectStore('kv');let nextFP=null,newRev=0,why=null;
+    t.oncomplete=()=>{for(const id of [...FP.keys()])if(!nextFP.has(id))FP.delete(id);nextFP.forEach((v,k)=>FP.set(k,v));BASEREV=newRev;sharded=true;hcSweep();res(newRev)};
+    t.onabort=()=>rej(why||t.error||new Error('寫入中斷'));
+    const mq=st.get('meta');mq.onsuccess=()=>{try{
+      const m=mq.result||{rev:0};if((m.rev||0)!==BASEREV){why=new ConflictErr('另一個視窗或分頁已經改過資料');t.abort();return}
+      const cur=new Map();for(const o of items)cur.set(o.id,fpOf(o));
+      for(const o of items)if(FP.get(o.id)!==cur.get(o.id))st.put(o,'o:'+o.id);
+      for(const id of FP.keys())if(!cur.has(id))st.delete('o:'+id);
+      st.put(items.map(o=>o.id),'oids');st.put(S,'settings');newRev=(m.rev||0)+1;st.put({rev:newRev,t:Date.now(),n:items.length},'meta');if(!sharded)st.delete('items');nextFP=cur;
+    }catch(e){why=e;try{t.abort()}catch(x){}}}})}
+/* 整份取代（還原、雲端下載、救援用）：同一個交易寫入全部訂單、索引、設定；救援時保留舊分片不刪 */
+async function commitAll(L,S2,o){o=o||{};const d=await db();const oldKeys=o.keepOld?[]:(await kvKeysS()).filter(k=>typeof k==='string'&&k.startsWith('o:'));
+  return await new Promise((res,rej)=>{let t;try{t=d.transaction('kv','readwrite')}catch(e){rej(e);return}const st=t.objectStore('kv');let why=null,newRev=0,cur=null;
+    t.oncomplete=()=>{FP.clear();cur.forEach((v,k)=>FP.set(k,v));BASEREV=newRev;sharded=true;hcSweep();res(newRev)};t.onabort=()=>rej(why||t.error||new Error('寫入中斷'));
+    const mq=st.get('meta');mq.onsuccess=()=>{try{const m=mq.result||{rev:0};if(!o.force&&(m.rev||0)!==BASEREV){why=new ConflictErr('另一個視窗或分頁已經改過資料');t.abort();return}
+      if(o.keepOld){const ids0=mq.result;st.put({at:Date.now(),why:o.keepOld},'rescueAt')}
+      cur=new Map();const ids=new Set();for(const x of L){if(!x||!x.id||ids.has(x.id))throw new Error('訂單編號重複或缺少');ids.add(x.id);cur.set(x.id,fpOf(x));st.put(x,'o:'+x.id)}
+      for(const k of oldKeys)if(!ids.has(k.slice(2)))st.delete(k);
+      st.put(L.map(x=>x.id),'oids');st.put(S2,'settings');newRev=Math.max(m.rev||0,BASEREV)+1;st.put({rev:newRev,t:Date.now(),n:L.length},'meta');st.delete('items');
+    }catch(e){why=e;try{t.abort()}catch(x){}}}})}
 const idbPut=()=>(putChain=putChain.catch(()=>{}).then(putShards));
+const isRec=o=>o&&typeof o==='object'&&!Array.isArray(o);
 async function loadItems(){
+  const bad=m=>{const e=new Error(m);e.bad=1;return e};let out=[];
   try{
+    const meta=await kvGetS('meta');if(meta!==undefined&&!(isRec(meta)&&typeof meta.rev==='number'))throw bad('版本資訊格式錯誤');BASEREV=meta?meta.rev:0;
+    const s=await kvGetS('settings');if(s!==undefined&&!isRec(s))throw bad('設定格式錯誤');
     const ids=await kvGetS('oids');
-    if(Array.isArray(ids)){sharded=true;const out=[];for(const id of ids){const o=await kvGetS('o:'+id);if(o){out.push(o);FP.set(o.id,fpOf(o))}}window.LOADMISS=ids.length-out.length;if(window.LOADMISS>0){RO=true;ROWHY='有 '+window.LOADMISS+' 筆讀不到'}return out}
-    return (await kvGetS('items'))||[];
-  }catch(e){RO=true;ROWHY='手機儲存空間讀取失敗（'+((e&&e.name)||'錯誤')+'）';console.error(e);return[]}
+    if(ids===undefined){const legacy=await kvGetS('items');
+      if(legacy!==undefined){if(!Array.isArray(legacy))throw bad('舊格式資料錯誤');out=legacy.filter(isRec);if(out.length!==legacy.length)throw bad('舊格式資料有損壞')}
+      else{const ks=await kvKeysS();if(ks.some(k=>typeof k==='string'&&k.startsWith('o:')))throw bad('找不到訂單索引，但手機裡還有訂單資料');if(meta)throw bad('找不到訂單索引')}}
+    else{if(!Array.isArray(ids))throw bad('訂單索引格式錯誤');if(ids.some(x=>typeof x!=='string'||!x))throw bad('訂單索引內容錯誤');if(new Set(ids).size!==ids.length)throw bad('訂單索引有重複');
+      sharded=true;let miss=0,wrong=0;for(const id of ids){const o=await kvGetS('o:'+id);if(o===undefined){miss++;continue}if(!isRec(o)||o.id!==id||!Array.isArray(o.items)){wrong++;continue}out.push(o);FP.set(o.id,fpOf(o))}
+      window.LOADMISS=miss+wrong;if(miss||wrong)throw bad((miss?'有 '+miss+' 筆讀不到':'')+(wrong?(miss?'、':'')+wrong+' 筆內容不對':''))}
+    hcSweep();return {items:out,settings:s,ok:true};
+  }catch(e){RO=true;ROWHY=e.bad?e.message:'手機儲存空間讀取失敗（'+((e&&e.name)||'錯誤')+'）';console.error(e);return {items:out,settings:undefined,ok:false}}
 }
-async function save(){if(RO){roBlock();SAVEST='fail';return false}AVC=null;SAVEST='saving';try{localStorage.setItem('dirty','1');localStorage.setItem('lastSave',String(Date.now()))}catch(e){}schedAuto();
-  try{await idbPut();saveFail=0;SAVEST='ok';lsSet('lastLocalOk',String(Date.now()));if(PREVUNDO){PREVUNDO=false;setTimeout(()=>undoToast('整理完成，不滿意可以復原',()=>restorePrev()),600)}return true}catch(e){console.error(e);try{await new Promise(r=>setTimeout(r,800));await idbPut();saveFail=0;SAVEST='ok';lsSet('lastLocalOk',String(Date.now()));return true}catch(e2){console.error(e2);SAVEST='fail';lsSet('dirty','1');if(!saveFail++||saveFail%5===0)toast('⚠ 這次沒存進手機！資料只在目前畫面，關掉 app 會消失。請先到設定按「上傳」或「備份」。（'+((e2&&e2.name)||'錯誤')+'）',12000);return false}}}
+function roBanner(){let e=$('rob');if(!RO){if(e)e.remove();return}if(!e){e=document.createElement('div');e.id='rob';document.body.appendChild(e)}
+  e.innerHTML='<b>⚠ 唯讀保護中</b><span></span><div><button data-rob="set">去設定救回資料</button></div>';e.querySelector('span').textContent=ROWHY+'。為了不蓋掉原本的資料，現在不能修改、匯入或上傳。';
+  e.onclick=ev=>{if(ev.target.closest('[data-rob]')){drawSet();SO.classList.add('show');const h=[...SO.querySelectorAll('.cd h3')].find(x=>/備份/.test(x.textContent));if(h){const g=h.closest('.gp');if(g)g.classList.remove('shut');h.parentElement.classList.remove('fold');h.scrollIntoView({block:'start'})}}}}
+/* 唯讀／讀取中：所有會改資料的按鈕都擋下（只放行瀏覽、搜尋、篩選、關閉、救援用的按鈕） */
+const RO_OK='.fpl label,#vs,#vg,#vc,#vf,#vl,.vt button,#chips button,#fpt button,#fmore,#sbtn,#q,#fc,#so,#hs,#hsl,#hsw,#hh,#hpx,#isbtn,#hcol,[data-id],[data-grp],#dcx,#gear,#sx,#im,#imf,#sydn,#syrs,#ex,#exl,#exf,#bkv,#bkvf,#ghtok,#ghrepo,#autosync,.gh,.cd>h3,#arx,[data-ar],.arl,#flx,#fl [data-ft],[data-kf],[data-cf],[data-ktog],#rob,#rob *,#svf,#svf *,[data-bkp],#bkps,#bkps *,#dv .dvn,#dv .dvi,#dv img';
+['click','change','input'].forEach(ev=>document.addEventListener(ev,e=>{if(READY&&!RO)return;const t=e.target;if(!(t instanceof Element))return;const act=t.closest('button,input,select,textarea,label,a,[data-pa],[data-fp],[data-fg],[data-ard],[data-arg],[data-h],[data-hi]');if(!act)return;if(act.closest(RO_OK)||t.closest(RO_OK))return;if(ev==='click'||ev==='change'){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();if(ev==='click')roBlock()}},true));
+/* 小改動：先記下原本的樣子（淺複製，不複製圖片），存檔失敗就放回去 */
+async function mutOrders(list,fn){const bak=list.filter(Boolean).map(o=>({o,c:{...o,items:o.items.map(i=>({...i}))}}));fn();if(await save())return true;bak.forEach(({o,c})=>{const k=items.indexOf(o);if(k>=0)items[k]=c});render();return false}
+let svfOn=false;
+function saveFailUI(on,msg){let e=$('svf');if(!on){if(e)e.remove();svfOn=false;return}svfOn=true;if(!e){e=document.createElement('div');e.id='svf';document.body.appendChild(e)}
+  e.innerHTML='<b>⚠ 剛才的修改沒有存進手機</b><span></span><div><button data-svf="retry">再試一次</button><button data-svf="exp">緊急匯出目前畫面</button></div>';e.querySelector('span').textContent=msg||'畫面上的資料還在，但關掉 app 會消失。';
+  e.onclick=ev=>{const b=ev.target.closest('[data-svf]');if(!b)return;if(b.dataset.svf==='retry')save().then(ok=>{if(ok)toast('✓ 已存進手機')});else doBackup('rescue')}}
+let SYNCLOCK=false;
+async function save(){
+  if(RO||!READY){roBlock();return false}if(SYNCLOCK){toast('正在套用雲端資料，請稍等再改');return false}
+  AVC=null;SAVEST='saving';MUTREV++;lsSet('dirty','1');lsSet('lastSave',String(Date.now()));
+  for(let k=0;k<2;k++){try{await idbPut();saveFail=0;SAVEST='ok';lsSet('lastLocalOk',String(Date.now()));if(svfOn)saveFailUI(false);schedAuto();if(PREVUNDO){const sid=PREVUNDO;PREVUNDO=null;setTimeout(()=>undoToast('整理完成，不滿意可以復原',()=>restorePrev(sid)),600)}return true}
+    catch(e){console.error(e);if(e instanceof ConflictErr){SAVEST='fail';saveFailUI(true,'另一個視窗或分頁已經改過資料，為了不互相覆蓋，這邊沒有存。請關掉其他視窗後重新整理。');return false}if(k===0)await new Promise(r=>setTimeout(r,800));else{SAVEST='fail';saveFail++;saveFailUI(true,'（'+((e&&e.name)||'錯誤')+'）畫面上的資料還在，但關掉 app 會消失。');return false}}}}
 
 /* partial sales: items carry sq (units sold) and sp (TWD revenue) */
 function migSold(o){
@@ -429,8 +484,10 @@ const chkWarn=o=>{if(!(+o.tot>0)||(o.cur&&o.cur!=='TWD')||(+o.ship<0))return'';c
 const lv=(o,it)=>it&&it.love!=null&&it.love!==''?+it.love:(+o.love||0);
 const sub=o=>o.items.reduce((a,i)=>a+(+i.qty||0)*(+i.price||0),0);
 const total=o=>sub(o)+(+o.ship||0);
-function fixPaid(){const l=items.filter(o=>(o.status==='have'||o.status==='sold')&&o.pay!=='paid');if(!l.length)return 0;return putPrev().then(()=>{l.forEach(o=>{o.pay='paid';o.deposit=0});save();return l.length})}
-const paidAmt=o=>(o.status==='have'||o.status==='sold'||o.pay==='paid')?total(o):o.pay==='deposit'?Math.min(+o.deposit||0,total(o)):0;
+function fixPaid(){const l=items.filter(o=>(o.status==='have'||o.status==='sold')&&o.pay!=='paid');if(!l.length)return 0;return putPrev().then(ok=>{if(!ok)return snapFail();l.forEach(o=>{o.pay='paid';o.deposit=0});save();return l.length})}
+/* 付款和到貨分開：有記錄付款狀態就照記錄；舊資料已到貨／已售出但沒記錄付款的，沿用舊版當作已付清，但畫面標「付款未記錄」 */
+const payUnk=o=>(o.status==='have'||o.status==='sold')&&!o.pay;
+const paidAmt=o=>o.pay==='paid'?total(o):o.pay==='deposit'?Math.min(+o.deposit||0,total(o)):(o.pay==='unpaid'||o.pay==='cod')?0:payUnk(o)?total(o):0;
 const bal=o=>total(o)-paidAmt(o);
 const feeOf=o=>(o.fee===''||o.fee==null)?(+S.cardFee||0):(+o.fee||0);
 function effRate(o){
@@ -535,7 +592,7 @@ function render(){
     const h=[o.items.map(i=>i.name+' '+(i.cat||'')+' '+(i.note||'')).join(' '),o.seller,o.src,o.cat,o.note].join(' ').toLowerCase();return h.includes(q)||STAL.some(([re,al])=>re.test(h)&&al.some(w=>w.includes(q)))};
   let l=items.filter(okO);
   const RK={pre:0,have:1,wish:2,sold:3},dk=o=>o.buyDate||o.recvDate||'';
-  l.sort((a,b)=>so==='price'?tw(b,total(b))-tw(a,total(a)):so==='eta'?(!a.eta&&!b.eta?0:!a.eta?1:!b.eta?-1:b.eta.localeCompare(a.eta)):dk(b).localeCompare(dk(a))||(b.recvDate||b.eta||'').localeCompare(a.recvDate||a.eta||''));
+  l.sort((a,b)=>so==='price'?tw(b,total(b))-tw(a,total(a)):so==='pasc'?tw(a,total(a))-tw(b,total(b)):so==='recv'?((b.recvDate||'').localeCompare(a.recvDate||'')||dk(b).localeCompare(dk(a))):so==='eta'?(!a.eta&&!b.eta?0:!a.eta?1:!b.eta?-1:b.eta.localeCompare(a.eta)):dk(b).localeCompare(dk(a))||(b.recvDate||b.eta||'').localeCompare(a.recvDate||a.eta||''));
   
   if(!l.length){$('dt').textContent='收藏 '+items.filter(o=>o.status!=='wish').reduce((a,o)=>a+o.items.reduce((b,i)=>b+(+i.qty||1),0),0)+' 件 · 目前顯示 0 件';$('main').innerHTML='<div class="empty">'+(items.length?(W?'還沒有想買的商品<br>按下方 ＋ 新增，選「想買」':'找不到符合的訂單'):'還沒有任何收藏<br>按下方 ＋ 新增第一件')+'</div>';return}
   const due=o=>o.status==='pre'&&o.eta&&o.eta<today();
@@ -568,7 +625,7 @@ function render(){
   if(imgQ){const sc=new Map(cells.map(c=>[c,imScore(c)]));cells.sort((a,b)=>sc.get(b)-sc.get(a));const k=cells.filter(c=>sc.get(c)>=.2).length;cells.splice(Math.min(12,Math.max(3,k)))}
   window.NAV=cells;
   {const pc=c=>c.grp?c.grp.reduce((a,x)=>a+(x.q||0),0):(c.q||c.o.items.reduce((a,i)=>a+(+i.qty||1),0));const shown=cells.reduce((a,c)=>a+pc(c),0),all=items.filter(o=>o.status!=='wish').reduce((a,o)=>a+o.items.reduce((b,i)=>b+(+i.qty||1),0),0);
-   $('dt').textContent='收藏 '+all+' 件'+(shown!==all?' · 目前顯示 '+shown+' 件':'')}
+   $('dt').textContent='收藏 '+all+' 件'+(shown!==all?' · 目前顯示 '+shown+' 件'+(HT()?'（櫃子只放漢頓）':''):'')}
   const im=c=>c.img?`<img loading="lazy" decoding="async" src="${c.img}" alt="">`:'<span style="font:12px var(--mono);color:var(--mu)">無圖片</span>';
   if(fMode){$('main').innerHTML=flBody();return}
   const vw=view;
@@ -649,13 +706,13 @@ function openDetail(id,ix){
   rows+=R('備註',esc(o.note||'').replace(/\n/g,'<br>'));
   const cnt=single?q:o.items.reduce((a,i)=>a+(+i.qty||1),0);
   const ntTot=Math.round(single?unitCost(o,it)*q:tw(o,total(o))),ntUnit=Math.round(single?unitCost(o,it):tw(o,total(o))/(units(o)||1));
-  const pst=(()=>{const pd=paidAmt(o),k=bal(o)<=0?['已付清','g']:(pd>0?['已付訂金','y']:['未付清','r']);return `<i class="pt ${k[1]}">${k[0]}</i>`})();
+  const pst=(()=>{const pd=paidAmt(o),k=payUnk(o)?['付款未記錄','y']:bal(o)<=0?['已付清','g']:(pd>0?['已付訂金','y']:['未付清','r']);return `<i class="pt ${k[1]}">${k[0]}</i>`})();
   const stats=`<div class="dst"><div class="m"><b>${cnt} 件</b>數量</div><div class="p" style="position:relative"><b${cfs(ic(o,single?it:null)||'未分類',1)}>${esc(ic(o,single?it:null)||'未分類')} <span style="font-size:12px;opacity:.55">▾</span></b>分類<select id="dcat" aria-label="改分類" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px">${(()=>{const cv=ic(o,single?it:null),L=S.cats.includes(cv)||!cv?S.cats:[...S.cats,cv];return (cv?'':'<option value="" selected>未分類</option>')+L.map(c=>`<option value="${esc(c)}" ${cv===c?'selected':''}>${esc(c)}</option>`).join('')})()}</select></div><div class="y">${(single&&it.cu)||o.status==='wish'?'':pst}<b>${single&&it.cu?'不明':'NT$'+ntUnit.toLocaleString()}</b><span>單件成本</span></div></div>`;
   const gotBtn=o.status==='pre'&&!(single&&it.got&&o.items.length>1)?'<button class="dgot" id="dgot">收到貨了</button>':'';
   let prog='';
   if(o.status==='pre'&&o.eta){const d0=new Date(today()+'T00:00'),e=new Date(o.eta+'T00:00'),st=new Date((o.buyDate||o.start||today())+'T00:00');const dl=Math.round((e-d0)/864e5),span=Math.max(1,Math.round((e-st)/864e5)),pct=Math.max(4,Math.min(100,Math.round((1-dl/span)*100)));
     prog=`<div class="dcd"><div class="dpr${dl<0?' od':''}"><b>${dl<0?'已逾期 '+(-dl)+' 天':dl===0?'今天到貨':'還有 '+dl+' 天'}</b>${gotBtn}</div><div class="dbar${dl<0?' od':''}"><i style="width:${dl<0?100:pct}%"></i></div><div class="dpr s"><span>${o.buyDate?fmt(o.buyDate)+' 下單':''}</span><span>預計 ${fmt(o.eta)}</span></div></div>`}
-  const tot=`<div class="dcd dtot"><small>總成本</small><div class="dn">NT$${ntTot.toLocaleString()}</div><div class="r">${o.cur!=='TWD'?money(o,single?(+it.price||0)*q:total(o))+' · ':''}${o.status==='wish'?'':(()=>{const pd=paidAmt(o),k=bal(o)<=0?['已付清','g']:(pd>0?['已付訂金','y']:['未付清','r']);return `<i class="pt ${k[1]}">${k[0]}</i>`})()}</div></div>`;
+  const tot=`<div class="dcd dtot"><small>總成本</small><div class="dn">NT$${ntTot.toLocaleString()}</div><div class="r">${o.cur!=='TWD'?money(o,single?(+it.price||0)*q:total(o))+' · ':''}${o.status==='wish'?'':(()=>{const pd=paidAmt(o),k=payUnk(o)?['付款未記錄','y']:bal(o)<=0?['已付清','g']:(pd>0?['已付訂金','y']:['未付清','r']);return `<i class="pt ${k[1]}">${k[0]}</i>`})()}</div></div>`;
   const gi=(l,v)=>v?`<div class="gi"><small>${l}</small><b>${v}</b></div>`:'';
   const srcT=(o.seller&&o.seller!==o.src?(o.src||'')+' · '+o.seller:(o.src||o.seller||'')),grid=`<div class="dcd dgr">${gi('來源',o.seller&&o.seller!==o.src?(o.src?`<span class="nb">${esc(o.src)} ·</span> `:'')+`<span class="nb">${esc(o.seller)}</span>`:`<span class="nb">${esc(o.src||o.seller||'')}</span>`)}${gi('購買日',fmt(o.buyDate))}</div>`;
   const hv=single?lv(o,it):(o.love||0);
@@ -663,7 +720,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" src="${img}" alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div>${paRow(o,single?[it]:o.items)}<button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v466</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div>${paRow(o,single?[it]:o.items)}<button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v467</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function paRow(o,L){const un=L.filter(i=>sq(i)<(+i.qty||1)),anySold=L.some(i=>sq(i)>0)||o.status==='sold',B=[];
@@ -679,29 +736,28 @@ function backDetail(){if(dvState&&items.find(x=>x.id===dvState.id)){const id=dvS
 {let sx=0,sy=0,st=0;DV.addEventListener('touchstart',e=>{const t=e.touches[0];sx=t.clientX;sy=t.clientY;st=Date.now()},{passive:true});
 DV.addEventListener('touchend',e=>{if(dvNav<0||!window.NAV)return;const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;if(Date.now()-st>700||Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.5)return;const j=dvNav+(dx<0?1:-1);if(j<0||j>=NAV.length)return;openNav(j);DV.scrollTop=0;try{DV.animate([{transform:`translateX(${dx<0?40:-40}px)`,opacity:.2},{transform:'none',opacity:1}],{duration:220,easing:'ease-out'})}catch(_){}},{passive:true})}
 DV.addEventListener('change',e=>{const t=e.target;if(t.id!=='dcat'||!dvState)return;const o=items.find(x=>x.id===dvState.id);if(!o)return;const v=t.value,ix=dvState.ix,single=ix>=0&&o.items.length>0;
-  if(ix>=0&&o.items[ix]){const it=o.items[ix];if(v===(o.cat||'')||!v)delete it.cat;else it.cat=v}else{o.cat=v;o.items.forEach(i=>{delete i.cat})}
-  const id0=dvState.id;save();render();reopenKeep(id0,ix);toast('分類已改成「'+(v||'未分類')+'」')});
+  const id0=dvState.id;mutOrders([o],()=>{if(ix>=0&&o.items[ix]){const it=o.items[ix];if(v===(o.cat||'')||!v)delete it.cat;else it.cat=v}else{o.cat=v;o.items.forEach(i=>{delete i.cat})}}).then(ok=>{render();reopenKeep(id0,ix);if(ok)toast('分類已改成「'+(v||'未分類')+'」')})});
 DV.addEventListener('click',e=>{const h=e.target.closest('[data-dh]');if(h&&dvState){const o=items.find(x=>x.id===dvState.id);if(o){const k=+h.dataset.dh,ix=dvState.ix,it=ix>=0?o.items[ix]:(o.items.length===1?o.items[0]:null),cu=it?lv(o,it):(+o.love||0),nv=cu===k?k-1:k;const sc=DV.scrollTop;dvKeep=1;if(dvState.g){dvState.g.forEach(([i2,x2])=>{const oo=items.find(z=>z.id===i2);if(oo&&oo.items[x2])oo.items[x2].love=nv});const gg=dvState.g;save();render();openGD(gg)}else{if(it)it.love=nv;else o.love=nv;save();render();openDetail(o.id,ix)}dvKeep=0;DV.scrollTop=sc}return}
   const go=e.target.closest('[data-oid]');if(go){openDetail(go.dataset.oid,+go.dataset.oix);return}
   const b=e.target.closest('button');if(!b)return;
   if((b.id==='gname'||b.id==='gimg')&&dvState&&dvState.g){const g=dvState.g,L=g.map(([id,ix])=>{const o=items.find(x=>x.id===id);return o&&o.items[ix]?{o,it:o.items[ix]}:null}).filter(Boolean);
     const redo=msg=>{save();render();dvKeep=true;openGD(g);dvKeep=false;toast(msg)};
-    if(b.id==='gname'){const v=prompt('這 '+L.length+' 筆要統一改成的商品名稱：',(L[0].it.name||'').replace(/\s*×\d+$/,''));if(v===null)return;const n=v.trim();if(!n){toast('名稱不能是空的');return}putPrev().then(()=>{L.forEach(x=>{x.it.name=n});redo('已把 '+L.length+' 筆的名稱統一改成「'+n.slice(0,12)+'」')});return}
+    if(b.id==='gname'){const v=prompt('這 '+L.length+' 筆要統一改成的商品名稱：',(L[0].it.name||'').replace(/\s*×\d+$/,''));if(v===null)return;const n=v.trim();if(!n){toast('名稱不能是空的');return}putPrev().then(ok=>{if(!ok)return snapFail();L.forEach(x=>{x.it.name=n});redo('已把 '+L.length+' 筆的名稱統一改成「'+n.slice(0,12)+'」')});return}
     const src=L.find(x=>x.it.img&&x.it.img.s);if(!src){toast('這組裡面都還沒有商品圖片');return}
-    if(!confirm('把這 '+L.length+' 筆的商品圖片，統一換成目前顯示的這張？'))return;putPrev().then(()=>{L.forEach(x=>{if(x!==src)x.it.img=JSON.parse(JSON.stringify(src.it.img))});redo('已統一 '+L.length+' 筆的商品圖片')});return}
+    if(!confirm('把這 '+L.length+' 筆的商品圖片，統一換成目前顯示的這張？'))return;putPrev().then(ok=>{if(!ok)return snapFail();L.forEach(x=>{if(x!==src)x.it.img=JSON.parse(JSON.stringify(src.it.img))});redo('已統一 '+L.length+' 筆的商品圖片')});return}
   if(b.id==='gcost'&&dvState&&dvState.g){const g=dvState.g,L=g.map(([id,ix])=>{const o=items.find(x=>x.id===id);return o&&o.items[ix]?{o,it:o.items[ix]}:null}).filter(Boolean);
     const ok=L.filter(x=>x.o.cur==='TWD'),bad=L.length-ok.length,cur=ok.length&&ok.every(x=>+x.it.price===+ok[0].it.price&&!x.it.cu)?ok[0].it.price:'';
     const v=prompt('這 '+L.length+' 筆要統一設定的「單件成本」（台幣）：'+(bad?'\n（有 '+bad+' 筆不是台幣訂單，不會改）':''),cur);if(v===null)return;const n=parseFloat(v);if(!(n>=0)){toast('請輸入數字');return}
-    putPrev().then(()=>{ok.forEach(x=>{x.it.price=n;delete x.it.cu});save();render();dvKeep=true;openGD(g);dvKeep=false;toast('已把 '+ok.length+' 筆的單件成本設為 NT$'+n)});return}
+    putPrev().then(ok=>{if(!ok)return snapFail();ok.forEach(x=>{x.it.price=n;delete x.it.cu});save();render();dvKeep=true;openGD(g);dvKeep=false;toast('已把 '+ok.length+' 筆的單件成本設為 NT$'+n)});return}
   if(b.dataset.pa&&dvState){const o=items.find(x=>x.id===dvState.id);if(!o)return;const ix=dvState.ix,k=b.dataset.pa,L=ix>=0?[o.items[ix]]:o.items.length===1?[o.items[0]]:o.items;
-    if(k==='sell'){const un=L.filter(i=>sq(i)<(+i.qty||1)),on=!un.every(i=>i.sell);un.forEach(i=>{if(on)i.sell=true;else delete i.sell});save();render();reopenKeep(o.id,ix);toast(on?'已標記打算賣':'已取消打算賣');return}
+    if(k==='sell'){const un=L.filter(i=>sq(i)<(+i.qty||1)),on=!un.every(i=>i.sell);mutOrders([o],()=>un.forEach(i=>{if(on)i.sell=true;else delete i.sell})).then(ok=>{render();reopenKeep(o.id,ix);if(ok)toast(on?'已標記打算賣':'已取消打算賣')});return}
     DV.classList.remove('show');openEd(o.id);
     if(k==='buy-have'){cur.status='have';cur.recvDate=cur.recvDate||today();drawEd()}
     else if(k==='buy-pre'){cur.status='pre';drawEd()}
     else if(k==='pay')edScroll('金額');else if(k==='sold')edScroll('品項');
     return}
   if(b.id==='dcx'){DV.classList.remove('show');dvState=null;if(window.flRet){flRet=false;drawFl();$('fl').classList.add('show')}}
-  if(b.id==='dgot'&&dvState){const o=items.find(x=>x.id===dvState.id);if(o&&o.status==='pre'&&confirm('標記為已到貨？')){const ix=dvState.ix;if(o.items.length>1&&ix>=0){o.items[ix].got=true;if(o.items.every(i=>i.got)){o.status='have';o.recvDate=o.recvDate||today();o.items.forEach(i=>delete i.got)}}else{o.status='have';o.recvDate=o.recvDate||today();o.items.forEach(i=>delete i.got)}save();render();toast('已標記到貨');backDetail()}return}
+  if(b.id==='dgot'&&dvState){const o=items.find(x=>x.id===dvState.id);if(o&&o.status==='pre'&&confirm('標記為已到貨？')){const ix=dvState.ix;const payAll=o.pay!=='paid'&&bal(o)>0&&(o.items.length<=1||ix<0||o.items.filter(i=>!i.got).length<=1)&&confirm('尾款 '+money(o,bal(o))+' 也付清了嗎？\n按「確定」記為已付清，按「取消」維持現在的付款狀態');mutOrders([o],()=>{if(payAll){o.pay='paid';o.deposit=0}if(o.items.length>1&&ix>=0){o.items[ix].got=true;if(o.items.every(i=>i.got)){o.status='have';o.recvDate=o.recvDate||today();o.items.forEach(i=>delete i.got)}}else{o.status='have';o.recvDate=o.recvDate||today();o.items.forEach(i=>delete i.got)}}).then(ok=>{render();if(ok){toast('已標記到貨');backDetail()}})}return}
   if(b.dataset.wok&&dvState){const o=items.find(x=>x.id===dvState.id);if(o){delete o.tot;save();openDetail(dvState.id,dvState.ix)}return}
   if(b.id==='dfs'){const o=items.find(x=>x.id===dvState.id),it=o&&o.items[dvState.ix>=0?dvState.ix:0],src=(it&&it.img&&it.img.s)||(o&&cover(o))||'';
     if(!src){window.open('https://lens.google.com/','_blank');toast('這個商品還沒有照片，先開 Google Lens，請從相簿選照片');return}
@@ -711,7 +767,7 @@ DV.addEventListener('click',e=>{const h=e.target.closest('[data-dh]');if(h&&dvSt
   if(b.id==='dav'){const o=items.find(x=>x.id===dvState.id),it=o&&o.items[dvState.ix>=0?dvState.ix:0];if(!it||!it.name)return;const k=nkey(it.name),on=!it.avg,L=[];items.forEach(x=>{if(x.status==='wish')return;x.items.forEach(i=>{if(nkey(i.name)===k)L.push(i)})});
     if(L.length<2){toast('只有這 1 筆叫這個名字，沒有可以分攤的');return}
     if(!confirm(on?'把全部 '+L.length+' 筆「'+it.name+'」的成本，改成平均值計算？\n（每筆原本的價格不會被改掉，隨時可以取消）':'取消「'+it.name+'」的均價，每筆改回自己的原價？'))return;
-    putPrev().then(()=>{L.forEach(i=>{if(on)i.avg=1;else delete i.avg});const id1=dvState.id,ix1=dvState.ix;save();render();reopenKeep(id1,ix1);toast(on?'已分攤均價':'已取消均價')});return}
+    putPrev().then(ok=>{if(!ok)return snapFail();L.forEach(i=>{if(on)i.avg=1;else delete i.avg});const id1=dvState.id,ix1=dvState.ix;save();render();reopenKeep(id1,ix1);toast(on?'已分攤均價':'已取消均價')});return}
   if(b.id==='ded'){DV.classList.remove('show');openEd(dvState.id)}
   if(b.id==='ddl'&&confirm('確定要刪除這筆訂單？')){const id=dvState.id;dvState=null;DV.classList.remove('show');delOrder(id)}});
 let ADV={};
@@ -894,13 +950,13 @@ MO.addEventListener('click',ev=>{
   if(id==='cclc'){const m=cur.imgs[cur.cover];busyBtn(b,'⏳ 清理中…');cleanCut(m.s).then(t=>{m.s=t;drawEd();toast('✓ 已清掉殘影')});return}
   if(id==='undo'){const m=cur.imgs[cur.cover];m.s=m.o;delete m.o;drawEd();toast('已還原原圖')}
   if(b.dataset.wok){delete cur.tot;upd();return}
-  if(id==='sv'){delete cur._new;delete cur.chk;delete cur.tot;derive(cur);cur.items=cur.items.filter((i,n)=>i.name||+i.price||n===0);const i=items.findIndex(x=>x.id===cur.id);i<0?items.unshift(cur):items[i]=cur;save();render();MO.classList.remove('show');backDetail()}
+  if(id==='sv'){delete cur._new;delete cur.chk;delete cur.tot;derive(cur);cur.items=cur.items.filter((i,n)=>i.name||+i.price||n===0);const i=items.findIndex(x=>x.id===cur.id),prev=i<0?null:items[i],me=cur;i<0?items.unshift(me):items[i]=me;save().then(ok=>{if(!ok){const k=items.indexOf(me);if(k>=0){if(prev)items[k]=prev;else items.splice(k,1)}render();toast('⚠ 沒有存進手機，編輯的內容還在畫面上，可以再按一次「儲存」',7000);return}render();MO.classList.remove('show');backDetail()})}
   if(id==='dl'&&confirm('確定要刪除整筆訂單「'+title(cur)+'」（共 '+cur.items.length+' 個品項）？\n只刪這個品項請回到編輯頁，用該品項的「刪除」。')){const did=cur.id;dvState=null;MO.classList.remove('show');delOrder(did)}
 });
 const setMsg=t=>{const m=$('msg');if(m)m.textContent=t};
 const setMsg2=t=>{const m=$('msg2');if(m)m.textContent=t};
 let utT;function undoToast(msg,fn){let e=$('utoast');if(!e){e=document.createElement('div');e.id='utoast';document.body.appendChild(e)}e.innerHTML='<span></span><button type="button">復原</button>';e.firstChild.textContent=msg;e.classList.add('show');clearTimeout(utT);e.lastChild.onclick=()=>{e.classList.remove('show');clearTimeout(utT);fn()};utT=setTimeout(()=>e.classList.remove('show'),8000)}
-function delOrder(id){const i=items.findIndex(x=>x.id===id);if(i<0)return;const o=items[i];items.splice(i,1);save();render();undoToast('已刪除「'+title(o).slice(0,14)+'」',()=>{if(items.some(x=>x.id===o.id))return;items.splice(Math.min(i,items.length),0,o);save();render();toast('✓ 已復原')})}
+async function delOrder(id){const i=items.findIndex(x=>x.id===id);if(i<0)return;const o=items[i];items.splice(i,1);render();if(!(await save())){items.splice(Math.min(i,items.length),0,o);render();return}undoToast('已刪除「'+title(o).slice(0,14)+'」',()=>{if(items.some(x=>x.id===o.id))return;items.splice(Math.min(i,items.length),0,o);render();save().then(ok=>{if(ok)toast('✓ 已復原');else{items=items.filter(x=>x!==o);render()}})})}
 let toastT;function toast(t,ms=2400){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(toastT);if(ms)toastT=setTimeout(()=>e.classList.remove('show'),ms)}
 function busyBtn(b,t){if(b){b.disabled=true;b.textContent=t}}
 let bgBusy=false,rbMod;
@@ -1316,12 +1372,12 @@ function drawSet(){
     <div class="fr"><span>倉庫</span><input id="ghrepo" value="${esc(GH().r)}" placeholder="帳號/倉庫名"></div>
     <div class="fr"><span>自動同步（開啟時檢查、修改後自動上傳）</span><input id="autosync" type="checkbox" ${lsGet('autoSync')!=='0'?'checked':''} style="flex:none;width:auto"></div>
     <button class="btn" id="syup">⬆ 上傳到雲端</button><button class="btn" id="sydn">⬇ 從雲端下載</button>${GH().t?'<button class="btn" id="qrcfg">📱 顯示設定 QR（用來接新裝置）</button>':''}${GH().t?'<button class="btn" id="cpcfg">🔗 複製設定連結（傳給自己的另一台裝置）</button>':''}
-    <div class="fr"><span>新裝置：貼上設定連結</span><input id="cfglink" placeholder="貼上從另一台複製的連結" autocomplete="off"></div><button class="btn" id="apcfg">套用設定連結並下載</button>${lsGet('prevAt')?'<button class="btn" id="syrs">↩ 還原到上一次快照（下載或整理前）</button>':''}
+    <div class="fr"><span>新裝置：貼上設定連結</span><input id="cfglink" placeholder="貼上從另一台複製的連結" autocomplete="off"></div><button class="btn" id="apcfg">套用設定連結並下載</button>${lsGet('prevAt')?'<button class="btn" id="syrs">↩ 還原到上一次快照（'+(SNAPK[lsGet('prevKind')]||'下載或整理前')+' · '+new Date(+lsGet('prevAt')).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})+'）</button>':''}
     <div class="msg">換手機或資料不見時，貼上同一把金鑰再按「下載」就能還原。開啟自動同步後，改完資料幾秒會自動上傳，打開 app 時會自動拿雲端最新的。如果兩支手機都有沒同步的修改，會停下來讓你選，不會自己蓋掉。金鑰只存在這支手機。</div></div>
-  <div class="cd"><h3>AI 辨識</h3><div class="fr"><span>Gemini Key</span><input id="sgk" type="password" autocomplete="off" placeholder="貼上免費金鑰" value="${esc(localStorage.getItem('gk')||'')}"></div><div class="msg">截圖自動填表、AI 智慧新增會用到。金鑰只存在這支手機，不會放進備份檔。</div></div>
+  <div class="cd"><h3>AI 辨識</h3><div class="fr"><span>Gemini Key</span><input id="sgk" type="password" autocomplete="off" placeholder="貼上免費金鑰" value="${esc(localStorage.getItem('gk')||'')}"></div><button class="btn" id="sgkt">測試金鑰</button><div class="msg" id="sgkm">截圖自動填表、AI 智慧新增會用到。金鑰只存在這支手機，不會放進備份檔。</div></div>
   <div class="cd"><h3>整理與維護</h3><button class="btn" data-n="merge">🔗 合併現有訂單</button><button class="btn" data-n="rcpt">🧾 合併同一張收據</button><button class="btn" data-n="bag">🛍 找紙袋／袋子品項</button><button class="btn" data-n="dup">🔍 找重複的商品</button><button class="btn" data-n="del">🗑 批次刪除訂單</button></div>
   <div class="cd"><h3>資料安全</h3>${safeCard()}</div>
-  <div class="cd"><h3>備份</h3><div class="msg" style="margin:0 0 8px">${lastBk()?'上次備份：'+Math.floor((Date.now()-lastBk())/864e5)+' 天前':'還沒備份過'}（超過 7 天首頁會提醒）</div><button class="btn" id="ex">匯出備份</button><button class="btn" id="im">匯入備份</button><button class="btn" id="exl">匯出文字版（不含圖片，給 Claude 看用）</button><input type="file" id="imf" accept=".json" multiple hidden>
+  <div class="cd"><h3>備份</h3><div class="msg" style="margin:0 0 8px">${lastBk()?'上次備份：'+Math.floor((Date.now()-lastBk())/864e5)+' 天前':'還沒備份過'}（超過 7 天首頁會提醒）</div><button class="btn" id="ex">匯出備份</button><button class="btn" id="im">匯入備份</button><button class="btn" id="bkv">檢查備份檔能不能還原</button><button class="btn" id="exl">匯出文字版（不含圖片，給 Claude 看用）</button><input type="file" id="imf" accept=".json" multiple hidden><input type="file" id="bkvf" accept=".json" multiple hidden>
     <div class="msg">資料只存在這支手機。匯出時選「儲存到檔案」→ iCloud Drive，換手機或資料不見時用「匯入備份」就能還原。</div></div>`;
 }
 $('eye').onclick=()=>{S.hide=!S.hide;save();render()};
@@ -1333,9 +1389,9 @@ SO.addEventListener('input',e=>{if(e.target.id==='sgk')try{localStorage.setItem(
 const GO=()=>{try{return JSON.parse(lsGet('setGrp')||'{}')}catch(e){return{}}};
 const grpSet=()=>{const o=GO(),cs=[...SO.querySelectorAll(':scope>.cd')];GRPS.forEach(([n,re])=>{const L=cs.filter(c=>re.test(((c.querySelector('h3')||{}).textContent||'').trim()));if(!L.length)return;const g=document.createElement('div');g.className='gp'+(o[n]?'':' shut');g.dataset.g=n;g.innerHTML='<div class="gh" data-g="'+n+'"><h2>'+n+'</h2></div><div class="gb"></div>';SO.appendChild(g);L.forEach(c=>g.querySelector('.gb').appendChild(c))})};
 const de0=drawEd;drawEd=function(){de0();if(cur&&cur.chk){const M=$('mo'),mh=M.querySelector('.mh');let n=0;const mark=el=>{if(el){el.classList.add('tbc');n++}};
-  cur.items.forEach((it,i)=>{if(!String(it.name||'').trim())mark(M.querySelector('input[data-i="'+i+'"][data-k="name"]'));if(!(+it.price>0)&&!it.cu)mark(M.querySelector('input[data-i="'+i+'"][data-k="price"]'));if(!(+it.qty>0))mark(M.querySelector('input[data-i="'+i+'"][data-k="qty"]'))});
+  cur.items.forEach((it,i)=>{if(!String(it.name||'').trim())mark(M.querySelector('input[data-i="'+i+'"][data-k="name"]'));if(!(+it.price>0)&&!it.cu)mark(M.querySelector('input[data-i="'+i+'"][data-k="price"]'));if(!(+it.qty>0)||+it.qty>99)mark(M.querySelector('input[data-i="'+i+'"][data-k="qty"]'));if(+it.price<0||+it.price>(cur.cur==='KRW'?5e7:cur.cur==='JPY'?2e6:2e5))mark(M.querySelector('input[data-i="'+i+'"][data-k="price"]'))});const fut=x=>x&&(isNaN(new Date(x+'T00:00'))||new Date(x+'T00:00')>new Date(Date.now()+730*864e5));if(cur.buyDate&&(fut(cur.buyDate)||cur.buyDate>today()))mark(M.querySelector('input[data-f="buyDate"]'));if(fut(cur.eta))mark(M.querySelector('input[data-f="eta"]'));
   if(!cur.buyDate)mark(M.querySelector('input[data-f="buyDate"]'));if(cur.status==='pre'&&!cur.eta)mark(M.querySelector('input[data-f="eta"]'));
-  if(mh&&!M.querySelector('.tbcn')){const d=document.createElement('div');d.className='tbcn';d.textContent=n?'✨ AI 辨識的結果：黃框的 '+n+' 個欄位沒讀到或不確定，請確認後再儲存':'✨ AI 辨識的結果：請確認品名、數量、金額、幣別、日期後再儲存';mh.after(d)}}document.querySelectorAll('#mo .it').forEach(it=>{const sl=it.querySelector('select[data-k="proxy"]'),row=sl&&sl.closest('.fr'),box=row&&row.querySelector('.pk'),lb=it.querySelector('.sellc');if(!box||!lb||box.parentElement.classList.contains('pkw'))return;const w=document.createElement('div');w.className='pkw';box.parentNode.insertBefore(w,box);w.append(box,lb)});document.querySelectorAll('#mo .cd').forEach(c=>{const h=c.querySelector('h3');if(h&&h.textContent.trim()==='截圖自動填表'&&!EDAIO)c.classList.add('fold')})};
+  if(mh&&!M.querySelector('.tbcn')){const d=document.createElement('div');d.className='tbcn';d.textContent=n?'✨ AI 辨識的結果：黃框的 '+n+' 個欄位沒讀到、或數值看起來不合理，請確認後再儲存。其他欄位也請快速看過一次':'✨ AI 辨識的結果：請確認品名、數量、金額、幣別、日期後再儲存';mh.after(d)}}document.querySelectorAll('#mo .it').forEach(it=>{const sl=it.querySelector('select[data-k="proxy"]'),row=sl&&sl.closest('.fr'),box=row&&row.querySelector('.pk'),lb=it.querySelector('.sellc');if(!box||!lb||box.parentElement.classList.contains('pkw'))return;const w=document.createElement('div');w.className='pkw';box.parentNode.insertBefore(w,box);w.append(box,lb)});document.querySelectorAll('#mo .cd').forEach(c=>{const h=c.querySelector('h3');if(h&&h.textContent.trim()==='截圖自動填表'&&!EDAIO)c.classList.add('fold')})};
 $('mo').addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('tbc')&&e.target.value)e.target.classList.remove('tbc')});
 $('mo').addEventListener('click',e=>{const h=e.target.closest('.cd>h3');if(h&&h.textContent.trim()==='截圖自動填表'){EDAIO=!EDAIO;h.parentElement.classList.toggle('fold')}});
 const ds0=drawSet;drawSet=function(){ds0();foldSet();grpSet()};
@@ -1358,19 +1414,21 @@ SO.addEventListener('change',e=>{
   if(t.id==='ghrepo'){lsSet('ghRepo',t.value.trim());localStorage.removeItem('syncSha')}
   if(t.id==='nick'){S.nick=t.value.trim()||'瓜呱';save()}
   if(t.dataset.rate){S.rates[t.dataset.rate]=+t.value||S.rates[t.dataset.rate];save();render()}
-  if(t.id==='imf'&&t.files[0]){const FL=[...t.files];t.value='';(async()=>{let docs;try{docs=await Promise.all(FL.map(async f=>JSON.parse(await f.text())))}catch(x){alert('檔案格式不正確');return}
-    let d=docs[0];if(docs.length===1&&!(d.manifest&&d.manifest.parts>1)){/* 單一檔 */}
-    else{const ms=docs.map(x=>x&&x.manifest).filter(Boolean);if(ms.length!==docs.length||new Set(ms.map(m=>m.set)).size!==1){alert('這幾個檔案不是同一次的分卷備份，請重新選');return}
-      const n=ms[0].parts,got=new Set(ms.map(m=>m.part));if(got.size!==n){alert('分卷不完整：這份備份共有 '+n+' 個檔，你選了 '+got.size+' 個。\n請把 '+n+' 個檔一起選。');return}
-      docs.sort((x,y)=>x.manifest.part-y.manifest.part);d={manifest:ms[0],items:[].concat(...docs.map(x=>x.items||[])),settings:(docs.find(x=>x.settings)||{}).settings}}
-    let its=Array.isArray(d)?d:d.items;if(!Array.isArray(its)){alert('檔案格式不正確');return}
-    if(d&&d.patch===true){patchImport(d);return}if(d&&d.imgOnly===true){imgOnlyImport(its);return}
-    if(d&&d.manifest&&d.manifest.orders!=null&&d.manifest.orders!==its.length){alert('備份檔不完整：應有 '+d.manifest.orders+' 筆，只讀到 '+its.length+' 筆。已停止，現有資料沒有被動到。');return}
-    if(roBlock())return;
-    if(d&&d.merge===true){const have=new Set(items.map(x=>x.id)),add=its.filter(x=>!have.has(x.id));if(!add.length){alert('這些資料都已經匯入過了');return}if(confirm('要「加入」'+add.length+' 筆資料嗎？（不會動到你現有的資料）')){items=items.concat(add.map(mig));save();renderCats();render();drawSet();toast('已加入 '+add.length+' 筆')}return}
-    const when=d&&d.manifest&&d.manifest.t?new Date(d.manifest.t).toLocaleString('zh-TW')+' 的':'';
-    if(confirm('用'+when+'備份還原 '+its.length+' 筆，會「取代」目前的 '+items.length+' 筆資料，確定嗎？\n（還原前會先留一份快照，可以復原）')){if(!(await putPrev())){toast('⚠ 快照建立失敗，為了安全已取消還原',8000);return}const bak=items,bakS=S;items=its.map(mig);if(d.settings&&d.settings.cats)S=Object.assign(S,d.settings);if(!(await save())){items=bak;S=bakS;toast('⚠ 還原沒有寫進手機，已保留原本的資料',8000);return}renderCats();render();drawSet();toast('✓ 已還原 '+items.length+' 筆')}
-    else{const have=new Set(items.map(x=>x.id)),add=its.filter(x=>!have.has(x.id));if(add.length&&confirm('改成只「加入」目前沒有的 '+add.length+' 筆？（不會動到現有資料）')){items=items.concat(add.map(mig));save();renderCats();render();drawSet();toast('已加入 '+add.length+' 筆')}}})()}
+  if(t.id==='bkvf'&&t.files[0]){const FL=[...t.files];t.value='';verifyBackup(FL);return}
+  if(t.id==='imf'&&t.files[0]){const FL=[...t.files];t.value='';(async()=>{let r;try{r=await readBackup(FL)}catch(e){alert('⚠ 沒有還原：'+e.message+'\n\n現有資料沒有被動到。');return}
+    if(r.patch){if(roBlock())return;patchImport(r.patch);return}if(r.imgOnly){if(roBlock())return;imgOnlyImport(r.items);return}
+    if(!READY){toast('資料還在讀取中，請稍等');return}
+    const its=r.items,S2=Object.assign(JSON.parse(JSON.stringify(S)),r.settings&&r.settings.cats?r.settings:{}),when=r.manifest&&r.manifest.t?new Date(r.manifest.t).toLocaleString('zh-TW')+' 的':'',W=r.warn.length?'\n\n注意：\n'+r.warn.join('\n'):'';
+    const L=its.map(mig);{const seen=new Set();L.forEach(o=>{if(!o.id||seen.has(o.id))o.id='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);seen.add(o.id)})}
+    if(r.merge){if(roBlock())return;const have=new Set(items.map(x=>x.id)),add=L.filter(x=>!have.has(x.id));if(!add.length){alert('這些資料都已經匯入過了');return}if(confirm('要「加入」'+add.length+' 筆資料嗎？（不會動到你現有的資料）')){const old=items;items=items.concat(add);if(!(await save())){items=old;render();return}renderCats();render();drawSet();toast('已加入 '+add.length+' 筆')}return}
+    if(RO){if(!confirm('目前是唯讀保護中。要用'+when+'備份救回資料嗎？（'+its.length+' 筆）\n原本讀不完整的資料會留在手機裡，不會被刪除。'+W))return;
+      try{await commitAll(L,S2,{keepOld:'backup',force:true})}catch(e){toast('⚠ 救回失敗（'+((e&&e.message)||'錯誤')+'），手機裡的資料沒有改變',9000);return}
+      items=L;S=S2;MUTREV++;lsSet('dirty','1');RO=false;ROWHY='';roBanner();SAVEST='ok';renderCats();render();drawSet();toast('✓ 已用備份救回 '+items.length+' 筆，唯讀保護已解除',6000);return}
+    if(confirm('用'+when+'備份還原 '+its.length+' 筆，會「取代」目前的 '+items.length+' 筆資料，確定嗎？\n（還原前會先留一份快照，可以復原）'+W)){
+      if(!(await putPrev('restore')))return snapFail();
+      try{await commitAll(L,S2)}catch(e){PREVUNDO=null;toast('⚠ 還原沒有寫進手機（'+((e&&e.message)||'錯誤')+'），原本的資料和設定都沒有改變',9000);return}
+      items=L;S=S2;MUTREV++;lsSet('dirty','1');lsSet('lastSave',String(Date.now()));SAVEST='ok';if(svfOn)saveFailUI(false);renderCats();render();drawSet();toast('✓ 已還原 '+items.length+' 筆');const sid=PREVUNDO;PREVUNDO=null;if(sid)setTimeout(()=>undoToast('已還原備份，不滿意可以復原',()=>restorePrev(sid)),800)}
+    else{const have=new Set(items.map(x=>x.id)),add=L.filter(x=>!have.has(x.id));if(add.length&&confirm('改成只「加入」目前沒有的 '+add.length+' 筆？（不會動到現有資料）')){const old=items;items=items.concat(add);if(!(await save())){items=old;render();return}renderCats();render();drawSet();toast('已加入 '+add.length+' 筆')}}})()}
 });
 SO.addEventListener('click',e=>{
   const gl=e.target.closest('[data-gl]');if(gl){lsSet('glass',gl.dataset.gl);render();drawSet();return}
@@ -1388,7 +1446,9 @@ SO.addEventListener('click',e=>{
   if(b.id==='addcat'){const v=$('newcat').value.trim();if(v&&!S.cats.includes(v)){S.cats.push(v);save();drawSet()}}
   if(b.id==='im')$('imf').click();
   if(['merge','rcpt','bag','dup','del'].includes(b.dataset.n)){SO.classList.remove('show');runTool(b.dataset.n);return}
+  if(b.id==='sgkt'){const k=(($('sgk')||{}).value||'').replace(/[^\x21-\x7e]/g,'');const m=$('sgkm');if(!k){m.textContent='請先貼上金鑰';return}m.textContent='測試中…';fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1&key='+encodeURIComponent(k)).then(r=>{m.textContent=r.ok?'✓ 金鑰可以用':(r.status===400||r.status===403?'✗ 金鑰無效或沒有權限（'+r.status+'）':'✗ 測試失敗（'+r.status+'），可能是暫時連線問題')}).catch(()=>{m.textContent='✗ 連不上 Google，請確認網路'});return}
   if(b.id==='ex')doBackup();
+  if(b.id==='bkv')$('bkvf').click();
   if(b.id==='exl')doLite();
   if(b.id==='bgall')bgAll();
   if(b.id==='addsrc'){const v=$('newsrc').value.trim();if(v&&!(SRC.includes(v)&&!(S.srcHide||[]).includes(v))&&!(S.srcX||[]).includes(v)){if(SRC.includes(v)){S.srcHide=S.srcHide.filter(x=>x!==v)}else S.srcX=(S.srcX||[]).concat(v);save()}drawSet();return}
@@ -1407,7 +1467,7 @@ SO.addEventListener('click',e=>{
   if(b.id==='feeauto'){S.noFeeAuto=false;const A=feeScan();if(!A.length){toast('沒有找到需要扣手續費的賣出');return}
     const fee=A.reduce((a,x)=>a+(x.gross-x.net),0);
     if(!confirm('找到 '+A.length+' 筆備註有「實收進帳」的賣出，賣出金額會改成實收，共少算手續費 NT$'+Math.round(fee).toLocaleString()+'：\n\n'+A.slice(0,8).map(x=>(x.L[0].name||'').slice(0,12)+'　'+Math.round(x.gross)+' → '+Math.round(x.net)).join('\n')+(A.length>8?'\n…還有 '+(A.length-8)+' 筆':'')+'\n\n要套用嗎？（會先備份，之後可以還原）'))return;
-    putPrev().then(()=>{feeApply(A);save();render();drawSet();toast('已套用 '+A.length+' 筆實收金額',4500)});return}
+    putPrev().then(ok=>{if(!ok)return snapFail();feeApply(A);save();render();drawSet();toast('已套用 '+A.length+' 筆實收金額',4500)});return}
   if(b.id==='feeundo'){if(!confirm('把套用過的實收金額全部還原成原本的賣出金額？（之後也不會再自動套用）'))return;S.noFeeAuto=true;feeUndo();save();render();drawSet();toast('已還原');return}
   if(b.id==='dupundo2'){if(!confirm('把整理過的賣貨便賣出全部還原？'))return;dupUndoAll();save();render();drawSet();toast('已還原');return}
   if(b.id==='unall'){const T=[];items.forEach(o=>{o.items.forEach(i=>{if(i.img&&i.img.o)T.push(i.img)});(o.imgs||[]).forEach(m=>{if(m&&m.o)T.push(m)})});if(!T.length){toast('沒有去背過的圖');return}if(confirm('把 '+T.length+' 張去背圖都還原成原圖？之後可以再按「全部商品去背」重做。')){T.forEach(m=>{m.s=m.o;delete m.o});save();render();toast('✓ 已還原 '+T.length+' 張')}}
@@ -1451,15 +1511,19 @@ function fillCfg(){const a=$('ghtok'),b=$('ghrepo'),g=GH();if(a)a.value=g.t||'';
 function grabCfg(){const a=$('ghtok'),b=$('ghrepo');if(a)lsSet('ghTok',a.value.trim());if(b&&b.value.trim()!==GH().r){lsSet('ghRepo',b.value.trim());try{localStorage.removeItem('syncSha')}catch(e){}}}
 function syncMsg(){return lastSync()?'上次同步：'+new Date(lastSync()).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'還沒同步過'}
 async function fixCut(){const ids=(await kvGet('pids'))||[],bid=new Map(items.map(o=>[o.id,o]));let n=0;for(const id of ids){const o=bid.get(id);if(!o)continue;const p=await kvGet('p:'+id);if(!p||!p.items)continue;p.items.forEach((pi,ix)=>{const it=o.items[ix];if(it&&it.img&&pi.img&&pi.img.o&&pi.img.s===it.img.s&&!it.img.o&&!it.img.c){it.img.c=1;n++}})}if(n)await save();return n}
-let PREVUNDO=false;
-async function putPrev(){try{
-  const pfp=(await kvGet('pfp'))||{},cur=new Map(items.map(o=>[o.id,FP.get(o.id)||fpOf(o)]));
-  for(const o of items){if(pfp[o.id]!==cur.get(o.id)){await kvTx(st=>st.put(o,'p:'+o.id));pfp[o.id]=cur.get(o.id)}}
-  const gone=Object.keys(pfp).filter(id=>!cur.has(id));gone.forEach(id=>delete pfp[id]);
-  await kvTx(st=>{st.put(items.map(o=>o.id),'pids');st.put({t:Date.now(),settings:S},'pmeta');st.put(pfp,'pfp');gone.forEach(id=>st.delete('p:'+id));st.delete('prev')});
-  const cp=await kvGetS('pids');if(!Array.isArray(cp)||cp.length!==items.length)throw new Error('快照數量不符');
-  for(const o of items.slice(0,3)){if(!(await kvGetS('p:'+o.id)))throw new Error('快照缺資料')}
-  lsSet('prevAt',String(Date.now()));if(!syncBusy)PREVUNDO=true;return true}catch(e){console.error(e);return false}}
+let PREVUNDO=null;const SNAPK={sync:'雲端下載前',op:'整理前',restore:'還原前',del:'刪除前',patch:'套用更新前',fix:'自動修正前'};
+/* 快照：一次交易寫入（變動的訂單、清單、設定、編號），寫完逐筆核對；唯讀時不建立（避免用不完整資料蓋掉好的快照） */
+async function putPrev(kind){if(RO||!READY)return false;kind=kind||'op';
+  try{const d=await db(),sid='s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    await new Promise((res,rej)=>{let t;try{t=d.transaction('kv','readwrite')}catch(e){rej(e);return}const st=t.objectStore('kv');let why=null;t.oncomplete=()=>res();t.onabort=()=>rej(why||t.error||new Error('快照寫入中斷'));
+      const q=st.get('pfp');q.onsuccess=()=>{try{const pfp=isRec(q.result)?q.result:{},cur=new Map();for(const o of items)cur.set(o.id,fpOf(o));
+        for(const o of items)if(pfp[o.id]!==cur.get(o.id))st.put(o,'p:'+o.id);
+        for(const id of Object.keys(pfp))if(!cur.has(id))st.delete('p:'+id);
+        const nf={};cur.forEach((v,k)=>nf[k]=v);st.put(items.map(o=>o.id),'pids');st.put({t:Date.now(),settings:S,sid,kind,n:items.length},'pmeta');st.put(nf,'pfp');st.delete('prev');
+      }catch(e){why=e;try{t.abort()}catch(x){}}}});
+    const ks=new Set(await kvKeysS()),pids=await kvGetS('pids');if(!Array.isArray(pids)||pids.length!==items.length||pids.some(id=>!ks.has('p:'+id)))throw new Error('快照核對不一致');
+    lsSet('prevAt',String(Date.now()));lsSet('prevKind',kind);if(kind!=='sync')PREVUNDO=sid;return sid}catch(e){console.error(e);return false}}
+const snapFail=()=>{toast('⚠ 操作前的快照建立失敗，為了安全已取消，資料沒有被動到',7000);return false};
 const shaKnown=h=>{if(!h)return true;if(h===lsGet('syncSha'))return true;if(h===lsGet('syncPend')){lsSet('syncSha',h);return true}return false};
 let autoT;const autoOn=()=>GH().t&&lsGet('autoSync')!=='0';
 function schedAuto(){if(!autoOn())return;clearTimeout(autoT);autoT=setTimeout(()=>syncUp(true),6000)}
@@ -1518,12 +1582,12 @@ function cfgUrl(){const g=GH();return location.origin+location.pathname+'#cfg='+
 function applyCfgRaw(raw){try{const j=JSON.parse(decodeURIComponent(escape(atob(raw.replace(/-/g,'+').replace(/_/g,'/')))));if(!j||!j.t||!j.r)return false;
   if(!confirm('要把這支裝置接上雲端倉庫「'+j.r+'」嗎？\n接上後會從雲端下載資料。'))return false;
   lsSet('ghTok',String(j.t).trim());lsSet('ghRepo',String(j.r).trim());try{localStorage.removeItem('syncSha')}catch(e){}return true}catch(e){toast('設定連結無法讀取');return false}}
-async function autoPull(){if(!autoOn()||syncBusy||!lsGet('syncSha')||Date.now()-_lp<30000)return;_lp=Date.now();
+async function autoPull(){if(!READY||RO||!autoOn()||syncBusy||!lsGet('syncSha')||Date.now()-_lp<30000)return;_lp=Date.now();
   try{const {head}=await repoHead();if(!head||shaKnown(head))return;
     if(isDirty()){toast('雲端有較新的資料，但這支手機也有還沒上傳的修改。請到設定選「上傳」或「下載」',6000);return}
     await syncDown(true)}catch(e){}}
 async function syncUp(auto){
-  if(auto!==true)auto=false;if(RO){if(!auto)roBlock();return}if(syncBusy){if(auto)schedAuto();return}if(!auto)grabCfg();const g=GH();if(!g.t){if(!auto)toast('請先貼上金鑰');return}
+  if(auto!==true)auto=false;if(RO||!READY){if(!auto)roBlock();return}if(syncBusy){if(auto)schedAuto();return}if(SAVEST==='saving'){try{await putChain}catch(e){}}if(SAVEST==='fail'){if(auto)return;if(!confirm('手機存檔目前是失敗狀態。\n現在上傳的會是「畫面上、還沒存進手機」的資料，當作緊急救援用。\n確定要上傳嗎？'))return}if(!auto)grabCfg();const g=GH();if(!g.t){if(!auto)toast('請先貼上金鑰');return}
   const tt=(m,ms)=>{if(!auto)toast(m,ms)};clearTimeout(autoT);
   syncBusy=true;try{
     tt('連線中…',0);let {br,head}=await repoHead(),base=null,have=new Set();
@@ -1531,31 +1595,34 @@ async function syncUp(auto){
     else{const c=await ghj('/git/commits/'+head);base=c.tree.sha;const t=await ghj('/git/trees/'+base+'?recursive=1');(t.tree||[]).forEach(x=>have.add(x.path))}
     if(have.has('data.json')&&!shaKnown(head)&&auto){toast('雲端有較新的資料，請到設定選「上傳」或「下載」處理',6000);return}
     if(have.has('data.json')&&!shaKnown(head)&&!confirm('雲端的資料比這支手機上次同步的更新（可能在別的裝置改過）。\n繼續上傳會蓋掉雲端那份，確定嗎？\n（想拿雲端的，請按取消，改用「從雲端下載」）')){toast('已取消');return}
-    const t0=Date.now(),{json,imgs}=packData();const need=Object.keys(imgs).filter(n=>!have.has('img/'+n)),tree=[];let done=0;
+    const t0=Date.now(),rev0=MUTREV,{json,imgs}=packData();const need=Object.keys(imgs).filter(n=>!have.has('img/'+n)),tree=[];let done=0;
     await pool(need,4,async n=>{const r=await ghj('/git/blobs','POST',{content:imgs[n],encoding:'base64'});tree.push({path:'img/'+n,mode:'100644',type:'blob',sha:r.sha});tt('上傳圖片 '+(++done)+'/'+need.length+'…',0)});
     const bl=await ghj('/git/blobs','POST',{content:b64(json),encoding:'base64'});tree.push({path:'data.json',mode:'100644',type:'blob',sha:bl.sha});
     const nt=await ghj('/git/trees','POST',{base_tree:base,tree}),cm=await ghj('/git/commits','POST',{message:'sync '+new Date().toISOString(),tree:nt.sha,parents:[head]});
     lsSet('syncPend',cm.sha);await ghj('/git/refs/heads/'+br,'PATCH',{sha:cm.sha});
-    lsSet('syncSha',cm.sha);lsSet('lastSync',String(t0));if((+lsGet('lastSave')||0)<=t0)lsSet('dirty','0');lsSet('lastBackup',String(Date.now()));lsSet('ghBr',br);
+    lsSet('syncSha',cm.sha);lsSet('syncPend','');lsSet('lastSync',String(t0));if(MUTREV===rev0&&SAVEST==='ok')lsSet('dirty','0');else{lsSet('dirty','1');schedAuto()}lsSet('lastBackup',String(Date.now()));lsSet('ghBr',br);
     toast(auto?'☁️ 已自動同步':'✓ 已上傳到雲端（'+items.length+' 筆，新增 '+need.length+' 張圖）',auto?1800:3500);renderBk();if(SO.classList.contains('show'))drawSet()
   }catch(e){lsSet('dirty','1');toast((auto?'自動同步失敗：':'同步失敗：')+e.message,5000)}finally{syncBusy=false}}
-async function restorePrev(){let p=await kvGet('pmeta'),list=null;
-  if(p){const ids=(await kvGet('pids'))||[];list=[];for(const id of ids){const o=await kvGet('p:'+id);if(o)list.push(o)}}
-  else{const q=await kvGet('prev');if(q&&Array.isArray(q.items)){p=q;list=q.items}}
-  if(!p||!list){toast('沒有可還原的資料');return}
-  if(roBlock())return;
-  {const ids0=(await kvGet('pids'));if(Array.isArray(ids0)&&ids0.length!==list.length){toast('⚠ 快照資料不完整（應有 '+ids0.length+' 筆，只讀到 '+list.length+' 筆），已停止還原，現有資料沒有被動到',8000);return}}
-  if(!confirm('還原成 '+new Date(p.t).toLocaleString('zh-TW')+' 的快照（'+list.length+' 筆）？\n之後做的修改會不見。')) return;
-  const bak=items,bakS=S;items=list.map(mig);if(p.settings&&p.settings.cats)S=Object.assign(S,p.settings);const okr=await save();if(!okr){items=bak;S=bakS;toast('⚠ 還原沒有寫進手機，已保留原本的資料',6000);return}renderCats();render();drawSet();toast('✓ 已還原')}
+async function restorePrev(sid){let p,list=[],ids;
+  try{p=await kvGetS('pmeta');if(p){ids=await kvGetS('pids');if(!Array.isArray(ids))throw new Error('快照清單損壞');for(const id of ids){const o=await kvGetS('p:'+id);if(!isRec(o)||o.id!==id||!Array.isArray(o.items))throw new Error('快照第 '+(list.length+1)+' 筆讀不到或損壞');list.push(o)}}
+    else{const q=await kvGetS('prev');if(q&&Array.isArray(q.items)){p=q;list=q.items}}}
+  catch(e){toast('⚠ 快照不完整（'+e.message+'），已停止還原，現有資料沒有被動到',8000);return}
+  if(!p){toast('沒有可還原的快照');return}
+  if(sid&&p.sid!==sid){toast('這次操作的快照已經被後來的操作取代，無法用這個按鈕復原。可到設定的「還原到上一次快照」看最新的一份。',8000);return}
+  if(!READY){toast('資料還在讀取中，請稍等');return}
+  if(!confirm('還原成 '+new Date(p.t).toLocaleString('zh-TW')+(SNAPK[p.kind]?'（'+SNAPK[p.kind]+'）':'')+' 的快照（'+list.length+' 筆）？\n之後做的修改會不見。'+(RO?'\n\n目前是唯讀保護中：原本讀不完整的資料會留在手機裡，不會被刪除。':''))) return;
+  const L=list.map(mig),S2=Object.assign(JSON.parse(JSON.stringify(S)),isRec(p.settings)&&p.settings.cats?p.settings:{});
+  try{await commitAll(L,S2,RO?{keepOld:'restore-snapshot',force:true}:{})}catch(e){console.error(e);toast('⚠ 還原沒有寫進手機（'+((e&&e.message)||'錯誤')+'），原本的資料和設定都沒有改變',8000);return}
+  items=L;S=S2;MUTREV++;lsSet('dirty','1');lsSet('lastSave',String(Date.now()));const wasRO=RO;RO=false;ROWHY='';roBanner();if(svfOn)saveFailUI(false);SAVEST='ok';lsSet('lastLocalOk',String(Date.now()));renderCats();render();if(SO.classList.contains('show'))drawSet();toast(wasRO?'✓ 已用快照救回資料，唯讀保護已解除':'✓ 已還原')}
 async function syncDown(auto){
   if(auto!==true)auto=false;if(syncBusy)return;if(!auto)grabCfg();const g=GH();if(!g.t){if(!auto)toast('請先貼上金鑰');return}
-  syncBusy=true;try{
-    if(RO&&!auto&&!confirm('這支手機的資料沒有完整讀進來。從雲端下載可以救回資料，要繼續嗎？'))return;if(RO&&auto)return;
+  if(!READY||(RO&&auto))return;syncBusy=true;const rev0=MUTREV;try{
+    if(RO&&!confirm('這支手機的資料沒有完整讀進來。從雲端下載可以救回資料（讀不完整的舊資料會留在手機裡，不會被刪除），要繼續嗎？'))return;
     if(!auto)toast('連線中…',0);const {head}=await repoHead();if(!head){toast('雲端還沒有資料，請先在主要的手機按「上傳」',4500);return}
     let text;try{text=await(await gh('/contents/data.json?ref='+head,'GET',null,true)).text()}catch(e){if(e.status===404){toast('雲端還沒有資料，請先在主要的手機按「上傳」',4500);return}throw e}
     const d=JSON.parse(text);if(!Array.isArray(d.items))throw new Error('雲端資料格式不對');
     if(!auto&&!confirm('雲端有 '+d.items.length+' 筆資料，下載會取代這支手機現有的 '+items.length+' 筆，確定嗎？')){toast('已取消');return}
-    if(!RO&&!(await putPrev())){toast('⚠ 下載前的備份快照建立失敗，為了安全已取消下載，現有資料沒有被動到',8000);return}
+    if(!RO&&!(await putPrev('sync'))){toast('⚠ 下載前的備份快照建立失敗，為了安全已取消下載，現有資料沒有被動到',8000);return}
     const names=[...new Set([...text.matchAll(/@img:([\w.]+)/g)].map(m=>m[1]))],local=packData().imgs,got={};let done=0;
     await pool(names,6,async n=>{const ext=n.split('.').pop();
       if(local[n]){got[n]='data:'+MIME[ext]+';base64,'+local[n]}
@@ -1563,8 +1630,14 @@ async function syncDown(auto){
       if(!auto)toast('下載圖片 '+(++done)+'/'+names.length+'…',0)});
     const full=JSON.parse(text,(k,v)=>typeof v==='string'&&v.startsWith('@img:')?got[v.slice(5)]:v);
     const lc=new Map();items.forEach(o=>o.items.forEach((it,ix)=>{if(it.img&&(it.img.o||it.img.c))lc.set(o.id+'|'+ix,it.img)}));
-    const oldItems=items,oldS=S;items=full.items.map(mig);items.forEach(o=>o.items.forEach((it,ix)=>{const m=it.img,l=lc.get(o.id+'|'+ix);if(m&&l&&l.s===m.s&&!m.o&&!m.c)m.c=1}));if(full.settings&&full.settings.cats)S=Object.assign(S,full.settings);dedupChars();dedupChars();
-    const wasRO=RO;RO=false;const okd=await save();if(!okd){RO=wasRO;items=oldItems;S=oldS;throw new Error('下載的資料沒有成功寫進手機，原本的資料已保留，沒有更新同步記號')}
+    if(!Array.isArray(full.items)||full.items.some(o=>!isRec(o)||!Array.isArray(o.items)))throw new Error('雲端資料格式不對');
+    if(MUTREV!==rev0){toast('下載期間這支手機有新的修改，為了不蓋掉它，已取消套用雲端資料。兩邊的資料都還在，請先上傳或稍後再下載。',9000);return}
+    const oldItems=items,oldS=S;let L=full.items.map(mig);L.forEach(o=>o.items.forEach((it,ix)=>{const m=it.img,l=lc.get(o.id+'|'+ix);if(m&&l&&l.s===m.s&&!m.o&&!m.c)m.c=1}));let S2=Object.assign(JSON.parse(JSON.stringify(S)),full.settings&&full.settings.cats?full.settings:{});
+    items=L;S=S2;try{dedupChars();dedupChars();L=items;S2=S}finally{items=oldItems;S=oldS}
+    const seen=new Set();L.forEach(o=>{if(!o.id||seen.has(o.id))o.id='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);seen.add(o.id)});
+    SYNCLOCK=true;try{await commitAll(L,S2,RO?{keepOld:'cloud',force:true}:{})}catch(e){throw new Error('下載的資料沒有寫進手機（'+((e&&e.message)||'錯誤')+'），原本的資料和設定都沒有改變，也沒有更新同步記號')}finally{SYNCLOCK=false}
+    if(MUTREV!==rev0){toast('⚠ 套用雲端資料時這支手機剛好有修改，請重新整理確認',9000)}
+    items=L;S=S2;const wasRO=RO;RO=false;ROWHY='';roBanner();if(svfOn)saveFailUI(false);SAVEST='ok';lsSet('lastLocalOk',String(Date.now()));
     lsSet('syncSha',head);lsSet('lastBackup',String(Date.now()));
     lsSet('lastSync',String(Date.now()+1));lsSet('dirty','0');clearTimeout(autoT);renderCats();render();renderBk();if(SO.classList.contains('show'))drawSet();toast(auto?'☁️ 已更新成雲端最新資料':'✓ 已從雲端下載 '+items.length+' 筆（下載前的資料有留一份，可在設定還原）',auto?2500:4500)
   }catch(e){if(!auto)toast('下載失敗：'+e.message,5000)}finally{syncBusy=false}}
@@ -1573,7 +1646,7 @@ async function syncDown(auto){
 function safeCard(){const lo=+lsGet('lastLocalOk')||0,ls=+lsGet('lastSync')||0,dirty=lsGet('dirty')==='1',tm=t=>t?new Date(t).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'尚無';
   const st=RO?`<b style="color:#c0392b">⚠ 唯讀保護中：${esc(ROWHY)}</b>`:SAVEST==='fail'?'<b style="color:#c0392b">⚠ 上次存入手機失敗，資料可能只在畫面上</b>':SAVEST==='saving'?'儲存中…':'✓ 手機儲存正常';
   const cl=GH().t?(syncBusy?'同步中…':dirty?'有修改尚未上傳到雲端':'✓ 雲端與手機一致'):'未連接雲端';
-  return `<div class="msg" style="margin:0 0 6px;line-height:1.8">${st}<br>手機最後成功儲存：${tm(lo)}<br>雲端：${cl}（最後成功同步：${tm(ls)}）<br>備份：${lastBk()?tm(lastBk())+'（只代表檔案已產生，尚未驗證能還原）':'還沒備份過'}<br>快照：${lsGet('prevAt')?tm(+lsGet('prevAt')):'尚無'}</div>`}
+  return `<div class="msg" style="margin:0 0 6px;line-height:1.8">${st}<br>手機最後成功儲存：${tm(lo)}<br>雲端：${cl}（最後成功同步：${tm(ls)}）<br>備份：${+lsGet('lastBackup')?'上次交給分享選單 '+tm(+lsGet('lastBackup')):'還沒交付過備份檔'}${+lsGet('bkVerified')?'；上次檢查可還原 '+tm(+lsGet('bkVerified')):'；還沒檢查過備份檔'}<br>快照：${lsGet('prevAt')?tm(+lsGet('prevAt')):'尚無'}</div>`}
 /* backup */
 const BK_DAYS=7;
 function lastBk(){return Math.max(+lsGet('lastBackup')||0,lastSync())}
@@ -1581,17 +1654,60 @@ async function doLite(){
   const name='collection-lite-'+today()+'.json',blob=new Blob([JSON.stringify({items,settings:S},(k,v)=>(k==='img'||k==='imgs'||k==='o'||(typeof v==='string'&&v.startsWith('data:')))?undefined:v)],{type:'application/json'});
   try{const f=new File([blob],name,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'收藏櫃文字版'});return}}catch(e){if(e&&e.name==='AbortError')return}
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();toast('已匯出文字版（'+Math.round(blob.size/1024)+' KB）',3500)}
-let BK_LIM=250e6;
-function bkFiles(){const rep=(k,v)=>k==='o'&&typeof v==='string'&&v.startsWith('data:')?undefined:v,t=Date.now(),parts=[];let cur=[],sz=0;
-  for(const o of items){const x=JSON.stringify(o,rep);if(cur.length&&sz+x.length>BK_LIM){parts.push(cur);cur=[];sz=0}cur.push(x);sz+=x.length}parts.push(cur);
-  const n=parts.length;return parts.map((p,i)=>{const man={app:'collection-tracker',type:'full-display',ver:'v466',set:String(t),orders:items.length,part:i+1,parts:n,count:p.length,t,note:'不含金鑰；不含部分原始大圖'};
-    const body='{"manifest":'+JSON.stringify(man)+',"items":['+p.join(',')+']'+(i===0?',"settings":'+JSON.stringify(S,rep):'')+'}';
-    return new File([body],'collection-backup-'+today()+(n>1?'-'+(i+1)+'of'+n:'')+'.json',{type:'application/json'})})}
-async function doBackup(){
-  let fs;try{fs=bkFiles()}catch(e){toast('⚠ 備份檔產生失敗（'+((e&&e.name)||'錯誤')+'），可能是手機記憶體不足',8000);return false}
-  try{if(navigator.canShare&&navigator.canShare({files:fs})){await navigator.share({files:fs,title:'收藏櫃備份'});markBk(fs.length);return true}}catch(e){if(e&&e.name==='AbortError')return false}
-  fs.forEach(f=>{const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;document.body.appendChild(a);a.click();a.remove()});markBk(fs.length);return true}
-function markBk(n){try{localStorage.setItem('lastBackup',String(Date.now()));localStorage.removeItem('bkSnooze')}catch(e){}renderBk();if(SO.classList.contains('show'))drawSet();toast('✓ 已產生備份檔（'+items.length+' 筆'+(n>1?'，分成 '+n+' 個檔，還原時要一起選':'')+'）。若用分享選單，請確認有選「儲存到檔案」；尚未驗證能還原',5500)}
+/* 備份：完整（含去背前原圖）／一般（不含原圖）／救援（唯讀或存檔失敗時，標記不完整）。用 UTF-8 位元組計算分卷，逐卷產生 */
+let BK_LIM=150e6;
+const u8len=t=>{let n=0;for(let i=0;i<t.length;i++){const c=t.charCodeAt(i);n+=c<128?1:c<2048?2:(c>=0xD800&&c<0xDC00)?(i++,4):3}return n};
+const fnv64=t=>{let h1=2166136261,h2=0x9747b28c;for(let i=0;i<t.length;i++){const c=t.charCodeAt(i);h1=Math.imul(h1^c,16777619);h2=Math.imul(h2^c,0x5bd1e995);h2^=h2>>>13}return (h1>>>0).toString(16).padStart(8,'0')+(h2>>>0).toString(16).padStart(8,'0')};
+const BKT={full:'完整備份（含去背前原圖）',display:'一般備份（不含去背前原圖）',rescue:'救援備份（不完整）'};
+function bkPlan(mode){const rep=mode==='full'?undefined:(k,v)=>k==='o'&&typeof v==='string'&&v.startsWith('data:')?undefined:v,set=String(Date.now()),parts=[];let cur=[],sz=0;
+  const st=JSON.stringify(S,(k,v)=>/^(gk|ghTok)$/.test(k)?undefined:v),over=u8len(st)+600;
+  for(const o of items){const n=u8len(JSON.stringify(o,rep))+1;if(n+over>BK_LIM)throw new Error('「'+title(o).slice(0,20)+'」這一筆有 '+Math.round(n/1e6)+' MB，超過單一檔案上限，無法備份。請先移除或縮小它的圖片。');if(cur.length&&sz+n+over>BK_LIM){parts.push(cur);cur=[];sz=0}cur.push(o.id);sz+=n}parts.push(cur);
+  return {mode,rep,set,parts,st,n:items.length,t:Date.now(),incomplete:mode==='rescue'}}
+function bkPart(P,i){const ids=new Set(P.parts[i]),L=items.filter(o=>ids.has(o.id)),arr='['+L.map(o=>JSON.stringify(o,P.rep)).join(',')+']';
+  const man={app:'collection-tracker',fmt:2,type:P.mode,label:BKT[P.mode],set:P.set,part:i+1,parts:P.parts.length,count:L.length,orders:P.n,t:P.t,hash:fnv64(arr),incomplete:P.incomplete||undefined,note:'不含 Gemini／GitHub 金鑰'};
+  const body='{"manifest":'+JSON.stringify(man)+',"items":'+arr+(i===0?',"settings":'+P.st:'')+'}';
+  return new File([body],'collection-'+(P.mode==='rescue'?'RESCUE-':P.mode==='full'?'full-':'')+'backup-'+today()+(P.parts.length>1?'-'+(i+1)+'of'+P.parts.length:'')+'.json',{type:'application/json'})}
+async function bkDeliver(f,label){try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:label});return 'shared'}}catch(e){if(e&&e.name==='AbortError')return 'cancel';}
+  const u=URL.createObjectURL(f),a=document.createElement('a');a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);return 'download'}
+let BKP=null;
+async function doBackup(mode){
+  if(!mode){const m=await bkChoose();if(!m)return false;mode=m}
+  if(RO&&mode!=='rescue'){if(!confirm('目前是唯讀保護中，資料可能不完整。\n只能匯出「救援備份（不完整）」，還原時會特別提醒。要匯出嗎？'))return false;mode='rescue'}
+  let P;try{P=bkPlan(mode)}catch(e){toast('⚠ 沒辦法產生備份：'+e.message,9000);return false}lsSet('bkGen',String(Date.now()));
+  if(P.parts.length===1){let f;try{f=bkPart(P,0)}catch(e){toast('⚠ 備份檔產生失敗（'+((e&&e.name)||'錯誤')+'），可能是手機記憶體不足',8000);return false}const r=await bkDeliver(f,BKT[mode]);f=null;bkDone(r,1,mode);return r!=='cancel'}
+  BKP=P;BKP.done=new Set();drawBkps();return true}
+function bkChoose(){return new Promise(res=>{let e=$('bkps');if(!e){e=document.createElement('div');e.id='bkps';document.body.appendChild(e)}
+  e.innerHTML='<div class="box"><b>要匯出哪一種備份？</b><button data-bkc="display"><b>一般備份</b><small>商品、訂單、設定、目前顯示的圖片。檔案較小，日常用這個</small></button><button data-bkc="full"><b>完整備份</b><small>再加上去背前的原圖，可以完整還原「還原原圖」，檔案較大</small></button><button data-bkc="">取消</button></div>';e.classList.add('show');
+  e.onclick=ev=>{const b=ev.target.closest('[data-bkc]');if(!b&&ev.target!==e)return;e.classList.remove('show');res(b?b.dataset.bkc:'')}})}
+function drawBkps(){const e=$('bkps')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'bkps'}));const P=BKP;
+  e.innerHTML='<div class="box"><b>備份分成 '+P.parts.length+' 個檔</b><small class="m">資料太大，一個檔放不下。請一個一個按，每個都選「儲存到檔案」存在同一個資料夾。還原時要把這 '+P.parts.length+' 個檔一起選。</small>'+P.parts.map((x,i)=>'<button data-bkp="'+i+'">'+(P.done.has(i)?'✓ ':'')+'儲存第 '+(i+1)+' 個檔（'+x.length+' 筆）</button>').join('')+'<button data-bkp="close">'+(P.done.size===P.parts.length?'完成':'稍後再說')+'</button></div>';e.classList.add('show');
+  e.onclick=async ev=>{const b=ev.target.closest('[data-bkp]');if(!b)return;if(b.dataset.bkp==='close'){e.classList.remove('show');if(P.done.size===P.parts.length)bkDone('shared',P.parts.length,P.mode);else toast('還有 '+(P.parts.length-P.done.size)+' 個檔沒存，這份備份還不完整',5000);return}
+    const i=+b.dataset.bkp;let f;try{f=bkPart(P,i)}catch(x){toast('⚠ 第 '+(i+1)+' 個檔產生失敗，可能是手機記憶體不足',8000);return}const r=await bkDeliver(f,BKT[P.mode]+' '+(i+1)+'/'+P.parts.length);f=null;if(r!=='cancel'){P.done.add(i);if(r==='download')P.dl=1}drawBkps()}}
+function bkDone(r,n,mode){if(r==='cancel')return;if(r==='shared'&&mode!=='rescue'){try{localStorage.setItem('lastBackup',String(Date.now()));localStorage.removeItem('bkSnooze')}catch(e){}}
+  renderBk();if(SO.classList.contains('show'))drawSet();toast(r==='shared'?'✓ 已交給分享選單（'+items.length+' 筆'+(n>1?'，'+n+' 個檔':'')+'）。請確認有選「儲存到檔案」；要確定能還原，可到設定按「檢查備份檔」':'已開始下載備份檔，請確認檔案有存好；這次不算完成備份',6500)}
+function markBk(n){bkDone('shared',n||1,'display')}
+/* 讀取並驗證備份（不會動到資料）：卷號 1..n 各一、同一次備份、格式、筆數、編號不重複、雜湊、圖片欄位 */
+async function readBackup(FL){const docs=[];for(const f of FL){let d;try{d=JSON.parse(await f.text())}catch(e){throw new Error('「'+f.name+'」不是正確的備份檔（無法讀取）')}docs.push({d,name:f.name})}
+  const warn=[];let L,S0,man=null;
+  if(docs.length===1&&(Array.isArray(docs[0].d)||!docs[0].d.manifest)){const d=docs[0].d;L=Array.isArray(d)?d:d.items;if(!Array.isArray(L))throw new Error('檔案裡找不到商品資料');S0=Array.isArray(d)?undefined:d.settings;warn.push('這是舊格式的備份，沒有完整性資訊，無法確認有沒有缺資料')}
+  else{const ms=docs.map(x=>x.d&&x.d.manifest);if(ms.some(m=>!isRec(m)))throw new Error('有檔案不是分卷備份');
+    if(ms.some(m=>m.app&&m.app!=='collection-tracker'))throw new Error('有檔案不是收藏櫃的備份');
+    if(new Set(ms.map(m=>m.set)).size!==1)throw new Error('這幾個檔案不是同一次的備份，請重新選');
+    const n=ms[0].parts||1;if(!Number.isInteger(n)||n<1||ms.some(m=>(m.parts||1)!==n||(m.type||'')!==(ms[0].type||'')))throw new Error('分卷資訊不一致');
+    const nums=ms.map(m=>m.part||1);if(nums.some(x=>!Number.isInteger(x)||x<1||x>n))throw new Error('分卷編號不正確');
+    if(new Set(nums).size!==nums.length)throw new Error('同一個分卷選了兩次（第 '+nums.find((x,i)=>nums.indexOf(x)!==i)+' 卷）');
+    if(nums.length!==n)throw new Error('分卷不完整：這份備份共有 '+n+' 個檔，你選了 '+nums.length+' 個（缺第 '+[...Array(n)].map((_,i)=>i+1).filter(i=>!nums.includes(i)).join('、')+' 卷）');
+    docs.sort((x,y)=>(x.d.manifest.part||1)-(y.d.manifest.part||1));L=[];
+    for(const x of docs){const m=x.d.manifest,its=x.d.items;if(!Array.isArray(its))throw new Error('第 '+(m.part||1)+' 卷沒有商品資料');if(m.count!=null&&m.count!==its.length)throw new Error('第 '+(m.part||1)+' 卷筆數不對（應有 '+m.count+'，讀到 '+its.length+'）');
+      if(m.hash&&fnv64(JSON.stringify(its))!==m.hash)throw new Error('第 '+(m.part||1)+' 卷內容損壞或被改過');for(const o of its)L.push(o)}
+    man=ms[0];S0=docs[0].d.settings;if(man.orders!=null&&man.orders!==L.length)throw new Error('筆數不對：應有 '+man.orders+' 筆，只讀到 '+L.length+' 筆');
+    if(S0!==undefined&&!isRec(S0))throw new Error('設定資料損壞');if(man.fmt>=2&&!isRec(S0))throw new Error('第 1 卷缺少設定資料');
+    if(!man.hash)warn.push('這份備份沒有內容檢查碼（較舊的版本產生），無法確認內容有沒有損壞');
+    if(man.incomplete||man.type==='rescue')warn.push('這是「救援備份」，是在資料不完整或存檔失敗時匯出的，可能缺資料')}
+  if(L.some(o=>!isRec(o)))throw new Error('有商品資料損壞');const ids=L.map(o=>o.id).filter(Boolean);if(new Set(ids).size!==ids.length)throw new Error('備份裡有重複的訂單編號');
+  let badImg=0;L.forEach(o=>(o.items||[]).forEach(it=>{if(it&&it.img&&!(typeof it.img.s==='string'&&it.img.s))badImg++}));if(badImg)throw new Error('有 '+badImg+' 張商品圖片的資料損壞');
+  return {items:L,settings:S0,manifest:man,warn,patch:docs.length===1&&docs[0].d&&docs[0].d.patch===true?docs[0].d:null,imgOnly:docs.length===1&&docs[0].d&&docs[0].d.imgOnly===true,merge:docs.length===1&&docs[0].d&&docs[0].d.merge===true}}
+async function verifyBackup(FL){try{const r=await readBackup(FL);if(r.patch||r.imgOnly){alert('這是更新用的檔案，不是備份');return}lsSet('bkVerified',String(Date.now()));if(SO.classList.contains('show'))drawSet();alert('✓ 備份檔完整，可以還原\n\n共 '+r.items.length+' 筆'+(r.manifest?'，'+(r.manifest.label||r.manifest.type||'')+'，'+new Date(r.manifest.t).toLocaleString('zh-TW'):'')+(r.warn.length?'\n\n注意：\n'+r.warn.join('\n'):''))}catch(e){alert('⚠ 這份備份不能用：\n'+e.message)}}
 function renderBk(){renderJobs();
   const el=$('bk');if(!el)return;let sn=0;try{sn=+localStorage.getItem('bkSnooze')||0}catch(e){}
   const l=lastBk(),d=l?Math.floor((Date.now()-l)/864e5):999;
@@ -1599,23 +1715,23 @@ function renderBk(){renderJobs();
   el.innerHTML=`<div class="note bkm"><span>${l?'已 '+d+' 天沒備份':'還沒備份過'}，資料只存在這支手機</span><button data-bk="now">備份</button><button data-bk="later" aria-label="之後再說">✕</button></div>`}
 $('bk').addEventListener('click',e=>{const b=e.target.closest('[data-bk]');if(!b)return;if(b.dataset.bk==='now')doBackup();else{try{localStorage.setItem('bkSnooze',String(Date.now()+2*864e5))}catch(x){}renderBk()}});
 /* arrivals */
-function arList(){const now=new Date(today()+'T00:00');return items.filter(o=>o.status==='pre').map(o=>{const d=o.eta?Math.round((new Date(o.eta+'T00:00')-now)/864e5):null,n=o.items.length,left=o.items.filter(i=>!i.got).length;return{o,d,n,left}})}
+function arList(){const now=new Date(today()+'T00:00');return items.filter(o=>o.status==='pre').map(o=>{const t=o.eta&&/^\d{4}-\d{2}-\d{2}$/.test(o.eta)?new Date(o.eta+'T00:00'):null,d=t&&!isNaN(t)?Math.round((t-now)/864e5):null,n=o.items.length,left=o.items.filter(i=>!i.got).length;return{o,d,n,left}})}
 function renderAr(st){
-  const el=$('ar');if(!el)return;const late=arList().filter(x=>x.d!==null&&x.d<0).length,soon=arList().filter(x=>x.d!==null&&x.d>=0&&x.d<=7).length;
-  if(!late&&!soon){el.innerHTML='';return}
-  el.innerHTML=`<button class="arl" data-arp="1" style="${late?'':'background:var(--chip);color:var(--tx)'}"><span>⏰ ${late?late+' 筆預購超過預計到貨日':soon+' 筆預購 7 天內會到'}</span><span>›</span></button>`}
+  const el=$('ar');if(!el)return;const A=arList(),late=A.filter(x=>x.d!==null&&x.d<0).length,soon=A.filter(x=>x.d!==null&&x.d>=0&&x.d<=7).length;
+  if(!A.length){el.innerHTML='';return}
+  el.innerHTML=`<button class="arl" data-arp="1" style="${late?'':'background:var(--chip);color:var(--tx)'}"><span>⏰ ${late?late+' 筆預購超過預計到貨日':soon?soon+' 筆預購 7 天內會到':A.length+' 筆預購中'}</span><span>›</span></button>`}
 function arThumb(o){const s=cover(o)||(o.items.find(i=>i.img)||{img:{}}).img.s||'';return s?`<img src="${s}" alt="">`:''}
 function drawArp(){const L=arList(),wd=d=>'日一二三四五六'[new Date(d+'T00:00').getDay()],md=d=>{const x=d.split('-');return (+x[1])+'/'+(+x[2])+'（'+wd(d)+'）'};
-  const G=[['已超過預計到貨日',L.filter(x=>x.d!==null&&x.d<0).sort((a,b)=>a.d-b.d),'late'],['7 天內會到',L.filter(x=>x.d!==null&&x.d>=0&&x.d<=7).sort((a,b)=>a.d-b.d),'soon'],['之後才到',L.filter(x=>x.d!==null&&x.d>7).sort((a,b)=>a.d-b.d),'later'],['還沒填預計到貨日',L.filter(x=>x.d===null),'none']];
+  const G=[['已超過預計到貨日',L.filter(x=>x.d!==null&&x.d<0).sort((a,b)=>a.d-b.d),'late'],['7 天內會到',L.filter(x=>x.d!==null&&x.d>=0&&x.d<=7).sort((a,b)=>a.d-b.d),'soon'],['之後才到',L.filter(x=>x.d!==null&&x.d>7).sort((a,b)=>a.d-b.d),'later'],['還沒填或日期不正確',L.filter(x=>x.d===null),'none']];
   const pill=x=>x.d===null?'<i class="ap none">未填日期</i>':x.d<0?`<i class="ap late">晚了 ${-x.d} 天</i>`:x.d===0?'<i class="ap soon">今天</i>':`<i class="ap ${x.d<=7?'soon':'later'}">還有 ${x.d} 天</i>`;
   $('arb').innerHTML=`<div class="aph"><b>預購動態</b><button id="arx">完成</button></div>`+
   G.filter(g=>g[1].length).map(g=>`<div class="apg ${g[2]}"><h5>${g[0]}<span>${g[1].length}</span></h5>${g[1].map(x=>`<div class="apr"><div class="apm" data-ar="${x.o.id}"><div class="apt">${arThumb(x.o)}</div><div class="apb"><b>${esc(title(x.o))}</b><small>${x.o.eta?'預計 '+md(x.o.eta)+'到貨':'還沒填日期'}${x.left<x.n?' · 已到 '+(x.n-x.left)+'/'+x.n+' 款':''}</small></div>${pill(x)}</div><div class="apa"><button data-ard="${x.o.id}">📅 改日期</button><button data-arg="${x.o.id}">📦 收到了</button></div></div>`).join('')}</div>`).join('')+(L.length?'':'<div class="empty">目前沒有預購中的商品</div>')}
-$('arpd').addEventListener('change',e=>{const o=items.find(x=>x.id===e.target.dataset.id);if(!o||!e.target.value)return;o.eta=e.target.value;save();render();drawArp();toast('預計到貨日改成 '+e.target.value)});
+$('arpd').addEventListener('change',e=>{const o=items.find(x=>x.id===e.target.dataset.id);if(!o||!e.target.value)return;const v=e.target.value;mutOrders([o],()=>{o.eta=v}).then(ok=>{render();drawArp();if(ok)toast('預計到貨日改成 '+v)})});
 let ARY=0;function openArp(){drawArp();$('arp').classList.add('show');$('arb').scrollTop=0;ARY=scrollY;const b=document.body.style;b.position='fixed';b.top=-ARY+'px';b.left='0';b.right='0'}
 function closeArp(){if(!$('arp').classList.contains('show'))return;$('arp').classList.remove('show');const b=document.body.style;b.position='';b.top='';b.left='';b.right='';scrollTo(0,ARY)}
 $('arp').addEventListener('click',e=>{if(e.target.id==='arp'||e.target.id==='arx'){closeArp();return}
   const dd=e.target.closest('[data-ard]');if(dd){const o=items.find(x=>x.id===dd.dataset.ard);if(!o)return;const inp=$('arpd');inp.dataset.id=o.id;inp.value=o.eta||today();try{inp.showPicker()}catch(x){inp.click()}return}
-  const gg=e.target.closest('[data-arg]');if(gg){const o=items.find(x=>x.id===gg.dataset.arg);if(!o||o.status!=='pre')return;const left=o.items.filter(i=>!i.got).length;if(!confirm(o.items.length>1&&left<o.items.length?'剩下的 '+left+' 款都收到了嗎？':'「'+title(o)+'」收到了嗎？\n會改成「已到貨」，收貨日是今天。'))return;o.status='have';o.recvDate=o.recvDate||today();o.items.forEach(i=>delete i.got);save();render();drawArp();toast('已改成已到貨');return}const r=e.target.closest('[data-ar]');if(r){closeArp();openDetail(r.dataset.ar,-1)}});
+  const gg=e.target.closest('[data-arg]');if(gg){const o=items.find(x=>x.id===gg.dataset.arg);if(!o||o.status!=='pre')return;const left=o.items.filter(i=>!i.got).length;if(!confirm(o.items.length>1&&left<o.items.length?'剩下的 '+left+' 款都收到了嗎？':'「'+title(o)+'」收到了嗎？\n會改成「已到貨」，收貨日是今天。'))return;const payAll=o.pay!=='paid'&&bal(o)>0&&confirm('尾款 '+money(o,bal(o))+' 也付清了嗎？\n按「確定」記為已付清，按「取消」維持現在的付款狀態');mutOrders([o],()=>{if(payAll){o.pay='paid';o.deposit=0}o.status='have';o.recvDate=o.recvDate||today();o.items.forEach(i=>delete i.got)}).then(ok=>{render();drawArp();if(ok)toast('已改成已到貨')});return}const r=e.target.closest('[data-ar]');if(r){closeArp();openDetail(r.dataset.ar,-1)}});
 $('ar').addEventListener('click',e=>{if(e.target.closest('[data-arp]'))openArp()});
 document.querySelector('.vt').addEventListener('click',e=>{const b=e.target.closest('[data-vt]');if(b)$(b.dataset.vt==='s'?'vs':'vl').click()});
 /* gemini usage */
@@ -1742,9 +1858,9 @@ $('dupm').addEventListener('click',e=>{const M=$('dupm'),b=e.target.closest('but
   if(b.dataset.ya){const L=[...b.closest('.ys').querySelectorAll('[data-kb]')],all=L.every(c=>c.checked);L.forEach(c=>c.checked=!all);dupCnt();return}
   if(b.id==='dupnone'||b.id==='dupall'){M.querySelectorAll('[data-ka],[data-kb]').forEach(c=>c.checked=b.id==='dupall');dupCnt();return}
   if(b.id==='dupgo2'){const ka=[...M.querySelectorAll('[data-ka]:checked')].map(x=>M._A[+x.dataset.ka]),kb=[...M.querySelectorAll('[data-kb]:checked')].map(x=>M._B[+x.dataset.kb]);if(!ka.length&&!kb.length){toast('沒有勾選');return}
-    putPrev().then(()=>{ka.forEach(x=>{x.R.i.mg=1;const no=((x.R.o.note||'').match(/CM\w+/)||[''])[0];x.M.forEach(Bm=>{Bm.i.mgi=(Bm.i.mgi||[]).concat({d:x.R.o.soldDate||x.R.o.buyDate||'',a:x.r,n:no})})});dupApplyB(kb);save();render();M.classList.remove('show');drawSet();toast('已整理 '+(ka.length+kb.length)+' 筆',4500)});return}
+    putPrev().then(ok=>{if(!ok)return snapFail();ka.forEach(x=>{x.R.i.mg=1;const no=((x.R.o.note||'').match(/CM\w+/)||[''])[0];x.M.forEach(Bm=>{Bm.i.mgi=(Bm.i.mgi||[]).concat({d:x.R.o.soldDate||x.R.o.buyDate||'',a:x.r,n:no})})});dupApplyB(kb);save();render();M.classList.remove('show');drawSet();toast('已整理 '+(ka.length+kb.length)+' 筆',4500)});return}
   if(b.id==='dupok'){const ks=[...M.querySelectorAll('[data-dk]:checked')].map(x=>+x.dataset.dk);if(!ks.length){toast('沒有勾選');return}
-    putPrev().then(()=>{let n=0,t=0;ks.forEach(k=>{const x=M._L[k];if(x){x.R.i.mg=1;const no=((x.R.o.note||'').match(/CM\w+/)||[''])[0];x.M.forEach(B=>{B.i.mgi=(B.i.mgi||[]).concat({d:x.R.o.soldDate||x.R.o.buyDate||'',a:x.r,n:no})});n++;t+=x.r}});save();render();M.classList.remove('show');toast('已併入 '+n+' 筆，清單不再重複顯示，回血少算重複的 NT$'+Math.round(t).toLocaleString(),5000)});return}
+    putPrev().then(ok=>{if(!ok)return snapFail();let n=0,t=0;ks.forEach(k=>{const x=M._L[k];if(x){x.R.i.mg=1;const no=((x.R.o.note||'').match(/CM\w+/)||[''])[0];x.M.forEach(B=>{B.i.mgi=(B.i.mgi||[]).concat({d:x.R.o.soldDate||x.R.o.buyDate||'',a:x.r,n:no})});n++;t+=x.r}});save();render();M.classList.remove('show');toast('已併入 '+n+' 筆，清單不再重複顯示，回血少算重複的 NT$'+Math.round(t).toLocaleString(),5000)});return}
   if(b.id==='dupundo'){if(!confirm('把所有「已併入」標記還原？'))return;items.forEach(o=>o.items.forEach(i=>{delete i.mg;delete i.mgi}));save();render();dupOpen();toast('已還原')}});
 /* ---- 長按選取、批次刪除 ---- */
 let selMode=false,lpFired=false;const selSet=new Set();
@@ -1763,9 +1879,9 @@ function selExit(){selMode=false;selSet.clear();markSel()}
   $('selx').onclick=selExit;
   $('selcat').onclick=()=>{if(!selSet.size)return;$('catbx').innerHTML='<div style="font-weight:700;margin:0 4px 12px">把選取的 '+selSet.size+' 件改成哪個分類？</div>'+S.cats.map((c,i)=>`<button data-cs="${i}"><b>${esc(c)}</b></button>`).join('');$('catsh').classList.add('show')};
   $('catsh').addEventListener('click',e=>{const b=e.target.closest('[data-cs]');if(!b){if(e.target===$('catsh'))$('catsh').classList.remove('show');return}const c=S.cats[+b.dataset.cs];if(c===undefined||!selSet.size)return;$('catsh').classList.remove('show');
-    putPrev().then(()=>{let n=0;selSet.forEach(k=>{const i=k.lastIndexOf('|'),id=k.slice(0,i),ix=+k.slice(i+1),o=items.find(x=>x.id===id);if(!o)return;if(ix<0){o.cat=c;o.items.forEach(it=>{it.cat=c})}else if(o.items[ix])o.items[ix].cat=c;n++});selExit();save();renderCats();render();toast('已把 '+n+' 件改成「'+c+'」')})});
+    putPrev().then(ok=>{if(!ok)return snapFail();let n=0;selSet.forEach(k=>{const i=k.lastIndexOf('|'),id=k.slice(0,i),ix=+k.slice(i+1),o=items.find(x=>x.id===id);if(!o)return;if(ix<0){o.cat=c;o.items.forEach(it=>{it.cat=c})}else if(o.items[ix])o.items[ix].cat=c;n++});selExit();save();renderCats();render();toast('已把 '+n+' 件改成「'+c+'」')})});
   $('seldel').onclick=()=>{if(!selSet.size)return;if(!confirm('要刪除選取的 '+selSet.size+' 件嗎？\n（刪除前會先自動備份，可在設定裡「還原」）'))return;
-    putPrev().then(()=>{const by={};selSet.forEach(k=>{const i=k.lastIndexOf('|'),id=k.slice(0,i),ix=+k.slice(i+1);(by[id]=by[id]||[]).push(ix)});
+    putPrev().then(ok=>{if(!ok)return snapFail();const by={};selSet.forEach(k=>{const i=k.lastIndexOf('|'),id=k.slice(0,i),ix=+k.slice(i+1);(by[id]=by[id]||[]).push(ix)});
       const n=selSet.size;items=items.filter(o=>{const l=by[o.id];if(!l)return true;if(l.some(x=>x<0)||o.items.length<=new Set(l).size)return false;[...new Set(l)].sort((a,b)=>b-a).forEach(x=>o.items.splice(x,1));return true});
       selExit();save();renderCats();render();toast('已刪除 '+n+' 件')})}})();
 $('main').addEventListener('click',e=>{if(fMode){const fd=e.target.closest('[data-fdn]');if(fd){const k=fd.dataset.fdn;if(FOPEN.has(k))FOPEN.delete(k);else FOPEN.add(k);render();return}const t=e.target.closest('button[data-ft],button[data-fp],button[data-fg]'),r=e.target.closest('[data-fo]');
@@ -1984,18 +2100,25 @@ function applyRules(rules){let n=0;(rules||[]).forEach(R=>{const hits=[];items.f
   hits.forEach(([o,ix])=>{const it=o.items[ix];if(!it)return;const parts=(R.parts||[]).map(P=>{const c=JSON.parse(JSON.stringify(it));c.name=R.to||c.name;c.qty=P.qty||1;if(P.ch!=null){c.ch=P.ch;c.note=P.ch}Object.assign(c,P.set||{});return c});
     if(parts.length){o.items.splice(ix,1,...parts);n+=parts.length}if(R.ocat)o.cat=R.ocat;if(R.oset)Object.assign(o,R.oset)})});return n}
 function delByNote(L){let n=0;(L||[]).forEach(k=>{items.forEach(o=>{if(!(o.note||'').includes(k.note))return;const b=o.items.length;o.items=o.items.filter(i=>(i.name||'')!==k.name);n+=b-o.items.length});items=items.filter(o=>o.items.length>0)});return n}
+/* 補丁白名單：只允許改這些欄位，金額（單價、數量、幣別、匯率、運費）、編號、圖片一律不准用補丁改 */
+const PO_OK={status:v=>['wish','pre','have','sold'].includes(v),buyDate:'d',recvDate:'d',eta:'d',soldDate:'d',start:'d',cat:'s',seller:'s',src:'s',note:'s',link:'s',rel:'s',pay:v=>['paid','deposit','unpaid','cod',''].includes(v),fs:v=>['unrel','rel',''].includes(v),tg:v=>['1','2',''].includes(v),proxy:v=>['0','1',''].includes(v),fpd:v=>['0','1','g',''].includes(v)};
+const PI_OK={name:'s',cat:'s',ch:'s',kind:'s',note:'s',fn:'s',sell:'b',hide:'b',got:'b',ap:'b',proxy:v=>['0','1',''].includes(v),fpd:v=>['0','1','g',''].includes(v),fpa:'n',sq:'n',sp:'n',giv:v=>v===''||/^\d{4}-\d{2}-\d{2}$/.test(v),love:'n'};
+function cleanSet(set,A){const ok={},bad=[];if(!isRec(set))return {ok,bad:['（格式錯誤）']};for(const [k,v] of Object.entries(set)){const r=A[k];let g=false;if(r==='s')g=typeof v==='string';else if(r==='d')g=v===''||(typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v));else if(r==='n')g=v===''||(typeof v==='number'&&isFinite(v)&&v>=0)||(typeof v==='string'&&/^\d+(\.\d+)?$/.test(v));else if(r==='b')g=typeof v==='boolean'||v===0||v===1||v==='';else if(typeof r==='function')g=r(v);if(g)ok[k]=v;else bad.push(k)}return {ok,bad}}
+function planPatch(list){const P=[];let skip=0;const why=[];(list||[]).forEach(x=>{const o=x&&items.find(y=>y.id===x.id);if(!o){skip++;return}const os=x.set?cleanSet(x.set,PO_OK):{ok:{},bad:[]};if(os.bad.length)why.push(title(o).slice(0,12)+'：不允許改 '+os.bad.join('、'));const its=[];
+  (x.its||[]).forEach(q=>{const it=Number.isInteger(q.ix)?o.items[q.ix]:null;if(!it){skip++;why.push(title(o).slice(0,12)+'：第 '+q.ix+' 個品項不存在');return}const want=q.name??q.was;if(want!=null&&want!==it.name){skip++;why.push(title(o).slice(0,12)+'：第 '+q.ix+' 個品項名稱對不上（現在是「'+(it.name||'')+'」）');return}const c=cleanSet(q.set,PI_OK);if(c.bad.length)why.push((it.name||'').slice(0,12)+'：不允許改 '+c.bad.join('、'));if(Object.keys(c.ok).length)its.push({it,set:c.ok})});
+  if(Object.keys(os.ok).length||its.length)P.push({o,set:os.ok,its})});return {P,skip,why,n:P.reduce((a,x)=>a+x.its.length,0)}}
 function patchImport(d){
   if(d.rules){const m=[];d.rules.forEach(R=>items.forEach(o=>o.items.forEach(i=>{if((i.name||'')===R.name&&(!R.qty||(+i.qty||1)===R.qty)&&(!R.ch||i.ch===R.ch)&&(!R.seller||new RegExp(R.seller).test(o.seller||'')))m.push(i)})));(d.del||[]).forEach(k=>items.forEach(o=>{if((o.note||'').includes(k.note))o.items.forEach(i=>{if((i.name||'')===k.name)m.push(i)})}));
     if(!m.length&&!(d.items||[]).length&&!d.catFix&&!d.imgMap){alert('這個檔案要修的品項，app 裡都找不到（可能已經修過了）');return}
     if(!confirm(d.imgMap&&!m.length?'要把商品照片分給各自的品項嗎？\n（只動圖片，其他資料不動；處理前會先自動備份）':'要修正 '+m.length+' 個品項（拆成各自的角色、改名、標記打算賣／已售出）嗎？\n（金額、圖片不會動；修正前請先到設定匯出備份）'))return;
-    putPrev().then(()=>{const n=applyRules(d.rules),dl=delByNote(d.del);if(d.imgMap){const r=applyImgMap(d.imgMap);save();renderCats();render();toast('已把 '+r.pn+' 張商品照片分給品項（'+r.on+' 筆訂單）'+(r.sk?'，'+r.sk+' 筆對不上沒動':''),6000);return}if(d.catFix){const M=d.catFix.map||{},D=d.catFix.drop||[];items.forEach(o=>{if(M[o.cat])o.cat=M[o.cat];o.items.forEach(i=>{if(D.includes(i.cat))delete i.cat;else if(M[i.cat])i.cat=M[i.cat]})});S.hid=(S.hid||[]).map(x=>M[x]||x)}(d.items||[]).forEach(x=>{const o=items.find(y=>y.id===x.id);if(!o)return;if(x.set)Object.assign(o,x.set);(x.its||[]).forEach(q=>{const it=o.items[q.ix];if(it&&q.set)Object.assign(it,q.set)})});if(d.chars)S.chars=[...new Set([...(S.chars||[]),...d.chars])];save();renderCats();render();try{drawSet()}catch(e){}toast('已修正'+(d.catFix?'分類、':'')+(dl?'，移除 '+dl+' 筆重複的售出紀錄':''),4000)});return}
-  const its=(d.items||[]).filter(x=>x&&items.some(y=>y.id===x.id)),fl=d.fledger||{};
-  const nf=Object.keys(fl).length,n=its.reduce((a,x)=>a+(x.its||[]).length,0);
-  if(!its.length&&!nf){alert('這個檔案裡的訂單，app 裡都找不到，所以沒有東西可以更新');return}
-  if(!confirm('要更新 '+n+' 個品項的「幫朋友買／朋友是否已付錢／打算賣／已售出」，以及 '+nf+' 位朋友的結算紀錄嗎？\n（不會動到任何金額、圖片）'))return;
-  its.forEach(x=>{const o=items.find(y=>y.id===x.id);if(x.set)Object.assign(o,x.set);(x.its||[]).forEach(p=>{const it=o.items[p.ix];if(it&&p.set)Object.assign(it,p.set)})});
-  if(nf){S.fledger=Object.assign(S.fledger||{},fl)}
-  save();renderCats();render();try{drawSet()}catch(e){}toast('已更新 '+n+' 個品項、'+nf+' 位朋友')}
+    putPrev('patch').then(ok=>{if(!ok)return snapFail();const n=applyRules(d.rules),dl=delByNote(d.del);if(d.imgMap){const r=applyImgMap(d.imgMap);save();renderCats();render();toast('已把 '+r.pn+' 張商品照片分給品項（'+r.on+' 筆訂單）'+(r.sk?'，'+r.sk+' 筆對不上沒動':''),6000);return}if(d.catFix){const M=d.catFix.map||{},D=d.catFix.drop||[];items.forEach(o=>{if(M[o.cat])o.cat=M[o.cat];o.items.forEach(i=>{if(D.includes(i.cat))delete i.cat;else if(M[i.cat])i.cat=M[i.cat]})});S.hid=(S.hid||[]).map(x=>M[x]||x)}planPatch(d.items).P.forEach(x=>{Object.assign(x.o,x.set);x.its.forEach(q=>Object.assign(q.it,q.set))});if(d.chars)S.chars=[...new Set([...(S.chars||[]),...d.chars])];save();renderCats();render();try{drawSet()}catch(e){}toast('已修正'+(d.catFix?'分類、':'')+(dl?'，移除 '+dl+' 筆重複的售出紀錄':''),4000)});return}
+  const PL=planPatch(d.items),fl=isRec(d.fledger)?d.fledger:{},nf=Object.keys(fl).length,n=PL.n;
+  if(!PL.P.length&&!nf){alert('這個檔案裡的訂單，app 裡都找不到或都對不上，所以沒有東西可以更新'+(PL.why.length?'：\n'+PL.why.slice(0,6).join('\n'):''));return}
+  const pv=PL.P.slice(0,6).map(x=>'・'+title(x.o).slice(0,16)+'：'+[...Object.keys(x.set),...new Set(x.its.flatMap(q=>Object.keys(q.set)))].join('、')).join('\n');
+  if(!confirm('要更新 '+PL.P.length+' 筆訂單（'+n+' 個品項），以及 '+nf+' 位朋友的結算紀錄嗎？\n'+pv+(PL.P.length>6?'\n…':'')+(PL.skip||PL.why.length?'\n\n略過／不允許的：\n'+PL.why.slice(0,6).join('\n'):'')+'\n\n（金額、編號、圖片不會被改；更新前會先留快照）'))return;
+  putPrev('patch').then(async ok=>{if(!ok)return snapFail();const oldF=JSON.parse(JSON.stringify(S.fledger||{}));
+    const done=await mutOrders(PL.P.map(x=>x.o),()=>{PL.P.forEach(x=>{Object.assign(x.o,x.set);x.its.forEach(q=>Object.assign(q.it,q.set))});if(nf)S.fledger=Object.assign(S.fledger||{},fl)});
+    if(!done){S.fledger=oldF;render();return}renderCats();render();try{drawSet()}catch(e){}toast('已更新 '+n+' 個品項、'+nf+' 位朋友')})}
 function imgOnlyImport(its){const ms=its.filter(x=>x&&x.imgs&&x.imgs.length&&items.some(y=>y.id===x.id));if(!ms.length){alert('這個檔案裡的訂單，app 裡都找不到，所以沒有圖片可以換');return}if(confirm('要把 '+ms.length+' 筆訂單的圖片換成高清版嗎？（只換圖片，其他資料不動）')){ms.forEach(x=>{const o=items.find(y=>y.id===x.id);o.imgs=x.imgs;o.cover=0});save();renderCats();render();try{drawSet()}catch(e){}toast('已更新 '+ms.length+' 筆的圖片')}}
 async function bulkImport(files){
   if(roBlock())return;
@@ -2013,7 +2136,7 @@ async function bulkImport(files){
   const pv=add.slice(0,5).map(o=>'・'+o.items.map(i=>i.name).join('、').slice(0,30)+(o.items[0]&&o.items[0].price?'　'+o.items[0].price:'')).join('\n');
   if(!confirm('讀到 '+n0+' 筆：\n可新增 '+add.length+' 筆'+(dup.length?'（其中 '+dup.length+' 筆跟現有商品同名，可能重複）':'')+(bad.length?'\n沒有品名、已略過 '+bad.length+' 筆':'')+(sameId?'\n已匯入過、已略過 '+sameId+' 筆':'')+'\n\n前幾筆：\n'+pv+(add.length>5?'\n…':'')+'\n\n要新增嗎？（不會動到你現有的資料）'))return;
   if(dup.length&&confirm('要略過同名的 '+dup.length+' 筆嗎？\n按「確定」略過、按「取消」全部新增')){add=add.filter(o=>!dup.includes(o));if(!add.length){toast('都是重複的，沒有新增');return}}
-  items=items.concat(add);save();renderCats();render();toast('已新增 '+add.length+' 筆')}
+  {const old=items;items=items.concat(add);save().then(ok=>{if(!ok){items=old;render();return}renderCats();render();toast('已新增 '+add.length+' 筆')})}}
 $('bulkf').addEventListener('change',e=>{const fs=[...e.target.files];e.target.value='';if(fs.length)bulkImport(fs)});
 
 
@@ -2076,10 +2199,11 @@ function drawRc(){
   <div style="padding:0 16px 150px"><div class="msg" style="margin:6px 0 10px">${rcG.length?'找到 '+rcG.length+' 組「同一天、同一個來源／店家、同幣別、同付款狀態」卻被分成多筆的訂單。勾選的會各自合併成一筆，不是同一張收據的請取消勾選。':'沒有找到需要合併的訂單。'}</div>
   ${rcG.map((g,i)=>{const on=rcSel.includes(i),f=g[0];return `<label class="mgr${on?' on':''}"><input type="checkbox" data-rc="${i}" ${on?'checked':''}><span class="mgt"><b>${esc(f.seller||f.src||'未填來源')} · ${fmt(f.buyDate)}</b><small>${g.length} 筆 → 1 筆：${esc(g.map(o=>o.items.map(i=>i.name).join('、')).join('、').slice(0,60))}</small></span><span class="mgp">${money(f,g.reduce((a,o)=>a+total(o),0))}</span></label>`}).join('')}</div>
   <div class="mgb"><div class="msg">${rcSel.length?'已選 '+rcSel.length+' 組':'還沒選'}</div><button class="btn mgg" id="rcgo" ${rcSel.length?'':'disabled'}>合併所選的 ${rcSel.length} 組</button></div>`}
-function doRc(){if(!rcSel.length)return;const n=rcSel.length;if(!confirm('要把 '+n+' 組訂單各自合併成一筆嗎？\n（合併前會先自動備份，可在設定裡「還原」）'))return;
-  putPrev().then(()=>{const gs=rcSel.map(i=>rcG[i]);let c=0;
-    gs.forEach(g=>{mgSel=g.map(o=>o.id);doMerge(true);c++});
-    mgSel=[];$('mg').classList.remove('show');renderCats();render();toast('已合併 '+c+' 組訂單',3500)})}
+async function doRc(){if(!rcSel.length)return;const n=rcSel.length;if(!confirm('要把 '+n+' 組訂單各自合併成一筆嗎？\n（合併前會先自動備份，可以復原）'))return;
+  if(!(await putPrev('op')))return snapFail();const old=items;let L=old.slice(),c=0,skip=0;
+  for(const g of rcSel.map(i=>rcG[i])){const ids=new Set(g.map(o=>o.id)),ch=L.filter(o=>ids.has(o.id));if(ch.length<2){skip++;continue}const m=buildMerge(ch,false);if(!m){skip++;continue}const at=L.indexOf(ch[0]);L=L.filter(o=>!ids.has(o.id));L.splice(Math.min(at,L.length),0,m);c++}
+  items=L;if(!(await save())){items=old;render();return}
+  mgSel=[];$('mg').classList.remove('show');renderCats();render();toast('已合併 '+c+' 組訂單'+(skip?'（'+skip+' 組無法合併，已略過）':''),3500)}
 function bgInit(){bgL=items.filter(o=>o.status!=='wish'&&o.items.length>1&&o.items.some(i=>!isBag(i.name)&&!i.ap)&&o.items.some(i=>isBag(i.name)&&!i.ap));bgSel=bgL.map(o=>o.id)}
 function drawBag(){
   $('mg').innerHTML=`<div class="mh"><button id="mgx">取消</button><b>找紙袋／袋子</b><span style="width:48px"></span></div>
@@ -2087,7 +2211,7 @@ function drawBag(){
   ${bgL.map(o=>{const on=bgSel.includes(o.id),bags=o.items.filter(i=>isBag(i.name)&&!i.ap),T=bags.reduce((a,i)=>a+(+i.qty||1)*(+i.price||0),0);return `<label class="mgr${on?' on':''}"><input type="checkbox" data-bg="${o.id}" ${on?'checked':''}><span class="mgt"><b>${esc(mgSum(o))}</b><small>${esc(o.seller||o.src||'')}${o.buyDate?' · '+fmt(o.buyDate):''} · ${esc(bags.map(i=>i.name).join('、'))} ${money(o,T)}</small></span><span class="mgp">${money(o,total(o))}</span></label>`}).join('')}</div>
   <div class="mgb"><div class="msg">${bgSel.length?'已選 '+bgSel.length+' 張':'還沒選'}</div><button class="btn mgg" id="bggo" ${bgSel.length?'':'disabled'}>套用到所選的 ${bgSel.length} 張</button></div>`}
 function doBag(){if(!bgSel.length)return;if(!confirm('要把 '+bgSel.length+' 張收據的袋子金額分攤到其他商品嗎？\n（套用前會先自動備份，可在設定裡「還原」）'))return;
-  putPrev().then(()=>{let n=0;items.forEach(o=>{if(!bgSel.includes(o.id))return;o.items.forEach(i=>{if(isBag(i.name)&&!i.ap){i.ap=1;n++}})});save();$('mg').classList.remove('show');renderCats();render();toast('已處理 '+n+' 個袋子品項')})}
+  putPrev().then(ok=>{if(!ok)return snapFail();let n=0;items.forEach(o=>{if(!bgSel.includes(o.id))return;o.items.forEach(i=>{if(isBag(i.name)&&!i.ap){i.ap=1;n++}})});save();$('mg').classList.remove('show');renderCats();render();toast('已處理 '+n+' 個袋子品項')})}
 function drawDupM(){
   const q=mgQ.trim().toLowerCase(),L=[];
   items.slice().reverse().forEach(o=>o.items.forEach((it,i)=>{if(!q||[it.name,it.cat,o.seller,o.src,o.cat].join(' ').toLowerCase().includes(q))L.push([o,it,i])}));
@@ -2108,7 +2232,7 @@ function doDupI(){
   const g=dmG.map(dmGet).filter(Boolean),keep=g.find(([o,it,i])=>dmKey(o,i)===dmKeep);if(!keep||g.length<2)return;
   const del=g.filter(x=>x!==keep);
   if(!confirm('要保留「'+(keep[1].name||'')+'」，刪除其他 '+del.length+' 個商品嗎？\n（刪除前會先自動備份，可在設定裡「還原」）'))return;
-  putPrev().then(()=>{const [ko,kit]=keep;
+  putPrev().then(ok=>{if(!ok)return snapFail();const [ko,kit]=keep;
     del.forEach(([o,it])=>{const im=it.img||'';if(dupAddImg&&im&&im!==kit.img){ko.imgs=ko.imgs||[];if(!ko.imgs.some(x=>x.s===im))ko.imgs.push({s:im})}else if(!kit.img&&im&&!hasImg(ko)){kit.img=im}});
     del.forEach(([o,it])=>{o.items=o.items.filter(x=>x!==it)});
     items=items.filter(o=>o.items.length>0);
@@ -2120,9 +2244,9 @@ function drawDup(){
   ${dupG.map((g,i)=>dupSkip[i]?'':`<div class="dupg"><div class="duph">${esc(mgSum(g[0]))}</div>${g.map(o=>{const on=dupKeep[i]===o.id;return `<div class="dupr${on?' on':''}" data-dk="${i}|${o.id}"><div class="dupi">${cover(o)?`<img loading="lazy" decoding="async" src="${cover(o)}" alt="">`:''}</div><span class="mgt"><b>${esc(mgSum(o))}</b><small>${esc(ST[o.status])} · ${esc(o.seller||o.src||'')}${o.buyDate?' · '+fmt(o.buyDate):''} · ${(o.imgs||[]).length} 張圖</small></span><span class="mgp">${money(o,total(o))}</span><i class="dupk">${on?'保留':'刪除'}</i></div>`}).join('')}<button class="btn" data-ds="${i}" style="margin-top:6px">這組不是重複</button></div>`).join('')}</div>
   <div class="mgb"><label class="mgv"><input type="checkbox" id="dupimg" ${dupAddImg?'checked':''}> 被刪除那筆的圖片，也加進保留的那筆</label><div class="msg">${ng?'將處理 '+ng+' 組，刪除 '+act+' 筆':'沒有要處理的'}</div><button class="btn mgg" id="dupgo" ${ng?'':'disabled'}>確認，保留所選並覆蓋</button></div>`}
 function doDup(){const g=dupG.map((x,i)=>[x,i]).filter(([x,i])=>!dupSkip[i]);if(!g.length)return;const del=g.reduce((a,[x])=>a+x.length-1,0);if(!confirm('要處理 '+g.length+' 組，刪除 '+del+' 筆嗎？\n（刪除前會先自動備份，可在設定裡「還原」）'))return;
-  putPrev().then(()=>{const rm=new Set();g.forEach(([x,i])=>{const keep=items.find(o=>o.id===dupKeep[i]);x.forEach(o=>{if(o.id===dupKeep[i])return;if(dupAddImg&&keep){keep.imgs=(keep.imgs||[]).concat(o.imgs||[])}else if(keep&&!(keep.imgs||[]).length){keep.imgs=(o.imgs||[]).slice()}rm.add(o.id)})});
+  putPrev().then(ok=>{if(!ok)return snapFail();const rm=new Set();g.forEach(([x,i])=>{const keep=items.find(o=>o.id===dupKeep[i]);x.forEach(o=>{if(o.id===dupKeep[i])return;if(dupAddImg&&keep){keep.imgs=(keep.imgs||[]).concat(o.imgs||[])}else if(keep&&!(keep.imgs||[]).length){keep.imgs=(o.imgs||[]).slice()}rm.add(o.id)})});
     items=items.filter(o=>!rm.has(o.id));save();$('mg').classList.remove('show');renderCats();render();toast('已刪除 '+rm.size+' 筆重複')})}
-function doDel(){if(!mgSel.length)return;{const ch=items.filter(o=>mgSel.includes(o.id));if(!confirm('要刪除這 '+ch.length+' 筆訂單嗎？\n'+ch.slice(0,8).map(o=>'・'+title(o).slice(0,18)).join('\n')+(ch.length>8?'\n…還有 '+(ch.length-8)+' 筆':'')+'\n\n共 '+ch.reduce((a,o)=>a+o.items.reduce((b,i)=>b+(+i.qty||1),0),0)+' 件、NT$'+Math.round(ch.reduce((a,o)=>a+tw(o,total(o)),0)).toLocaleString()+'\n刪除後可以按「復原」'))return}putPrev().then(()=>{const n=mgSel.length;items=items.filter(o=>!mgSel.includes(o.id));mgSel=[];save();$('mg').classList.remove('show');renderCats();render();toast('已刪除 '+n+' 筆')})}
+function doDel(){if(!mgSel.length)return;{const ch=items.filter(o=>mgSel.includes(o.id));if(!confirm('要刪除這 '+ch.length+' 筆訂單嗎？\n'+ch.slice(0,8).map(o=>'・'+title(o).slice(0,18)).join('\n')+(ch.length>8?'\n…還有 '+(ch.length-8)+' 筆':'')+'\n\n共 '+ch.reduce((a,o)=>a+o.items.reduce((b,i)=>b+(+i.qty||1),0),0)+' 件、NT$'+Math.round(ch.reduce((a,o)=>a+tw(o,total(o)),0)).toLocaleString()+'\n刪除後可以按「復原」'))return}putPrev('del').then(async ok=>{if(!ok)return snapFail();const n=mgSel.length,old=items;items=items.filter(o=>!mgSel.includes(o.id));if(!(await save())){items=old;render();return}mgSel=[];$('mg').classList.remove('show');renderCats();render();toast('已刪除 '+n+' 筆')})}
 const mgSum=o=>{const n=o.items.filter(i=>i.name).map(i=>i.name);return (n[0]||'（未命名）')+(o.items.length>1?' 等'+o.items.length+'項':'')};
 function drawMg(){
   if(mgMode==='del'){drawDel();return}
@@ -2144,12 +2268,9 @@ function drawMg(){
   <button class="btn mgg" id="mgo" ${ch.length<2?'disabled':''}>合併成一筆</button></div>`;
   const qi=$('mgq');if(qi&&mgQ){qi.focus();const l=qi.value.length;qi.setSelectionRange(l,l)}
 }
-function doMerge(q){
-  const ch=items.filter(o=>mgSel.includes(o.id));if(ch.length<2)return;
-  const f=ch[0];if(!q){const df=(k,lab,fm)=>{const v=[...new Set(ch.map(o=>fm?fm(o):(o[k]||'（空）')))];return v.length>1?'⚠ '+lab+'不同：'+v.join('、'):''};
-    const warn=[df('cur','幣別'),df('src','來源'),df('status','狀態',o=>ST[o.status]||o.status),df('pay','付款',o=>({paid:'已付清',deposit:'已付訂金',unpaid:'未付',cod:'貨到付款'})[o.pay]||'未付')].filter(Boolean);const bds=[...new Set(ch.map(o=>o.buyDate).filter(Boolean))].sort();
-    const lst=ch.map(o=>'・'+title(o).slice(0,18)+'（'+o.items.length+' 項，NT$'+Math.round(tw(o,total(o))).toLocaleString()+'）').join('\n');
-    if(!confirm('把這 '+ch.length+' 筆合併成一筆：\n'+lst+'\n\n合併後共 '+ch.reduce((a,o)=>a+o.items.length,0)+' 個品項，總額 NT$'+Math.round(ch.reduce((a,o)=>a+tw(o,total(o)),0)).toLocaleString()+'（運費加總，不會重複算）'+(warn.length?'\n\n'+warn.join('\n')+'\n（以上以第一筆為準）':'')+(bds.length>1?'\n購買日用最早的 '+bds[0]:'')+'\n\n合併後可以按「復原」'))return}
+/* 合併：先在副本上算出結果（不動現有資料），快照成功、存檔成功才算數；不同幣別不合併；保留每筆來源明細 m.mf */
+const MFK=['id','src','seller','buyDate','recvDate','soldDate','eta','status','pay','deposit','twPaid','ship','cur','rate','pm','fee','feeAmt','feeLater','taxf','fpaid','fpd','link'];
+function buildMerge(ch,ev){const f=ch[0];if(new Set(ch.map(o=>o.cur||'TWD')).size>1)return null;
   const m=JSON.parse(JSON.stringify(f));m.id='o'+Date.now();
   m.items=[];ch.forEach(o=>JSON.parse(JSON.stringify(o.items)).forEach(i=>{if(i.p0!==undefined){i.price=i.p0;delete i.p0}m.items.push(i)}));
   m.ship=ch.reduce((a,o)=>a+(+o.ship||0),0);
@@ -2164,11 +2285,21 @@ function doMerge(q){
   m.seller=[...new Set(ch.map(o=>o.seller).filter(Boolean))].join('、')||f.seller;
   m.note=ch.map(o=>(o.note||'').trim()).filter(Boolean).join('\n');
   m.imgs=[].concat(...ch.map(o=>o.imgs||[]));
-  m.even='';m.shipBy='p';if(!q&&$('mgev').checked)setEven(m,true);
-  if(!q)putPrev();const at=items.indexOf(f);items=items.filter(o=>!mgSel.includes(o.id));items.splice(Math.min(at,items.length),0,m);
-  derive(m);
-  if(q)return;save();render();$('mg').classList.remove('show');toast('✓ 已合併成一筆（'+m.items.length+' 個品項）',3500);
-}
+  m.even='';m.shipBy='p';if(ev)setEven(m,true);
+  const same=k=>ch.every(o=>String(o[k]??'')===String(f[k]??''));if(same('rate')&&f.rate)m.rate=f.rate;if(same('pm')&&f.pm)m.pm=f.pm;if(same('fee')&&f.fee!==undefined)m.fee=f.fee;
+  m.mf=[].concat(...ch.map(o=>o.mf&&o.mf.length?o.mf:[Object.fromEntries(MFK.filter(k=>o[k]!==undefined&&o[k]!=='').map(k=>[k,o[k]]).concat([['n',o.items.length]]))]));
+  derive(m);return m}
+async function doMerge(){
+  const ch=items.filter(o=>mgSel.includes(o.id));if(ch.length<2)return;const f=ch[0];
+  if(new Set(ch.map(o=>o.cur||'TWD')).size>1){alert('這幾筆的幣別不同（'+[...new Set(ch.map(o=>CURN[o.cur||'TWD']||o.cur))].join('、')+'），直接合併會把不同幣別的金額加在一起，所以不能合併。');return}
+  {const df=(k,lab,fm)=>{const v=[...new Set(ch.map(o=>fm?fm(o):(o[k]||'（空）')))];return v.length>1?'⚠ '+lab+'不同：'+v.join('、'):''};
+    const warn=[df('src','來源'),df('status','狀態',o=>ST[o.status]||o.status),df('pay','付款',o=>({paid:'已付清',deposit:'已付訂金',unpaid:'未付',cod:'貨到付款'})[o.pay]||'未記錄')].filter(Boolean);const bds=[...new Set(ch.map(o=>o.buyDate).filter(Boolean))].sort();
+    const lst=ch.map(o=>'・'+title(o).slice(0,18)+'（'+o.items.length+' 項，NT$'+Math.round(tw(o,total(o))).toLocaleString()+'）').join('\n');
+    if(!confirm('把這 '+ch.length+' 筆合併成一筆：\n'+lst+'\n\n合併後共 '+ch.reduce((a,o)=>a+o.items.length,0)+' 個品項，總額 NT$'+Math.round(ch.reduce((a,o)=>a+tw(o,total(o)),0)).toLocaleString()+'（運費加總，不會重複算）'+(warn.length?'\n\n'+warn.join('\n')+'\n（以上以第一筆為準，原本每筆的來源、日期、付款會保留在合併明細裡）':'')+(bds.length>1?'\n購買日用最早的 '+bds[0]:'')+'\n\n合併後可以按「復原」'))return}
+  const ev=!!($('mgev')&&$('mgev').checked);if(!(await putPrev('op')))return snapFail();
+  const m=buildMerge(ch,ev);if(!m)return;const old=items,at=old.indexOf(f),L=old.filter(o=>!mgSel.includes(o.id));L.splice(Math.min(at,L.length),0,m);
+  items=L;if(!(await save())){items=old;render();return}
+  render();$('mg').classList.remove('show');toast('✓ 已合併成一筆（'+m.items.length+' 個品項）',3500)}
 $('mg').addEventListener('click',e=>{const t=e.target;if(mgMode==='dup'){const dr=t.closest('[data-dk]'),ds=t.closest('[data-ds]');if(dr){const [i,id]=dr.dataset.dk.split('|');dupKeep[i]=id;drawMg();return}if(ds){dupSkip[ds.dataset.ds]=true;dupNoAdd(dupG[+ds.dataset.ds]);drawMg();return}}if(mgMode==='bag'){if(t.id==='bggo'){doBag();return}}if(mgMode==='rcpt'){if(t.id==='rcgo'){doRc();return}}if(t.id==='dupm'){mgMode='dupm';dmSel=[];mgQ='';drawMg();return}if(t.id==='dupmgo'){if(dmSel.length<2)return;dmG=dmSel.slice();dmKeep=dmG[0];mgMode='dupi';drawMg();return}if(mgMode==='dupi'){const dr=t.closest('[data-di]');if(dr){dmKeep=dr.dataset.di;drawMg();return}if(t.id==='dupigo'){doDupI();return}}if(t.id==='mgx'){$('mg').classList.remove('show')}else if(t.id==='mgo')doMerge();else if(t.id==='mgdel')doDel();else if(t.id==='dupgo')doDup();else if(t.id==='mgall'){const q=mgQ.trim().toLowerCase(),ids=items.filter(o=>(!q||(mgSum(o)+(o.seller||'')+o.items.map(i=>i.name).join(' ')).toLowerCase().includes(q))&&(!mgNoImg||!hasImg(o))).map(o=>o.id);const all=ids.length&&ids.every(i=>mgSel.includes(i));mgSel=all?mgSel.filter(i=>!ids.includes(i)):[...new Set([...mgSel,...ids])];drawMg()}});
 $('mg').addEventListener('change',e=>{const t=e.target;if(t.dataset.rc!==undefined){const i=+t.dataset.rc;const k=rcSel.indexOf(i);k>=0?rcSel.splice(k,1):rcSel.push(i);drawMg();return}if(t.dataset.bg){const i=bgSel.indexOf(t.dataset.bg);i>=0?bgSel.splice(i,1):bgSel.push(t.dataset.bg);drawMg();return}if(t.dataset.dm){const i=dmSel.indexOf(t.dataset.dm);i>=0?dmSel.splice(i,1):dmSel.push(t.dataset.dm);drawMg()}else if(t.dataset.mg){const i=mgSel.indexOf(t.dataset.mg);i>=0?mgSel.splice(i,1):mgSel.push(t.dataset.mg);drawMg()}else if(t.id==='mgev')mgEven=t.checked;else if(t.id==='mgni'){mgNoImg=t.checked;drawMg()}else if(t.id==='dupimg')dupAddImg=t.checked});
 $('mg').addEventListener('input',e=>{if(e.target.id==='mgq'){mgQ=e.target.value;if(e.isComposing||mgComp)return;drawMg()}});
@@ -2195,15 +2326,17 @@ function flBody(){
   <div class="flt">${T.map(([k,n])=>`<button data-ft="${k}" class="${flTab===k?'on':''}">${n} ${cnt(k)}</button>`).join('')}</div>
   ${Object.keys(g).sort((x,y)=>Math.min(...g[x].map(z=>RK[z.st]))-Math.min(...g[y].map(z=>RK[z.st]))).map(f=>`<div class="flg"><h4>${esc(f)}</h4>${frSum(L.filter(z=>z.fr===f))}${fled(f,L.filter(z=>z.fr===f&&fpdOf(z.o,z.it)==='g').reduce((t,z)=>t+z.nt,0))}${(()=>{const card=x=>{const im=(x.it.img&&x.it.img.s)||(x.o.imgs&&x.o.imgs[0]&&x.o.imgs[0].s)||'';return `<div class="flr${x.st==='given'?' done':''}" data-fo="${x.o.id}|${x.ix}"><div class="fli">${im?`<img loading="lazy" decoding="async" src="${im}" alt="">`:''}</div><div class="flb"><b>${esc(x.it.name||'（未命名）')}${(+x.it.qty||1)>1?' ×'+(+x.it.qty):''}</b><small>${x.o.status==='pre'&&x.o.eta&&!got(x.o,x.it)?'預計 '+fmt(x.o.eta)+' · ':''}NT$${x.nt.toLocaleString()}${(+x.it.fpa>0&&fpdOf(x.o,x.it)!=='g')?(()=>{const d=Math.round(x.it.fpa-x.nt);return ' · 朋友付 NT$'+Math.round(+x.it.fpa).toLocaleString()+(d>0?'（多收 '+d+'）':d<0?'（少收 '+(-d)+'）':'')})():''}</small></div>
    <div class="flc">${!got(x.o,x.it)?'<i class="fs pre">預購中</i>':''}<span class="sg"><button data-fp="${x.o.id}|${x.ix}" data-v="0" class="u${fpdOf(x.o,x.it)==='0'?' on':''}">未付款</button><button data-fp="${x.o.id}|${x.ix}" data-v="1" class="${fpdOf(x.o,x.it)==='1'||(fpdOf(x.o,x.it)!=='0'&&fpdOf(x.o,x.it)!=='g')?'on':''}">已付款</button><button data-fp="${x.o.id}|${x.ix}" data-v="g" class="${fpdOf(x.o,x.it)==='g'?'on gf':''}">🎁送禮</button></span>${got(x.o,x.it)?`<span class="sg"><button data-fg="${x.o.id}|${x.ix}" data-v="0" class="u${x.it.giv?'':' on'}">未交貨</button><button data-fg="${x.o.id}|${x.ix}" data-v="1" class="${x.it.giv?' on':''}">已交貨</button></span>`:''}</div></div>`};const dn=g[f].filter(x=>x.st==='given'),ac=g[f].filter(x=>x.st!=='given'),fold=dn.length>0&&flTab!=='given';return ac.map(card).join('')+(dn.length?(flTab==='given'||!fold?dn.map(card).join(''):`<div class="fdn" data-fdn="${esc(f)}">${FOPEN.has(f)?'▾':'▸'} 已完成 ${dn.length} 件${FOPEN.has(f)?'（點一下收起）':'（點一下展開）'}</div>${FOPEN.has(f)?dn.map(card).join(''):''}`):'')})()}</div>`).join('')||'<div class="empty">沒有符合的商品<br><small>把品項的歸屬設為「幫朋友買」就會出現在這裡</small></div>'}</div>`}
-function frSum(A){const m=v=>'NT$'+Math.round(v).toLocaleString();let due=0,got_=0,over=0,hold=0;A.forEach(x=>{const st=fpdOf(x.o,x.it),pa=+x.it.fpa||0;if(st==='g')return;due+=x.nt;const r=st==='0'?pa:(pa||x.nt);got_+=Math.min(r,x.nt);if(r>x.nt)over+=r-x.nt});A.forEach(x=>{if(x.st==='tohand')hold++});const un=Math.max(0,due-got_);
-  return `<div class="frs"><span>應收 <b>${m(due)}</b></span><span>已收 <b>${m(got_)}</b></span><span class="${un?'r':''}">未收 <b>${m(un)}</b></span>${over?`<span>溢收 <b>${m(over)}</b></span>`:''}<span>待交 <b>${hold} 件</b></span></div>`}
+function frSum(A){const m=v=>'NT$'+Math.round(v).toLocaleString();let due=0,rec=0,un=0,over=0,hold=0,unk=0;
+  A.forEach(x=>{const st=fpdOf(x.o,x.it),q=+x.it.qty||1,pa=+x.it.fpa||0;if(got(x.o,x.it)&&!x.it.giv)hold+=q;if(st==='g')return;due+=x.nt;
+    if(st!=='0'&&st!=='1'){unk+=q;if(pa){rec+=pa;over+=Math.max(0,pa-x.nt)}return}const r=st==='0'?pa:(pa||x.nt);rec+=r;un+=Math.max(0,x.nt-r);over+=Math.max(0,r-x.nt)});
+  return `<div class="frs"><span>應收 <b>${m(due)}</b></span><span>實收 <b>${m(rec)}</b></span><span class="${un?'r':''}">未收 <b>${m(un)}</b></span>${over?`<span>溢收 <b>${m(over)}</b></span>`:''}<span>待交 <b>${hold} 件</b></span>${unk?`<span>付款未記錄 <b>${unk} 件</b></span>`:''}</div>`}
 function drawFl(){$('fl').innerHTML=`<div class="mh"><button id="flx">完成</button><b>朋友的商品</b><span style="width:48px"></span></div>`+flBody()}
 $('fl').addEventListener('click',e=>{const t=e.target.closest('button');if(!t){const r=e.target.closest('[data-fo]');if(r){const [id,ix]=r.dataset.fo.split('|');flRet=true;$('fl').classList.remove('show');openDetail(id,+ix)}return}
   if(t.id==='flx'){$('fl').classList.remove('show');render();return}
   if(t.dataset.ft){flTab=t.dataset.ft;drawFl();return}
   if(!t.closest('button')){}
-  if(t.dataset.fp){const [id,ix]=t.dataset.fp.split('|'),o=items.find(x=>x.id===id),it=o&&o.items[+ix];if(it){it.fpd=t.dataset.v;save();drawFl()}return}
-  if(t.dataset.fg){const [id,ix]=t.dataset.fg.split('|'),o=items.find(x=>x.id===id),it=o&&o.items[+ix];if(it){it.giv=t.dataset.v==='1'?(it.giv||today()):'';save();drawFl()}}});
+  if(t.dataset.fp){const [id,ix]=t.dataset.fp.split('|'),o=items.find(x=>x.id===id),it=o&&o.items[+ix];if(it){const v=t.dataset.v;mutOrders([o],()=>{it.fpd=v}).then(()=>drawFl())}return}
+  if(t.dataset.fg){const [id,ix]=t.dataset.fg.split('|'),o=items.find(x=>x.id===id),it=o&&o.items[+ix];if(it){const v=t.dataset.v;mutOrders([o],()=>{it.giv=v==='1'?(it.giv||today()):''}).then(()=>drawFl())}}});
 /* iOS 鍵盤：編輯頁與設定頁底部固定多留空間（寫在 CSS，不在輸入當下改版面，避免游標與選取框錯位） */
 
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
@@ -2217,8 +2350,8 @@ async function autoTrimAll(){
   if(ch){save();render()}
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){autoPull();}else if(autoOn()&&isDirty()&&lsGet('syncSha'))syncUp(true)});
-(async()=>{const a=await loadItems(),s=await kvGet('settings');if(s&&s.cats)S=Object.assign(S,s);items=(a||[]).map(mig);if(dedupChars()>0)setTimeout(()=>{save();toast('已合併重複的角色',3500)},800);renderCats();setTimeout(feeAuto,1500);if(window.LOADMISS>0)setTimeout(()=>toast('⚠ 有 '+window.LOADMISS+' 筆資料讀不到，請先不要刪除或匯入，並到設定按「還原到上一次快照」或用備份檔救回',15000),1500);try{if(!localStorage.getItem('fixCut1')){localStorage.setItem('fixCut1','1');Promise.resolve(fixCut()).then(n=>{if(n){render();toast('已找回 '+n+' 張去背圖的標記',4000)}}).catch(()=>{})}}catch(e){}try{if(!localStorage.getItem('fixPaid1')){localStorage.setItem('fixPaid1','1');Promise.resolve(fixPaid()).then(n=>{if(n){render();toast('已把 '+n+' 筆已到貨的訂單標為已付清（可在設定還原）')}})}}catch(e){}try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{const h=localStorage.getItem('hp2')||(localStorage.getItem('hp')==='0'?'all':'hide');$('hp').value=h}catch(e){}
-try{const v=localStorage.getItem('view');if(VB[v])view=v;Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===view))}catch(e){}render();setTimeout(()=>autoTrimAll().catch(()=>{}),400);jobs=[];saveJobs();if(applyCfgHash()){fillCfg();toast('已設定，開始從雲端下載…');setTimeout(()=>syncDown(),300)}else setTimeout(autoPull,1500)})();
+(async()=>{const LD=await loadItems(),s=LD.settings;if(s&&s.cats)S=Object.assign(S,s);items=(LD.items||[]).map(mig);READY=true;renderCats();if(RO)roBanner();else{if(dedupChars()>0)setTimeout(()=>{save().then(ok=>{if(ok)toast('已合併重複的角色',3500)})},800);setTimeout(feeAuto,1500)}try{if(!RO&&!localStorage.getItem('fixCut1')){localStorage.setItem('fixCut1','1');Promise.resolve(fixCut()).then(n=>{if(n){render();toast('已找回 '+n+' 張去背圖的標記',4000)}}).catch(()=>{})}}catch(e){}try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{const h=localStorage.getItem('hp2')||(localStorage.getItem('hp')==='0'?'all':'hide');$('hp').value=h}catch(e){}
+try{const v=localStorage.getItem('view');if(VB[v])view=v;Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===view))}catch(e){}render();if(!RO)setTimeout(()=>autoTrimAll().catch(()=>{}),400);jobs=[];saveJobs();if(applyCfgHash()){fillCfg();toast('已設定，開始從雲端下載…');setTimeout(()=>syncDown(),300)}else if(!RO)setTimeout(autoPull,1500)})();
 
 /* shrink every "NT$" next to numerals (Hoefler old-style figures make caps look big) */
 (function(){
