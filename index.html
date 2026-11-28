@@ -528,7 +528,10 @@ async function putShards(){
 /* 整份取代（還原、雲端下載、救援）：同一個交易。
    o.rescue：先把手機裡原本的資料（含損壞的、舊格式、所有分片）整份複製到「R:代號:」保存區，再寫新資料。
    o.keep：另外把指定的內容（例如下載時沒對上的原圖、有問題被隔離的訂單）原樣存進另一個保存區。空間不夠就整筆取消 */
-async function commitAll(L,S2,o){o=o||{};if(STOREBAD)throw new Error('儲存方式記錄異常，唯讀保護中。請先到設定選擇要使用哪一份資料');await ingestList(L);const d=await db();const gen=o.rescue?newGen():null,kgen=o.keep&&o.keep.entries&&o.keep.entries.length?newGen():null;
+/* v472：舊的儲存方式不能接收「新的儲存方式」產生的資料（圖片在圖片庫裡，只放參照），否則換回後圖片無法使用 */
+const XREFMSG='這份資料是「新的儲存方式」產生的（圖片放在圖片庫裡），目前是舊的儲存方式，不能直接換回或匯出。請先到設定「資料安全」按「回到之前升級的新資料」（或「升級儲存方式」），再做一次';
+const hasXRef=L=>!IMGON&&Array.isArray(L)&&L.some(o=>imgRefsOf(o).length>0);
+async function commitAll(L,S2,o){o=o||{};if(STOREBAD)throw new Error('儲存方式記錄異常，唯讀保護中。請先到設定選擇要使用哪一份資料');if(hasXRef(L))throw new Error(XREFMSG);await ingestList(L);const d=await db();const gen=o.rescue?newGen():null,kgen=o.keep&&o.keep.entries&&o.keep.entries.length?newGen():null;
   return await new Promise((res,rej)=>{let t;try{t=d.transaction('kv','readwrite')}catch(e){rej(e);return}const st=t.objectStore('kv');let why=null,newRev=0,cur=null,meta=null,mrev=MUTREV;
     t.oncomplete=()=>{FP.clear();cur.forEach((v,k)=>FP.set(k,v));BASEREV=newRev;LOADMETA=JSON.stringify(meta);COMMITREV=Math.max(COMMITREV,mrev);sharded=true;hcSweep();res({rev:newRev,gen,kgen})};t.onabort=()=>rej(why||t.error||new Error('寫入中斷'));
     const fail=e=>{why=e;try{t.abort()}catch(x){}};const ac=actChk(st,fail);
@@ -1760,7 +1763,7 @@ async function readSnap(want){const SN=await kvGetS('snaps');let m=null;
   if(!Array.isArray(m.ids)||!Array.isArray(m.keys)||m.ids.length!==m.n||m.keys.length!==m.n||new Set(m.ids).size!==m.n)throw new Error('快照清單損壞');
   if(m.stH!==undefined&&shOf(m.settings)!==m.stH)throw new Error('快照的設定內容損壞');
   const list=[];for(let i=0;i<m.n;i++){const r=await kvGetS(m.keys[i]);if(!isRec(r)||r.id!==m.ids[i]||!Array.isArray(r.items)||'P:'+h64(fpOf(r))!==m.keys[i]||vOrder(r,i,'hard').hard.length)throw new Error('快照第 '+(i+1)+' 筆讀不到或內容損壞');
-    for(const x of imgRefsOf(r))if(!refOk(x))throw new Error('快照第 '+(i+1)+' 筆的圖片在手機裡找不到');list.push(r)}
+    for(const x of imgRefsOf(r))if(!refOk(x))throw new Error(IMGON?'快照第 '+(i+1)+' 筆的圖片在手機裡找不到':XREFMSG);list.push(r)}
   return {m,list}}
 async function snapList(){const out=[];try{const SN=await kvGetS('snaps');if(isRec(SN))['sync','op'].forEach(k=>{if(isRec(SN[k]))out.push({slot:k,kind:SN[k].kind,t:SN[k].t,n:SN[k].n})});if(!out.some(x=>x.slot==='sync')){const p=await kvGetS('pmeta');if(p)out.push({slot:'legacy',kind:p.kind||'sync',t:p.t,n:p.n})}}catch(e){}return out}
 const snapFail=()=>{toast('⚠ 操作前的快照建立失敗，為了安全已取消，資料沒有被動到',7000);return false};
@@ -2088,7 +2091,8 @@ async function readGen(gen){const R=await rawRead(gen),M=new Map(R.entries);cons
   const V=vList(src,'hard');const se=st===undefined?[]:vSettings(st,'legacy');
   return {L:V.ok,bad:V.bad,miss,st:se.length?undefined:st,badSettings:se,legacy,rec:R.rec,keys:R.entries.length,orig:R.entries.filter(e=>e[0].startsWith('orig:')).length,q:R.entries.filter(e=>e[0].startsWith('q:')).length}}
 async function genAct(act,gen){
-  if(act==='exp'){let R;try{toast('準備匯出…',0);R=await rawPrep(gen);toast('',1)}catch(e){toast('⚠ 讀不到這份保存區：'+e.message,7000);return}const P=rawPlan(gen,R);
+  if(act==='exp'){if(!IMGON){try{const R0=await rawRead(gen);if(rawRefs(R0.entries).size){alert('⚠ '+XREFMSG+'。\n\n這份保存區沒有被改動。');return}}catch(e){toast('⚠ 讀不到這份保存區：'+e.message,7000);return}}
+    let R;try{toast('準備匯出…',0);R=await rawPrep(gen);toast('',1)}catch(e){toast('⚠ 讀不到這份保存區：'+e.message,7000);return}const P=rawPlan(gen,R);
     if(R.missing.length)alert('⚠ 這份保存區引用的圖片有 '+R.missing.length+' 張在手機裡找不到或內容損壞。\n匯出的檔案會標成「不完整」，不能用來確認刪除這份保存區。');
     if(P.parts.length===1){let f;try{f=await rawPart(P,0)}catch(e){toast('⚠ '+e.message,7000);return}const r=await bkDeliver(f,BKT.raw);bkDone(r,1,'raw',P);return}BKP=P;drawBkps();return}
   if(act==='del'){if(WLOCK){roBlock();return}const R=await rescueList(),x=R.find(r=>r.gen===gen);if(!x){toast('找不到這份保存區');return}
@@ -2098,6 +2102,7 @@ async function genAct(act,gen){
       const P='R:'+gen+':';const kq=st.getAllKeys(IDBKeyRange.bound(P,P+'￿'));kq.onsuccess=()=>{kq.result.forEach(k=>st.delete(k));const q=st.get('rescues');q.onsuccess=()=>{const L=Array.isArray(q.result)?q.result:[];st.put(L.filter(r=>r.gen!==gen),'rescues')}}});
       toast('已刪除');drawSet()}catch(e){toast('⚠ 刪除失敗（整份都還在）：'+e.message,7000)}return}
   if(act==='res'){let g;try{g=await readGen(gen)}catch(e){toast('⚠ 讀不到這份保存區：'+e.message,7000);return}
+    if(hasXRef(g.L)){alert('⚠ '+XREFMSG+'。\n\n手機裡的資料沒有改動。');return}
     if(!g.L.length){alert('這份保存區裡沒有可以直接換回的訂單'+(g.bad.length?'（有 '+g.bad.length+' 筆損壞）':'')+(g.orig?'（裡面是 '+g.orig+' 張去背前原圖）':'')+'。\n可以按「匯出這份舊資料」把原始內容整份存成檔案。');return}
     const msg='換回這份保存區的資料？\n\n可用的訂單：'+g.L.length+' 筆'+(g.legacy?'（舊格式）':'')+(g.miss.length?'\n清單裡有、但保存區裡沒有的：'+g.miss.length+' 筆（換回後會少這些）':'')+(g.bad.length?'\n損壞、不能用的：'+g.bad.length+' 筆（例：'+g.bad[0].why[0]+'）':'')+(g.badSettings.length?'\n設定損壞，會保留目前的設定':'')+'\n\n損壞的部分仍會留在這份保存區裡，不會刪除；目前手機裡的資料也會先整份保存起來。';
     if(!confirm(msg))return;
