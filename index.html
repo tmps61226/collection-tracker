@@ -380,7 +380,7 @@ const db=()=>dbp||(dbp=new Promise((res,rej)=>{let done=false;const fail=e=>{if(
     r.onerror=()=>fail(r.error||new Error('資料庫開啟失敗'));r.onblocked=()=>{}}catch(e){fail(e)}}));
 /* 嚴格讀取：錯誤、逾時、交易中斷一律 reject，不會被當成「沒資料」 */
 const kvReq=(mk)=>new Promise((r,j)=>{let fin=false;const ok=v=>{if(!fin){fin=true;clearTimeout(to);r(v)}},no=e=>{if(!fin){fin=true;clearTimeout(to);j(e)}};const to=setTimeout(()=>no(new Error('讀取逾時')),20000);
-  db().then(d=>{let t;try{t=d.transaction('kv')}catch(e){no(e);return}t.onabort=()=>no(t.error||new Error('讀取中斷'));const q=mk(t.objectStore('kv'));q.onsuccess=()=>{try{ok(q.result)}catch(e){no(e)}};q.onerror=()=>no(q.error||new Error('讀取失敗'))},no)});
+  db().then(d=>{let t;try{t=d.transaction('kv');t.onabort=()=>no(t.error||new Error('讀取中斷'));const q=mk(t.objectStore('kv'));q.onsuccess=()=>{try{ok(q.result)}catch(e){no(e)}};q.onerror=()=>no(q.error||new Error('讀取失敗'))}catch(e){try{t&&t.abort()}catch(x){}no(e)}},no)});
 const kvGetS=k=>kvReq(st=>st.get(k)),kvKeysS=()=>kvReq(st=>st.getAllKeys());
 const kvGet=async k=>{try{return await kvGetS(k)}catch(e){return undefined}};
 let RO=false,ROWHY='',ROMETA=false,READY=false,WLOCK='';
@@ -395,10 +395,17 @@ const kvTx=(f)=>db().then(d=>new Promise((res,rej)=>{const t=d.transaction('kv',
    圖片庫：圖片內容存成 Blob（B:<SHA-256>），另有小縮圖（T:）與圖片資訊（BM:）。訂單裡只放「img:<SHA-256>」參照。
    原圖一律原樣保存（位元組完全相同、可還原成原本的 data URL），不壓縮、不刪除。 */
 const K0={o:'o:',ids:'oids',set:'settings',meta:'meta',ns:''},KN={o:'n:',ids:'nids',set:'nset',meta:'nmeta',ns:'n'};
-let K=K0,IMGON=false,ACTP=null;
+let K=K0,IMGON=false,ACTP=null,ACTJ='null';
 const IREF=/^img:[0-9a-f]{64}$/;
 const isRef=v=>typeof v==='string'&&v.length===68&&IREF.test(v);
 const BMX=new Map();
+/* v472：BHAS＝手機裡真的有圖片本體（B: 鍵）的 SHA。只有圖片資訊（BM:）不代表圖片在 */
+const BHAS=new Set();let NOREF=false;
+const refOk=v=>isRef(v)&&BMX.has(v.slice(4))&&BHAS.has(v.slice(4));
+/* 只有圖片欄位（s、o）裡的參照才是圖片；備註等文字剛好長得像參照也不會被當成圖片 */
+const isRefK=(k,v)=>(k==='s'||k==='o')&&isRef(v);
+const imgRefsOf=o=>{const r=[];JSON.stringify(o,(k,v)=>{if(isRefK(k,v))r.push(v);return v});return r};
+const noRef=f=>{NOREF=true;try{return f()}finally{NOREF=false}};
 let BLOBOK=null;
 const hexOf=buf=>[...new Uint8Array(buf)].map(x=>x.toString(16).padStart(2,'0')).join('');
 async function blobSelfTest(){if(BLOBOK!==null)return BLOBOK;try{const b=new Blob([new Uint8Array([1,2,3,250])],{type:'application/octet-stream'});await kvTx(st=>st.put(b,'__bt'));const r=await kvGetS('__bt');const u=new Uint8Array(await (r instanceof Blob?r:new Blob([r])).arrayBuffer());BLOBOK=r instanceof Blob&&u.length===4&&u[3]===250;await kvTx(st=>st.delete('__bt'))}catch(e){BLOBOK=false}return BLOBOK}
@@ -411,24 +418,44 @@ async function mkThumb(blob,mime){let bm=null,w=0,h=0,src=null;
     const alpha=/png|webp|gif|svg/.test(mime);const tb=await new Promise(r=>c.toBlob(r,alpha?'image/png':'image/jpeg',.82));return tb?{blob:tb,w,h}:null}
   finally{try{bm&&bm.close&&bm.close()}catch(e){}if(src)URL.revokeObjectURL(src)}}
 /* 把一張 data URL 圖片放進圖片庫，回傳參照。格式特殊、重新編碼後不能完全還原的，就不轉、原樣保留 */
-async function imgPut(v){if(typeof v!=='string'||!v.startsWith('data:')||v.length<=400)return v;const m=DURL.exec(v.slice(0,300));if(!m)return v;
+/* 同一張圖（同一個 SHA）同時存兩次時排隊處理，避免兩種寫法的 data URL 互相蓋掉圖片資訊 */
+const IPQ=new Map();
+async function imgPut(v){if(typeof v!=='string'||!v.startsWith('data:')||v.length<=400)return v;const k=v.length+'|'+v.slice(-48);const q=IPQ.get(k)||{p:Promise.resolve(),n:0};q.n++;const prev=q.p;let rel;q.p=new Promise(r=>rel=r);IPQ.set(k,q);
+  try{await prev;return await imgPut0(v)}finally{rel();if(--q.n===0)IPQ.delete(k)}}
+async function imgPut0(v){const m=DURL.exec(v.slice(0,300));if(!m)return v;
   const b64=v.slice(m[0].length);if(!b64.length||b64.length%4||!B64RE.test(b64))return v;
   /* 可逆檢查：base64 只有最後 4 個字可能有不同寫法；最後 4 個字解開再編回去必須一樣，位元組數也要對 */
   const tail=b64.slice(-4);let canon=false;try{canon=btoa(atob(tail))===tail}catch(e){}if(!canon)return v;
   const pad=tail.endsWith('==')?2:tail.endsWith('=')?1:0,want=b64.length/4*3-pad;
   const bytes=new Uint8Array(await (await fetch(v)).arrayBuffer());if(bytes.length!==want)return v;
-  const sha=hexOf(await crypto.subtle.digest('SHA-256',bytes)),ref='img:'+sha;if(BMX.has(sha))return ref;
+  const sha=hexOf(await crypto.subtle.digest('SHA-256',bytes)),ref='img:'+sha,pre=v.slice(0,m[0].length-1),m0=BMX.get(sha);
+  if(m0){/* 同樣的位元組已經在圖片庫：data URL 開頭（MIME 寫法、參數）不同就不轉、原樣保留，才能逐字還原 */
+    if(m0.pre!==pre)return v;if(await bOk(sha,m0.bytes))return ref;
+    /* 圖片資訊在、本體不在或壞了：用這份已核對的位元組修補 */
+    const ok=await blobSelfTest();await kvTx(st=>st.put(ok?new Blob([bytes],{type:m0.mime}):bytes.buffer,'B:'+sha));
+    if(!(await bOk(sha,bytes.length)))throw new Error('圖片存進手機後讀回來核對不一致');BHAS.add(sha);return ref}
   const mime=m[1].toLowerCase(),ext=mime.includes('png')?'png':mime.includes('webp')?'webp':'jpg';
   const meta={sha,mime,pre:v.slice(0,m[0].length-1),bytes:bytes.length,n:b64.length,h:h64(b64),hv:h64(v),lv:v.length,cn:h53(v)+v.length.toString(36)+'.'+ext,t:Date.now()};meta.pid=meta.h+':'+meta.n;
   const blob=new Blob([bytes],{type:mime});let th=null;try{th=await mkThumb(blob,mime)}catch(e){}if(th){meta.w=th.w;meta.ht=th.h;meta.th=1}
   const ok=await blobSelfTest();const thv=th?(ok?th.blob:await th.blob.arrayBuffer()):null;
-  await kvTx(st=>{st.put(ok?blob:bytes.buffer,'B:'+sha);if(thv)st.put(thv,'T:'+sha);st.put(meta,'BM:'+sha)});
+  /* 交易內再確認：另一個分頁可能剛存了同一份位元組但不同寫法；那樣這一份就不轉、原樣保留 */
+  let other=null;await kvTx(st=>{const q=st.get('BM:'+sha);q.onsuccess=()=>{const x=q.result;if(isRec(x)&&x.pre!==pre){other=x;return}st.put(ok?blob:bytes.buffer,'B:'+sha);if(thv)st.put(thv,'T:'+sha);if(!isRec(x))st.put(meta,'BM:'+sha)}});
+  if(other){BMX.set(sha,other);return v}
   /* 寫完讀回來核對位元組（SHA-256） */
-  const rb=await kvGetS('B:'+sha),rbb=asBlob(rb,mime);if(!rbb||rbb.size!==bytes.length||hexOf(await crypto.subtle.digest('SHA-256',await rbb.arrayBuffer()))!==sha){try{await kvTx(st=>{st.delete('B:'+sha);st.delete('T:'+sha);st.delete('BM:'+sha)})}catch(e){}throw new Error('圖片存進手機後讀回來核對不一致')}
-  BMX.set(sha,meta);return ref}
+  /* 讀回來核對失敗時不刪除（可能是另一個分頁剛寫好的同一張圖）；下次存同一張圖會再核對並修補 */
+  if(!(await bOk(sha,bytes.length)))throw new Error('圖片存進手機後讀回來核對不一致');
+  BMX.set(sha,meta);BHAS.add(sha);return ref}
+/* 圖片本體在、大小對、SHA-256 對 */
+async function bOk(sha,len){let b;try{b=asBlob(await kvGetS('B:'+sha))}catch(e){return false}if(!b||b.size!==len)return false;return hexOf(await crypto.subtle.digest('SHA-256',await b.arrayBuffer()))===sha}
+/* 讀出核對過的圖片位元組；不在或內容不對就丟出錯誤 */
+async function imgBytesOk(ref){const sha=ref.slice(4),m=BMX.get(sha);const b=await imgBlob(ref,'f');if(!m||!b)throw new Error('手機裡找不到圖片（'+sha.slice(0,8)+'）');const by=new Uint8Array(await b.arrayBuffer());if(by.length!==m.bytes||hexOf(await crypto.subtle.digest('SHA-256',by))!==sha)throw new Error('手機裡的圖片內容損壞（'+sha.slice(0,8)+'）');return by}
 /* 核對圖片庫裡這張圖的位元組（SHA-256），不轉成字串 */
 async function imgVerify(ref){const sha=ref.slice(4),m=BMX.get(sha);const b=await imgBlob(ref,'f');if(!m||!b||b.size!==m.bytes)return false;return hexOf(await crypto.subtle.digest('SHA-256',await b.arrayBuffer()))===sha}
-async function imgLoadIndex(){BMX.clear();const d=await db();await new Promise((res,rej)=>{const t=d.transaction('kv'),st=t.objectStore('kv');t.oncomplete=res;t.onabort=()=>rej(t.error);const cq=st.openCursor(IDBKeyRange.bound('BM:','BM:￿'));cq.onsuccess=()=>{const c=cq.result;if(c){if(isRec(c.value)&&c.value.sha)BMX.set(c.value.sha,c.value);c.continue()}}})}
+async function imgLoadIndex(){BMX.clear();BHAS.clear();const d=await db();await new Promise((res,rej)=>{const t=d.transaction('kv'),st=t.objectStore('kv');t.oncomplete=res;t.onabort=()=>rej(t.error||new Error('讀取中斷'));const cq=st.openCursor(IDBKeyRange.bound('BM:','BM:￿'));cq.onsuccess=()=>{const c=cq.result;if(c){if(isRec(c.value)&&c.value.sha)BMX.set(c.value.sha,c.value);c.continue()}};
+  const kq=st.getAllKeys(IDBKeyRange.bound('B:','B:￿'));kq.onsuccess=()=>{for(const k of kq.result)BHAS.add(k.slice(2))}})}
+/* 啟動時：使用中的訂單引用的圖片，圖片資訊與本體都要在（不必解碼） */
+function imgMissCount(L){let n=0;const seen=new Set();for(const o of L)for(const r of imgRefsOf(o))if(!seen.has(r)){seen.add(r);if(!refOk(r))n++}return n}
+let MISSN=0;
 async function imgBlob(v,kind){if(!isRef(v))return null;const sha=v.slice(4),m=BMX.get(sha);let x=kind==='t'&&m&&m.th?await kvGetS('T:'+sha):undefined;let mime=x?((m&&/png|webp|gif|svg/.test(m.mime))?'image/png':'image/jpeg'):(m&&m.mime);if(x===undefined)x=await kvGetS('B:'+sha);return x===undefined?null:asBlob(x,mime||(m&&m.mime))}
 const MISSIMG='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" fill="#eee"/><text x="40" y="46" font-size="14" text-anchor="middle" fill="#999">缺圖</text></svg>');
 const BLANKIMG='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
@@ -436,20 +463,28 @@ const IURL=new Map();const ILIM={t:240,f:10};
 /* 參照 → 物件網址（有上限，最舊的會釋放） */
 async function imgURL(v,kind){if(!isRef(v))return v;kind=kind==='t'?'t':'f';const key=kind+v;const c=IURL.get(key);if(c){IURL.delete(key);IURL.set(key,c);return c}
   const b=await imgBlob(v,kind);if(!b)return MISSIMG;if(IURL.has(key))return IURL.get(key);const u=URL.createObjectURL(b);IURL.set(key,u);
-  let n=0;for(const k of IURL.keys())if(k[0]===kind)n++;for(const [k,x] of IURL){if(n<=ILIM[kind])break;if(k[0]===kind&&k!==key){URL.revokeObjectURL(x);IURL.delete(k);n--}}return u}
+  /* 超過上限才釋放最舊的；畫面上還在用的網址不釋放（否則圖片會變空白） */
+  let n=0;for(const k of IURL.keys())if(k[0]===kind)n++;if(n>ILIM[kind]){const used=urlsInUse();for(const [k,x] of IURL){if(n<=ILIM[kind])break;if(k[0]===kind&&k!==key&&!used.has(x)){URL.revokeObjectURL(x);IURL.delete(k);n--}}}return u}
+const urlsInUse=()=>{const S=new Set();for(const i of document.images)if(i.src&&i.src.startsWith('blob:'))S.add(i.src);document.querySelectorAll('[data-irb]').forEach(e=>{if(e.__pu)S.add(e.__pu)});return S};
+/* 暫時用一次的網址（編輯工具、量尺寸）：自己建立、用完就釋放，不會被快取釋放掉 */
+const withURL=async(v,kind,fn)=>{if(!isRef(v))return fn(v);const b=await imgBlob(v,kind);if(!b)throw new Error('手機裡找不到這張圖');const x=URL.createObjectURL(b);try{return await fn(x)}finally{URL.revokeObjectURL(x)}};
 /* 參照 → 原本的 data URL（位元組完全相同；會核對內容雜湊） */
 async function imgDataURL(v){if(!isRef(v))return v;const m=BMX.get(v.slice(4));const b=await imgBlob(v,'f');if(!b||!m)throw new Error('圖片庫裡找不到這張圖');const b64=u8b64(new Uint8Array(await b.arrayBuffer()));if(b64.length!==m.n||h64(b64)!==m.h)throw new Error('圖片內容和記錄不符');return m.pre+','+b64}
 /* 模板用：<img ${IS(v,'t')}>。參照先放透明圖，進入畫面才載入（離開畫面會釋放） */
 const IS=(v,kind)=>{if(!isRef(v))return 'src="'+String(v||'').replace(/"/g,'&quot;')+'"';const c=IURL.get((kind==='t'?'t':'f')+v);return 'src="'+(c||BLANKIMG)+'" data-ir="'+(kind==='t'?'t':'f')+v+'"'};
 let IO_=null;
-function irLoad(el){const k=el.getAttribute('data-ir');if(!k)return;imgURL(k.slice(1),k[0]).then(u=>{if(el.getAttribute('data-ir')===k&&el.isConnected)el.src=u}).catch(()=>{el.src=MISSIMG})}
+/* 載入記號：每次載入都有自己的號碼，晚到的舊結果不會蓋掉新的；縮圖離開畫面後才到的結果不套用 */
+function irLoad(el){const k=el.getAttribute('data-ir');if(!k)return;const tk=el.__tk=(el.__tk||0)+1;
+  imgURL(k.slice(1),k[0]).then(u=>{if(el.__tk!==tk||el.getAttribute('data-ir')!==k||!el.isConnected)return;if(k[0]==='t'&&el.__vis===false)return;el.src=u}).catch(()=>{if(el.__tk===tk&&el.getAttribute('data-ir')===k)el.src=MISSIMG})}
 function irWatch(root){if(!('IntersectionObserver' in window)){(root.querySelectorAll?root:document).querySelectorAll('img[data-ir]').forEach(irLoad);return}
-  if(!IO_)IO_=new IntersectionObserver(es=>es.forEach(e=>{const el=e.target;if(e.isIntersecting)irLoad(el);else if(el.getAttribute('data-ir')&&el.getAttribute('data-ir')[0]==='t'&&el.src.startsWith('blob:'))el.src=BLANKIMG}),{rootMargin:'900px 0px'});
-  (root.matches&&root.matches('[data-irb]')?[root]:[...root.querySelectorAll('[data-irb]')]).forEach(el=>{const r=el.getAttribute('data-irb');imgURL(r,'t').then(u=>{if(el.getAttribute('data-irb')===r)el.style.setProperty('--pi','url("'+u+'")')})});
+  if(!IO_)IO_=new IntersectionObserver(es=>es.forEach(e=>{const el=e.target;el.__vis=e.isIntersecting;if(e.isIntersecting)irLoad(el);else if(el.getAttribute('data-ir')&&el.getAttribute('data-ir')[0]==='t'){el.__tk=(el.__tk||0)+1;if(el.src.startsWith('blob:'))el.src=BLANKIMG}}),{rootMargin:'900px 0px'});
+  (root.matches&&root.matches('[data-irb]')?[root]:[...root.querySelectorAll('[data-irb]')]).forEach(el=>{const r=el.getAttribute('data-irb');imgURL(r,'t').then(u=>{if(el.getAttribute('data-irb')===r){el.__pu=u;el.style.setProperty('--pi','url("'+u+'")')}})});
   const L=root.matches&&root.matches('img[data-ir]')?[root]:[...root.querySelectorAll('img[data-ir]')];L.forEach(el=>{if(!el.__ir){el.__ir=1;IO_.observe(el)}})}
-new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1)irWatch(n)}).observe(document.documentElement,{childList:true,subtree:true});
+/* 新加入的圖開始觀察；移除的圖停止觀察（不讓觀察器留住已經不在畫面上的元素和圖片） */
+const irDrop=n=>{if(!IO_)return;const L=n.matches&&n.matches('img[data-ir]')?[n]:n.querySelectorAll?n.querySelectorAll('img[data-ir]'):[];for(const el of L)if(el.__ir&&!el.isConnected){IO_.unobserve(el);el.__ir=0;el.__tk=(el.__tk||0)+1}};
+new MutationObserver(ms=>{for(const m of ms){for(const n of m.removedNodes)if(n.nodeType===1)irDrop(n);for(const n of m.addedNodes)if(n.nodeType===1)irWatch(n)}}).observe(document.documentElement,{childList:true,subtree:true});
 /* 需要真正像素的功能（裁切、去背、放大主體…）：參照換成物件網址再處理；沒有改變就回傳原本的參照 */
-const refWrap=fn=>async(u,...a)=>{if(!isRef(u))return fn(u,...a);const x=await imgURL(u,'f');const out=await fn(x,...a);return out===x?u:out};
+const refWrap=fn=>async(u,...a)=>{if(!isRef(u))return fn(u,...a);return withURL(u,'f',async x=>{const out=await fn(x,...a);return out===x?u:out})};
 const imgFetchBlob=async v=>isRef(v)?await imgBlob(v,'f'):await (await fetch(v)).blob();
 /* 更新檔裡的圖片對照表：先把裡面的圖片放進圖片庫，讓比對用同一種參照 */
 async function ingestDeep(x){if(Array.isArray(x)){for(let i=0;i<x.length;i++){if(typeof x[i]==='string')x[i]=await imgPut(x[i]);else await ingestDeep(x[i])}}else if(isRec(x)){for(const k of Object.keys(x)){if(typeof x[k]==='string')x[k]=await imgPut(x[k]);else await ingestDeep(x[k])}}}
@@ -474,12 +509,12 @@ const metaOf=(rev,ids,ch,sh)=>({rev,t:Date.now(),n:ids.length,ih:idsHash(ids),ch
 const newGen=()=>'g'+((crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2));
 /* 一次交易寫入：變動的訂單、刪除、索引、設定、版本號同一個交易，任何一步失敗整筆取消 */
 async function putShards(){
-  if(!READY)throw new Error('資料還沒讀取完成');uniqIds();const d=await db();
+  if(!READY)throw new Error('資料還沒讀取完成');if(STOREBAD)throw new Error('儲存方式記錄異常，唯讀保護中');uniqIds();const d=await db();
   return await new Promise((res,rej)=>{let t;try{t=d.transaction('kv','readwrite')}catch(e){rej(e);return}
     const st=t.objectStore('kv');let nextFP=null,newRev=0,why=null,mrev=0,meta=null;
     t.oncomplete=()=>{for(const id of [...FP.keys()])if(!nextFP.has(id))FP.delete(id);nextFP.forEach((v,k)=>FP.set(k,v));BASEREV=newRev;LOADMETA=JSON.stringify(meta);COMMITREV=Math.max(COMMITREV,mrev);sharded=true;hcSweep();res(newRev)};
     t.onabort=()=>rej(why||t.error||new Error('寫入中斷'));
-    const mq=st.get(K.meta);mq.onsuccess=()=>{try{
+    const ac=actChk(st,e=>{why=e;try{t.abort()}catch(x){}});const mq=st.get(K.meta);mq.onsuccess=()=>{try{if(!ac())return;
       const m=mq.result||{rev:0};if((m.rev||0)!==BASEREV){why=new ConflictErr('另一個視窗或分頁已經改過資料');t.abort();return}
       mrev=MUTREV;const cur=new Map();for(const o of items)cur.set(o.id,fpOf(o));
       for(const o of items)if(FP.get(o.id)!==cur.get(o.id))st.put(o,K.o+o.id);
@@ -489,11 +524,11 @@ async function putShards(){
 /* 整份取代（還原、雲端下載、救援）：同一個交易。
    o.rescue：先把手機裡原本的資料（含損壞的、舊格式、所有分片）整份複製到「R:代號:」保存區，再寫新資料。
    o.keep：另外把指定的內容（例如下載時沒對上的原圖、有問題被隔離的訂單）原樣存進另一個保存區。空間不夠就整筆取消 */
-async function commitAll(L,S2,o){o=o||{};await ingestList(L);const d=await db();const gen=o.rescue?newGen():null,kgen=o.keep&&o.keep.entries&&o.keep.entries.length?newGen():null;
+async function commitAll(L,S2,o){o=o||{};if(STOREBAD)throw new Error('儲存方式記錄異常，唯讀保護中。請先到設定選擇要使用哪一份資料');await ingestList(L);const d=await db();const gen=o.rescue?newGen():null,kgen=o.keep&&o.keep.entries&&o.keep.entries.length?newGen():null;
   return await new Promise((res,rej)=>{let t;try{t=d.transaction('kv','readwrite')}catch(e){rej(e);return}const st=t.objectStore('kv');let why=null,newRev=0,cur=null,meta=null,mrev=MUTREV;
     t.oncomplete=()=>{FP.clear();cur.forEach((v,k)=>FP.set(k,v));BASEREV=newRev;LOADMETA=JSON.stringify(meta);COMMITREV=Math.max(COMMITREV,mrev);sharded=true;hcSweep();res({rev:newRev,gen,kgen})};t.onabort=()=>rej(why||t.error||new Error('寫入中斷'));
-    const fail=e=>{why=e;try{t.abort()}catch(x){}};
-    const mq=st.get(K.meta);mq.onerror=()=>{};mq.onsuccess=()=>{try{const m=mq.result;
+    const fail=e=>{why=e;try{t.abort()}catch(x){}};const ac=actChk(st,fail);
+    const mq=st.get(K.meta);mq.onerror=()=>{};mq.onsuccess=()=>{try{if(!ac())return;const m=mq.result;
       if(o.rescue){if(JSON.stringify(m===undefined?null:m)!==LOADMETA){fail(new ConflictErr('另一個視窗或分頁在這段時間改過資料，為了不蓋掉它，已停止救援。請關掉其他視窗後重新整理再試。'));return}}
       else if(((m&&m.rev)||0)!==BASEREV){fail(new ConflictErr('另一個視窗或分頁已經改過資料'));return}
       const reg=[];
@@ -548,7 +583,7 @@ async function metaAccept(){let R;try{R=await loadAll()}catch(e){toast('⚠ 讀�
   const gen=newGen();
   try{const d=await db();await new Promise((res,rej)=>{const t=d.transaction('kv','readwrite'),st=t.objectStore('kv');let why=null;const fail=e=>{why=e;try{t.abort()}catch(x){}};
     t.oncomplete=()=>res();t.onabort=()=>rej(why||t.error||new Error('寫入中斷'));
-    const mq=st.get(K.meta);mq.onsuccess=()=>{try{const m2=mq.result;if(JSON.stringify(m2===undefined?null:m2)!==LOADMETA){fail(new ConflictErr('另一個視窗或分頁剛改過資料，已停止。請關掉其他視窗後重新整理'));return}
+    const ac=actChk(st,fail);const mq=st.get(K.meta);mq.onsuccess=()=>{try{if(!ac())return;const m2=mq.result;if(JSON.stringify(m2===undefined?null:m2)!==LOADMETA){fail(new ConflictErr('另一個視窗或分頁剛改過資料，已停止。請關掉其他視窗後重新整理'));return}
       const recs=new Map();let n=0;const cq=st.openCursor(IDBKeyRange.bound(K.o,K.o+'\uffff'));
       let msz=0;cq.onsuccess=()=>{try{const c=cq.result;if(c){st.put(c.value,'R:'+gen+':'+c.key);recs.set(c.key.slice(K.o.length),c.value);msz+=approxSize(c.value);n++;c.continue();return}
         const oq=st.get(K.ids),sq2=st.get(K.set);sq2.onsuccess=()=>{try{const ids2=oq.result,s2=sq2.result;
@@ -560,7 +595,7 @@ async function metaAccept(){let R;try{R=await loadAll()}catch(e){toast('⚠ 讀�
             st.put(Object.assign(metaOf((((m2&&typeof m2.rev==='number')?m2.rev:0))+1,ids2,chOf(fps),shOf(s2)),IMGON?{img:1}:{}),K.meta)}catch(e){fail(e)}}}catch(e){fail(e)}}}catch(e){fail(e)}};
     }catch(e){fail(e)}}});location.reload()}catch(e){toast('⚠ 沒辦法繼續（資料沒有改動）：'+e.message,9000)}}
 /* 唯讀／讀取中／套用中：畫面上所有會改資料的按鈕都擋下（只放行「本身就是」瀏覽、關閉、救援用的元素） */
-const RO_OK='.fpl label,#vs,#vg,#vc,#vf,#vl,.vt button,#chips button,#fpt button,#fmore,#sbtn,#q,#fc,#so,#hs,#hsl,#hsw,#hh,#hpx,#isbtn,#hcol,#dcx,#gear,#sx,#im,#imf,#sydn,[data-snap],#ex,#exl,#bkv,#bkvf,[data-rg],#ghtok,#ghrepo,#autosync,.gh,.cd>h3,#arx,.arl,#flx,#fl [data-ft],[data-kf],[data-cf],[data-ktog],#rob button,#svf button,#uswarn button,[data-bkp],[data-bkc],[data-svf],#bkps';
+const RO_OK='.fpl label,#vs,#vg,#vc,#vf,#vl,.vt button,#chips button,#fpt button,#fmore,#sbtn,#q,#fc,#so,#hs,#hsl,#hsw,#hh,#hpx,#isbtn,#hcol,#dcx,#gear,#sx,#im,#imf,#sydn,[data-snap],#ex,#exl,#bkv,#bkvf,[data-rg],#ghtok,#ghrepo,#autosync,.gh,.cd>h3,#arx,.arl,#flx,#fl [data-ft],[data-kf],[data-cf],[data-ktog],#rob button,#svf button,#uswarn button,[data-bkp],[data-bkc],[data-svf],#bkps,#migstop,[data-mg2]';
 const ACT='button,input,select,textarea,label,a,[data-pa],[data-fp],[data-fg],[data-ard],[data-arg],[data-h],[data-hi],[data-hide],[data-fq],[data-fr]';
 ['click','change','input','contextmenu'].forEach(ev=>document.addEventListener(ev,e=>{if(writable())return;const t=e.target;if(!(t instanceof Element))return;const act=t.closest(ACT);if(!act)return;if(act.matches(RO_OK))return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();if(ev==='click')roBlock()},true));
 /* 存檔中的成功提示先排隊，真的寫進手機才顯示；失敗就不顯示 */
@@ -577,7 +612,7 @@ async function save(opt){opt=opt||{};
   AVC=null;SAVEST='saving';MUTREV++;lsSet('dirty','1');lsSet('lastSave',String(Date.now()));lsSet('unsaved','1');
   if(!SAVING){TQ=[];TQfail=false}SAVING++;let ok=false;
   try{for(let k=0;k<2;k++){try{if(IMGON)await ingestList(items);await idbPut();ok=true;break}
-      catch(e){console.error(e);if(e instanceof ConflictErr){saveFailUI(true,'另一個視窗或分頁已經改過資料，為了不互相覆蓋，這邊沒有存。請先「緊急匯出」，再關掉其他視窗後重新整理。');break}if(k===0)await new Promise(r=>setTimeout(r,800));else saveFailUI(true,'（'+((e&&e.name)||'錯誤')+'）畫面上是你剛改的內容，但還沒存進手機，關掉 app 會消失。')}}}
+      catch(e){console.error(e);if(e instanceof ConflictErr){saveFailUI(true,/儲存方式/.test(e.message)?e.message+'。為了不互相覆蓋，這邊沒有存。請先「緊急匯出」，再重新整理。':'另一個視窗或分頁已經改過資料，為了不互相覆蓋，這邊沒有存。請先「緊急匯出」，再關掉其他視窗後重新整理。');break}if(k===0)await new Promise(r=>setTimeout(r,800));else saveFailUI(true,'（'+((e&&e.name)||'錯誤')+'）畫面上是你剛改的內容，但還沒存進手機，關掉 app 會消失。')}}}
   finally{SAVING--}
   if(ok&&MUTREV===COMMITREV){SAVEST='ok';saveFail=0;lsSet('unsaved','0');lsSet('lastLocalOk',String(Date.now()));if(svfOn)saveFailUI(false);schedAuto()}else if(!ok){SAVEST='fail';saveFail++;TQfail=true}
   if(!SAVING){const q=TQ;TQ=null;if(!TQfail&&q&&q.length){const [t,ms]=q[q.length-1];toast(t,ms)}}
@@ -850,7 +885,7 @@ function openDetail(id,ix){
   <div class="dvp"><i class="tp"></i><span class="dch"><span>${n>=q&&q>0?'已售出':ST[o.status]}</span></span><div class="dvi">${img?`<img loading="lazy" decoding="async" ${IS(img,'f')} alt="">`:''}</div></div>
   <div class="dvb"><div class="dvn">${esc(name)}</div><div class="dvs"><span class="dvh">${dH(hv)}</span></div>
   ${stats}${prog||(gotBtn?`<div class="dcd"><div class="dpr"><b>還沒填到貨日</b>${gotBtn}</div></div>`:'')}${list}${chkWarn(o)}${grid}${rows?`<div class="dcd ddt"><div class="dth">明細・備註</div>${rows}</div>`:''}
-  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div>${paRow(o,single?[it]:o.items)}<button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v471</div></div>`;
+  <div class="dtl"><button id="dav">${(single?it:o.items[0]).avg?'🧮 取消均價':'🧮 均價'}</button><a id="dfi" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent((name||'')+' 官方')}">🔍 找圖</a><button id="dfs">📷 拍照搜</button></div>${paRow(o,single?[it]:o.items)}<button class="dbt pri" id="ded">編輯</button><button class="dbt red" id="ddl">刪除這筆訂單</button><div style="text-align:center;font-size:11px;color:#b8b2a2;margin-top:10px">v472</div></div>`;
   DV.classList.add('show');DV.scrollTop=0;fitGrid()}
 const DV=$('dv');
 function paRow(o,L){const un=L.filter(i=>sq(i)<(+i.qty||1)),anySold=L.some(i=>sq(i)>0)||o.status==='sold',B=[];
@@ -1254,7 +1289,7 @@ async function callShot(k,parts,schema,on){
 async function reShot(){
   const k=(localStorage.getItem('gk')||'').replace(/[^\x21-\x7e]/g,'');if(!k){setMsg('請先貼上 Gemini API Key');return}
   const dims=u=>new Promise(r=>{const i=new Image();i.onload=()=>r(i.height/i.width);i.onerror=()=>r(0);i.src=u});
-  const shots=[];for(const m of cur.imgs){if(m.sh||(await dims(await imgURL(m.s,'f')))>1.5)shots.push(m)}
+  const shots=[];for(const m of cur.imgs){if(m.sh||(await withURL(m.s,'f',dims).catch(()=>0))>1.5)shots.push(m)}
   if(!shots.length){setMsg('這筆訂單沒有保留訂單截圖，請按「上傳訂單截圖」重新選圖');return}
   if(!guardOK())return;
   if(!confirm('用這筆訂單已存的 '+shots.length+' 張截圖重新辨識？\n品項、金額、日期會被新結果覆蓋；每個品項的圖片、朋友代買、已售數量會保留。'))return;
@@ -1401,7 +1436,7 @@ function cleanCut0(u){return new Promise(res=>{const im=new Image();im.onerror=(
   g.putImageData(d,0,0);trimImg(c.toDataURL('image/webp',.9)).then(res)}catch(e){res(u)}};im.src=u})}
 
 /* 去背補救：模型把主體一部分（例如淺色身體）誤刪時，用「背景連通」法把被誤刪、且連著主體的部分補回來 */
-var restoreCut=async(a,b)=>restoreCut0(isRef(a)?await imgURL(a,'f'):a,isRef(b)?await imgURL(b,'f'):b);
+var restoreCut=async(a,b)=>withURL(a,'f',x=>withURL(b,'f',async y=>{const out=await restoreCut0(x,y);return out===x?a:out===y?b:out}));
 function restoreCut0(origUrl,cutUrl){return new Promise(res=>{const A=new Image(),B=new Image();let n=0;const go=()=>{if(++n<2)return;try{
   const w=A.width,h=A.height;if(!w||B.width!==w||B.height!==h){res(cutUrl);return}
   const mk=im=>{const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(im,0,0);return [c,g,g.getImageData(0,0,w,h)]};
@@ -1631,13 +1666,13 @@ async function cleanAll(){
   for(let i=0;i<T.length;i++){toast('🧹 清理中 '+(i+1)+' / '+T.length+'…',0);T[i].s=await cleanCut(T[i].s);if(i%5===4){await save();render()}}
   await save();render();toast('✓ 完成',3000)}
 async function cmpImgs(){
-  const re=async u=>new Promise(res=>{const im=new Image();im.onerror=()=>res(u);im.onload=()=>{const k=Math.min(1,640/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));c.getContext('2d').drawImage(im,0,0,c.width,c.height);const o=c.toDataURL('image/webp',.78);res(o.length<u.length?o:u)};im.src=u});
+  const re=async (u,lim)=>new Promise(res=>{const im=new Image();im.onerror=()=>res(u);im.onload=()=>{const k=Math.min(1,640/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));c.getContext('2d').drawImage(im,0,0,c.width,c.height);const o=c.toDataURL('image/webp',.78);res(o.length<lim?o:u)};im.src=u});
   /* 只縮小顯示用的圖（s）；去背前原圖（o）一律原樣保留，不降低畫質 */
   const sz=v=>isRef(v)?((BMX.get(v.slice(4))||{}).lv||0):v.length;
   const holders=[];const walk=x=>{if(Array.isArray(x))x.forEach(walk);else if(x&&typeof x==='object'){const v=x.s;if(typeof v==='string'&&(v.startsWith('data:image')||isRef(v))&&sz(v)>40000)holders.push([x,'s']);Object.values(x).forEach(v=>{if(v&&typeof v==='object')walk(v)})}};walk(items);
   if(!holders.length){toast('圖片都已經夠小了');return}
   const before=holders.reduce((a,[x,k])=>a+sz(x[k]),0);let i=0;
-  for(const [x,k] of holders){const v=x[k],u=isRef(v)?await imgURL(v,'f'):v;const r=await re(u);if(r!==u&&r.length<sz(v))x[k]=r;toast('縮小圖片 '+(++i)+'/'+holders.length+'…',0)}
+  for(const [x,k] of holders){const v=x[k];let r=null;try{r=await withURL(v,'f',async u=>{const o=await re(u,sz(v));return o===u?null:o})}catch(e){}if(r&&r.length<sz(v)&&x[k]===v)x[k]=r;toast('縮小圖片 '+(++i)+'/'+holders.length+'…',0)}
   const after=holders.reduce((a,[x,k])=>a+(isRef(x[k])?sz(x[k]):x[k].length),0);save();render();toast('✓ 完成，省下約 '+Math.round((before-after)/1048576*10)/10+' MB',4000)}
 /* cloud sync: private GitHub repo (data.json + img/*) */
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
@@ -1649,15 +1684,20 @@ function h53(s){let a=0xdeadbeef,b=0x41c6ce57;for(let i=0;i<s.length;i++){const 
    檔名沿用 v1（內容雜湊＋長度，舊版 v442 也讀得懂、不必重傳圖片）；另外在 imgMeta 記下真正的 MIME 與 64 位元內容雜湊，下載時逐張核對。
    去背前原圖不上傳；改記「原圖內容識別碼」oh，下載時用它把本機原圖接回正確的品項 */
 const imgRef=v=>{const m=typeof v==='string'&&/^data:(image\/[\w.+-]+);base64,/i.exec(v.slice(0,120));if(!m)return null;const pay=v.slice(m[0].length),mime=m[1].toLowerCase();
-  const ext=mime.includes('png')?'png':mime.includes('webp')?'webp':'jpg';return {n:h53(v)+v.length.toString(36)+'.'+ext,pay,mime}};
+  const ext=mime.includes('png')?'png':mime.includes('webp')?'webp':'jpg';return {n:h53(v)+v.length.toString(36)+'.'+ext,pay,mime,pre:'data:'+m[1]+';base64'}};
 /* 上傳用：圖片參照不必讀出內容，名稱、MIME、雜湊都在圖片資訊裡；真正要上傳的那幾張才讀 */
 function packData(){const imgs={},meta={};
-  const one=v=>{if(isRef(v)){const m=BMX.get(v.slice(4));if(!m)throw new Error('圖片庫裡找不到要上傳的圖片');imgs[m.cn]={ref:v};if(!meta[m.cn])meta[m.cn]={mime:m.mime,h:m.h,n:m.n};return '@img:'+m.cn}
-    const f=imgRef(v);if(!f)return v;imgs[f.n]={pay:f.pay};if(!meta[f.n])meta[f.n]={mime:f.mime,h:h64(f.pay),n:f.pay.length};return '@img:'+f.n};
+  const one=v=>{if(isRef(v)){const m=BMX.get(v.slice(4));if(!m||!BHAS.has(v.slice(4)))throw new Error('有圖片在手機裡找不到，先不上傳（避免雲端也缺圖）。可以用完整備份還原修補');imgs[m.cn]={ref:v};if(!meta[m.cn])meta[m.cn]={mime:m.mime,h:m.h,n:m.n,pre:m.pre};return '@img:'+m.cn}
+    const f=imgRef(v);if(!f)return v;imgs[f.n]={pay:f.pay};if(!meta[f.n])meta[f.n]={mime:f.mime,h:h64(f.pay),n:f.pay.length,pre:f.pre};return '@img:'+f.n};
   const tx=m=>{if(!isRec(m))return m;const r={...m};if(typeof m.o==='string'&&(m.o.startsWith('data:')||isRef(m.o))){delete r.o;r.c=1;r.oh=pidOf(m.o)}if(typeof m.s==='string')r.s=one(m.s);return r};
   const L=items.map(o=>{if(!isRec(o))return o;const x={...o};if(Array.isArray(o.items))x.items=o.items.map(it=>isRec(it)&&isRec(it.img)?{...it,img:tx(it.img)}:it);if(Array.isArray(o.imgs))x.imgs=o.imgs.map(tx);return x});
   return{json:JSON.stringify({v:2,savedAt:Date.now(),items:L,settings:S,imgMeta:meta}),imgs,meta}}
-const imgPay=async x=>x.pay!=null?x.pay:u8b64(new Uint8Array(await (await imgBlob(x.ref,'f')).arrayBuffer()));
+/* 上傳前：手機裡的圖片必須在、大小對、SHA-256 對，才上傳（壞掉的不會傳上去） */
+const imgPay=async x=>x.pay!=null?x.pay:u8b64(await imgBytesOk(x.ref));
+/* 圖片的 git blob SHA（和雲端檔案清單比對內容用）：參照用核對過 SHA-256 的位元組算，記在圖片資訊裡；data URL 這次開啟期間快取 */
+const GSC=new Map();
+async function imgGitSha(x,nm){if(x.pay!=null){const k=nm;let g=GSC.get(k);if(!g){g=await gitSha(b64u8(x.pay));GSC.set(k,g)}return g}
+  const sha=x.ref.slice(4),m=BMX.get(sha);if(m&&m.gs)return m.gs;const g=await gitSha(await imgBytesOk(x.ref));if(m){m.gs=g;try{await kvTx(st=>st.put(m,'BM:'+sha))}catch(e){}}return g}
 const gitSha=async bytes=>{const hd=new TextEncoder().encode('blob '+bytes.length+'\0'),gb=new Uint8Array(hd.length+bytes.length);gb.set(hd);gb.set(bytes,hd.length);return hexOf(await crypto.subtle.digest('SHA-1',gb))};
 /* 下載：只在圖片欄位找「@img:」引用；缺圖或內容雜湊不符就整個停止，不會動到一般文字 */
 function imgSlots(d,f){(Array.isArray(d.items)?d.items:[]).forEach(o=>{if(!isRec(o))return;(Array.isArray(o.items)?o.items:[]).forEach(it=>{if(isRec(it)&&isRec(it.img))f(it.img)});(Array.isArray(o.imgs)?o.imgs:[]).forEach(m=>{if(isRec(m))f(m)})})}
@@ -1715,12 +1755,13 @@ async function readSnap(want){const SN=await kvGetS('snaps');let m=null;
   if(!m)return null;
   if(!Array.isArray(m.ids)||!Array.isArray(m.keys)||m.ids.length!==m.n||m.keys.length!==m.n||new Set(m.ids).size!==m.n)throw new Error('快照清單損壞');
   if(m.stH!==undefined&&shOf(m.settings)!==m.stH)throw new Error('快照的設定內容損壞');
-  const list=[];for(let i=0;i<m.n;i++){const r=await kvGetS(m.keys[i]);if(!isRec(r)||r.id!==m.ids[i]||!Array.isArray(r.items)||'P:'+h64(fpOf(r))!==m.keys[i]||vOrder(r,i,'hard').hard.length)throw new Error('快照第 '+(i+1)+' 筆讀不到或內容損壞');list.push(r)}
+  const list=[];for(let i=0;i<m.n;i++){const r=await kvGetS(m.keys[i]);if(!isRec(r)||r.id!==m.ids[i]||!Array.isArray(r.items)||'P:'+h64(fpOf(r))!==m.keys[i]||vOrder(r,i,'hard').hard.length)throw new Error('快照第 '+(i+1)+' 筆讀不到或內容損壞');
+    for(const x of imgRefsOf(r))if(!refOk(x))throw new Error('快照第 '+(i+1)+' 筆的圖片在手機裡找不到');list.push(r)}
   return {m,list}}
 async function snapList(){const out=[];try{const SN=await kvGetS('snaps');if(isRec(SN))['sync','op'].forEach(k=>{if(isRec(SN[k]))out.push({slot:k,kind:SN[k].kind,t:SN[k].t,n:SN[k].n})});if(!out.some(x=>x.slot==='sync')){const p=await kvGetS('pmeta');if(p)out.push({slot:'legacy',kind:p.kind||'sync',t:p.t,n:p.n})}}catch(e){}return out}
 const snapFail=()=>{toast('⚠ 操作前的快照建立失敗，為了安全已取消，資料沒有被動到',7000);return false};
 const shaKnown=h=>{if(!h)return true;if(h===lsGet('syncSha'))return true;if(h===lsGet('syncPend')){lsSet('syncSha',h);return true}return false};
-let autoT;const autoOn=()=>GH().t&&lsGet('autoSync')!=='0';
+let autoT;const autoOn=()=>GH().t&&lsGet('autoSync')!=='0'&&lsGet('syncHold')!=='1';
 function schedAuto(){if(!autoOn())return;clearTimeout(autoT);autoT=setTimeout(()=>syncUp(true),6000)}
 let _lp=0;
 /* minimal QR encoder: byte mode, ECC L/M, versions 1-40 */
@@ -1788,18 +1829,23 @@ async function syncUp(auto){
 async function syncUpIn(auto){
   try{await putChain}catch(e){}
   /* 這個分頁的內容是不是手機裡最新的版本？（別的分頁改過、或同步過，這邊就是舊的，不准上傳） */
+  if(!(await actSame())){if(!auto)toast('⚠ 儲存方式已經在另一個分頁或視窗切換過，這個分頁的資料是舊的，已停止上傳。請重新整理',9000);return}
+  if(lsGet('syncHold')==='1'){if(auto)return;if(!confirm('剛切換過儲存方式（或從異常狀態選了資料），自動同步已暫停。\n\n上傳會用這支手機「現在顯示的資料」取代雲端的資料。雲端如果有比較新的修改，請按取消，改用「從雲端下載」。\n\n確定上傳嗎？'))return}
   {let m;try{m=await kvGetS(K.meta)}catch(e){if(!auto)toast('⚠ 讀不到手機裡的版本記錄，先不上傳',6000);return}if(((m&&m.rev)||0)!==BASEREV){if(!auto)toast('⚠ 另一個分頁或視窗已經改過資料，這個分頁的內容是舊的，為了不把舊資料傳上去已停止。請重新整理後再同步',9000);return}}
   let rescueUp=false;if(SAVEST==='fail'||MUTREV!==COMMITREV){if(auto)return;if(!confirm('手機存檔目前是失敗狀態。\n現在上傳的會是「畫面上、還沒存進手機」的資料，當作緊急救援用（雲端紀錄會標成救援）。\n確定要上傳嗎？'))return;rescueUp=true}if(!auto)grabCfg();const g=GH();if(!g.t){if(!auto)toast('請先貼上金鑰');return}
   const tt=(m,ms)=>{if(!auto)toast(m,ms)};clearTimeout(autoT);
   GHX={t:g.t,r:g.r};const rg0=REPGEN;try{
-    tt('連線中…',0);let {br,head}=await repoHead(),base=null,have=new Set();
+    tt('連線中…',0);let {br,head}=await repoHead(),base=null,have=new Set();const TSU=new Map();
     if(!head){const r=await ghj('/contents/README.md','PUT',{message:'init',content:b64('收藏櫃雲端資料')});head=r.commit.sha;base=r.commit.tree.sha;have.add('README.md')}
-    else{const c=await ghj('/git/commits/'+head);base=c.tree.sha;const t=await ghj('/git/trees/'+base+'?recursive=1');(t.tree||[]).forEach(x=>have.add(x.path))}
+    else{const c=await ghj('/git/commits/'+head);base=c.tree.sha;const t=await ghj('/git/trees/'+base+'?recursive=1');if(t.truncated)throw new Error('雲端檔案清單太大，讀不完整，已停止上傳');(t.tree||[]).forEach(x=>{have.add(x.path);TSU.set(x.path,x.sha)})}
     if(have.has('data.json')&&!shaKnown(head)&&auto){toast('雲端有較新的資料，請到設定選「上傳」或「下載」處理',6000);return}
     if(have.has('data.json')&&!shaKnown(head)&&!confirm('雲端的資料比這支手機上次同步的更新（可能在別的裝置改過）。\n繼續上傳會蓋掉雲端那份，確定嗎？\n（想拿雲端的，請按取消，改用「從雲端下載」）')){toast('已取消');return}
     if(!rescueUp&&(SAVEST!=='ok'||MUTREV!==COMMITREV)){if(!auto)toast('剛剛有新的修改還在存檔，等一下再上傳',4000);else schedAuto();return}
-    {const m=await kvGetS(K.meta);if(((m&&m.rev)||0)!==BASEREV){tt('⚠ 另一個分頁剛改過資料，已停止上傳，請重新整理',8000);return}}
-    const t0=Date.now(),rev0=MUTREV,base0=BASEREV,{json,imgs}=packData();const need=Object.keys(imgs).filter(n=>!have.has('img/'+n)),tree=[];let done=0;
+    {const m=await kvGetS(K.meta);if(((m&&m.rev)||0)!==BASEREV){tt('⚠ 另一個分頁剛改過資料，已停止上傳，請重新整理',8000);return}if(!(await actSame())){tt('⚠ 儲存方式在另一個分頁切換過，已停止上傳，請重新整理',8000);return}}
+    const t0=Date.now(),rev0=MUTREV,base0=BASEREV,{json,imgs}=packData(),tree=[];let done=0;
+    /* 雲端已有同名圖片：核對 git blob SHA（內容），不只看檔名；內容不同就用手機裡核對過的原圖重新上傳（修補） */
+    const need=[],chk=Object.keys(imgs).filter(n=>have.has('img/'+n));for(const n of Object.keys(imgs))if(!have.has('img/'+n))need.push(n);
+    let ck=0;await pool(chk,4,async n=>{const gs=await imgGitSha(imgs[n],n);if(gs!==TSU.get('img/'+n))need.push(n);if(!auto&&++ck%20===0)tt('核對雲端圖片 '+ck+'/'+chk.length+'…',0)});
     await pool(need,4,async n=>{const r=await ghj('/git/blobs','POST',{content:await imgPay(imgs[n]),encoding:'base64'});tree.push({path:'img/'+n,mode:'100644',type:'blob',sha:r.sha});tt('上傳圖片 '+(++done)+'/'+need.length+'…',0)});
     const bl=await ghj('/git/blobs','POST',{content:b64(json),encoding:'base64'});tree.push({path:'data.json',mode:'100644',type:'blob',sha:bl.sha});
     const nt=await ghj('/git/trees','POST',{base_tree:base,tree}),cm=await ghj('/git/commits','POST',{message:(rescueUp?'RESCUE upload (not saved on phone) ':'sync ')+new Date().toISOString(),tree:nt.sha,parents:[head]});
@@ -1807,7 +1853,7 @@ async function syncUpIn(auto){
     /* 只有「上傳的版本＝手機裡現在的版本」而且倉庫、金鑰沒換過，才算同步完成 */
     const gNow=GH(),sameRepo=gNow.r===g.r&&gNow.t===g.t;let mNow=null;try{mNow=await kvGetS(K.meta)}catch(e){}
     const same=!rescueUp&&MUTREV===rev0&&MUTREV===COMMITREV&&SAVEST==='ok'&&BASEREV===base0&&REPGEN===rg0&&((mNow&&mNow.rev)||0)===base0;
-    if(sameRepo){lsSet('syncSha',cm.sha);lsSet('syncPend','');lsSet('lastSync',String(t0));lsSet('ghBr',br)}
+    if(sameRepo){lsSet('syncSha',cm.sha);lsSet('syncPend','');lsSet('lastSync',String(t0));lsSet('ghBr',br);lsSet('syncHold','')}
     if(same&&sameRepo)lsSet('dirty','0');else{lsSet('dirty','1');if(!rescueUp&&sameRepo)schedAuto()}
     toast(auto?'☁️ 已自動同步':'✓ 已上傳到雲端（'+items.length+' 筆，新增 '+need.length+' 張圖）',auto?1800:3500);renderBk();if(SO.classList.contains('show'))drawSet()
   }catch(e){lsSet('dirty','1');toast((auto?'自動同步失敗：':'同步失敗：')+e.message,5000)}}
@@ -1825,7 +1871,7 @@ async function restorePrev(want,mutAt){let r;
 let REPGEN=0;
 async function replaceAll(L,S2,rescueWhy,okMsg,keep){if(WLOCK){roBlock();return false}if(syncBusy){toast('正在和雲端同步，請等同步完成再做',5000);return false}WLOCK='寫入資料';
   try{const o={};if(rescueWhy)o.rescue=rescueWhy;if(keep)o.keep=keep;await commitAll(L,S2,o);REPGEN++}catch(e){console.error(e);WLOCK='';toast('⚠ 沒有寫進手機（'+((e&&e.message)||'錯誤')+'），原本的資料和設定都沒有改變',9000);return false}
-  WLOCK='';items=L;S=S2;COMMITREV=MUTREV;SAVEST='ok';lsSet('unsaved','0');lsSet('dirty','1');lsSet('lastSave',String(Date.now()));if(svfOn)saveFailUI(false);
+  WLOCK='';items=L;S=S2;if(IMGON)MISSN=imgMissCount(items);COMMITREV=MUTREV;SAVEST='ok';lsSet('unsaved','0');lsSet('dirty','1');lsSet('lastSave',String(Date.now()));if(svfOn)saveFailUI(false);
   const wasRO=RO;RO=false;ROWHY='';ROMETA=false;roBanner();renderCats();render();if(SO.classList.contains('show'))drawSet();if(okMsg)toast(okMsg,5000);if(wasRO)setTimeout(()=>{autoPull()},1500);return true}
 async function syncDown(auto){
   if(auto!==true)auto=false;if(syncBusy){if(!auto)toast('正在同步中，請等一下再按');return}if(!auto)grabCfg();const g=GH();if(!g.t){if(!auto)toast('請先貼上金鑰');return}
@@ -1844,20 +1890,22 @@ async function syncDown(auto){
     for(const n of names){if(!TS.has('img/'+n))throw new Error('雲端缺少圖片 '+n+'，已停止下載，資料沒有改動');
       if(v2){const x=IM[n];if(!isRec(x)||typeof x.mime!=='string'||!/^image\/[\w.+-]+$/i.test(x.mime)||!/^[0-9a-f]{16}$/.test(x.h||'')||!Number.isInteger(x.n))throw new Error('雲端圖片 '+n+' 的記錄不完整或格式不對，已停止下載，資料沒有改動')}}
     const mimeOf=n=>{const x=IM[n];return isRec(x)&&/^image\/[\w.+-]+$/i.test(x.mime||'')?x.mime:(MIME[n.split('.').pop()]||'image/jpeg')};
+    /* 原本 data URL 的開頭（含 MIME 大小寫），讓下載後逐字還原；舊版沒有記錄就用 MIME */
+    const preOf=n=>{const x=IM[n],d='data:'+mimeOf(n)+';base64';return isRec(x)&&typeof x.pre==='string'&&/^data:image\/[\w.+-]+;base64$/i.test(x.pre)&&x.pre.slice(5,-7).toLowerCase()===mimeOf(n).toLowerCase()?x.pre:d};
     /* 本機已有同名圖片：只有和雲端這個版本的檔案內容（git blob SHA）一致才直接用 */
     const local=packData().imgs,byCn=new Map();BMX.forEach(m=>byCn.set(m.cn,m));const got={};let done=0;
     await pool(names,4,async n=>{const ts=TS.get('img/'+n),x=IM[n];let val=null;
-      const lm=byCn.get(n);if(IMGON&&lm&&(!x||(x.h===lm.h&&x.n===lm.n&&x.mime===lm.mime))){if(!lm.gs){const bb=await imgBlob('img:'+lm.sha,'f');if(bb)lm.gs=await gitSha(new Uint8Array(await bb.arrayBuffer()))}if(lm.gs===ts)val='img:'+lm.sha}
-      else if(local[n]&&local[n].pay!=null){const p=local[n].pay;if((await gitSha(b64u8(p)))===ts&&(!x||(h64(p)===x.h&&p.length===x.n)))val='data:'+mimeOf(n)+';base64,'+p}
+      const lm=byCn.get(n);if(IMGON&&lm&&(!x||(x.h===lm.h&&x.n===lm.n&&x.mime===lm.mime))){let by=null;try{by=await imgBytesOk('img:'+lm.sha)}catch(e){}if(by&&(await gitSha(by))===ts)val='img:'+lm.sha;by=null}
+      else if(local[n]&&local[n].pay!=null){const p=local[n].pay;if((await gitSha(b64u8(p)))===ts&&(!x||(h64(p)===x.h&&p.length===x.n)))val=preOf(n)+','+p}
       if(val==null){let buf=null,er=null;for(let k=0;k<3&&!buf;k++){try{buf=new Uint8Array(await (await gh('/contents/img/'+n+'?ref='+head,'GET',null,true)).arrayBuffer())}catch(e){er=e;if(e.status&&e.status!==403&&e.status!==429)break}}
         if(!buf)throw (er&&er.status===404)?new Error('雲端缺少圖片 '+n+'，已停止下載，資料沒有改動'):(er||new Error('圖片下載失敗'));
         if((await gitSha(buf))!==ts)throw new Error('雲端圖片 '+n+' 和這個版本的檔案清單不符，已停止下載，資料沒有改動');
         const p=u8b64(buf);buf=null;if(x&&(h64(p)!==x.h||p.length!==x.n))throw new Error('雲端圖片 '+n+' 內容和記錄不符（可能損壞），已停止下載，資料沒有改動');
-        val='data:'+mimeOf(n)+';base64,'+p;if(IMGON)val=await imgPut(val)}
+        val=preOf(n)+','+p;if(IMGON)val=await imgPut(val)}
       got[n]=val;if(!auto)toast('下載圖片 '+(++done)+'/'+names.length+'…',0)});
     imgSlots(full,m=>{['s','o'].forEach(k=>{const v=m[k];if(typeof v==='string'&&v.startsWith('@img:')){const n=v.slice(5);if(got[n]==null)throw new Error('雲端缺少圖片 '+n+'，已停止下載');m[k]=got[n]}})});
     /* 雲端資料用同一套驗證：結構壞掉的不能套用；其他問題自動下載就停止，手動下載可用救援模式（有問題的另外保存） */
-    const V=vList(full.items,'full'),se=full.settings===undefined?[]:vSettings(full.settings,'legacy');let keepE=[];
+    /* 圖片已經下載並放進圖片庫（參照），所以這裡允許手機裡完整存在的參照 */const V=vList(full.items,'full'),se=full.settings===undefined?[]:vSettings(full.settings,'legacy');let keepE=[];
     if(V.bad.length||se.length){const hardN=V.bad.filter(b=>vOrder(b.o,b.k,'hard').hard.length).length;
       if(auto){toast('雲端資料有 '+(V.bad.length+se.length)+' 個格式問題，為了安全沒有自動下載。請到設定按「從雲端下載」查看',8000);return}
       if(!confirm('雲端資料有 '+(V.bad.length+se.length)+' 個問題'+(hardN?'（其中 '+hardN+' 筆結構損壞）':'')+'：\n'+V.msgs.concat(se).slice(0,4).join('\n')+'\n\n要用「救援模式」下載嗎？正常的 '+V.ok.length+' 筆照常下載，有問題的原樣另外保存到「保存下來的舊資料」。'))return;
@@ -1874,8 +1922,8 @@ async function syncDown(auto){
     if(MUTREV!==rev0||MUTREV!==COMMITREV){toast('這支手機有還沒存好或剛改的資料，為了不蓋掉它，已取消套用雲端資料。',9000);return}
     {const gn=GH();if(gn.r!==g.r||gn.t!==g.t){toast('下載途中雲端倉庫或金鑰被改過，為了不套用錯的資料，已取消（資料沒有改動，同步記號也沒更新）',9000);return}}
     WLOCK='套用雲端資料';try{const co=RO?{rescue:'從雲端下載救回'}:{};if(keepE.length)co.keep={why:'雲端下載時另外保存（原圖或有問題的資料）',entries:keepE};await commitAll(L,S2,co)}catch(e){throw new Error('下載的資料沒有寫進手機（'+((e&&e.message)||'錯誤')+'），原本的資料和設定都沒有改變，也沒有更新同步記號')}finally{WLOCK=''}
-    items=L;S=S2;REPGEN++;COMMITREV=MUTREV;lsSet('unsaved','0');const wasRO=RO;RO=false;ROWHY='';ROMETA=false;roBanner();if(svfOn)saveFailUI(false);SAVEST='ok';lsSet('lastLocalOk',String(Date.now()));
-    {const gn=GH();if(gn.r===g.r&&gn.t===g.t){lsSet('syncSha',head);lsSet('lastSync',String(Date.now()+1));lsSet('dirty','0')}else lsSet('dirty','1')}clearTimeout(autoT);renderCats();render();renderBk();if(SO.classList.contains('show'))drawSet();toast(auto?'☁️ 已更新成雲端最新資料':'✓ 已從雲端下載 '+items.length+' 筆（下載前的資料有留一份，可在設定還原）',auto?2500:4500)
+    items=L;S=S2;REPGEN++;if(IMGON)MISSN=imgMissCount(items);COMMITREV=MUTREV;lsSet('unsaved','0');const wasRO=RO;RO=false;ROWHY='';ROMETA=false;roBanner();if(svfOn)saveFailUI(false);SAVEST='ok';lsSet('lastLocalOk',String(Date.now()));
+    {const gn=GH();if(gn.r===g.r&&gn.t===g.t){lsSet('syncSha',head);lsSet('lastSync',String(Date.now()+1));lsSet('dirty','0');lsSet('syncHold','')}else lsSet('dirty','1')}clearTimeout(autoT);renderCats();render();renderBk();if(SO.classList.contains('show'))drawSet();toast(auto?'☁️ 已更新成雲端最新資料':'✓ 已從雲端下載 '+items.length+' 筆（下載前的資料有留一份，可在設定還原）',auto?2500:4500)
   }catch(e){if(!auto)toast('下載失敗：'+e.message,5000)}finally{syncBusy=false;GHX=null}}
 /* 原圖配對（不靠位置）：
    1. 雲端記有原圖內容識別碼 oh（v470 起上傳都會記）→ 找本機內容完全相同的原圖接回去（重排、搬到別的訂單都對得上）。
@@ -1899,63 +1947,121 @@ function keepOrig(oldL,newL){const recs=[],byO=new Map(),byS=new Map();
    舊的 o:、oids、settings、meta 從頭到尾不改不刪；中途關掉、空間不足、舊資料被改，都可以停下來、下次繼續或重來。 */
 let LEGSIG=null,MIGBUSY=false,MIGSTOP=false;
 async function legacySig(){const m=await kvGetS('meta'),ids=await kvGetS('oids');return JSON.stringify([m===undefined?null:m,Array.isArray(ids)?idsHash(ids):null,Array.isArray(ids)?ids.length:-1])}
-async function initStore(){let a;try{a=await kvGetS('act')}catch(e){a=undefined}ACTP=isRec(a)?a:null;
-  if(ACTP&&ACTP.ns==='n'){K=KN;IMGON=true;try{LEGSIG=await legacySig()}catch(e){}}
-  else{K=K0;try{const m=await kvGetS('meta'),ids=await kvGetS('oids'),it=ids===undefined&&m===undefined?await kvGetS('items'):undefined;IMGON=(isRec(m)&&m.img===1)||(m===undefined&&ids===undefined&&it===undefined)}catch(e){IMGON=false}}
-  if(IMGON){try{await imgLoadIndex()}catch(e){console.error(e)}}}
+/* v472：啟動時用同一個唯讀交易讀出 act、actPrev、mig、兩組資料的版本記錄與清單（固定同一時點）。
+   「確實沒有指標」才當舊資料；讀不到、格式不對、指向的資料不存在、有新資料卻沒有指標，一律唯讀，不會退回舊資料、不寫入、不同步 */
+const kvSnap=(keys,ranges)=>new Promise((res,rej)=>{let fin=false;const to=setTimeout(()=>{if(!fin){fin=true;rej(new Error('讀取逾時'))}},20000);
+  const no=e=>{if(!fin){fin=true;clearTimeout(to);rej(e)}};
+  db().then(d=>{let t;try{t=d.transaction('kv');const st=t.objectStore('kv'),R={};t.oncomplete=()=>{if(!fin){fin=true;clearTimeout(to);res(R)}};t.onabort=()=>no(t.error||new Error('讀取中斷'));
+    keys.forEach(k=>{const q=st.get(k);q.onsuccess=()=>{R[k]=q.result}});Object.entries(ranges||{}).forEach(([n,p])=>{const q=st.count(IDBKeyRange.bound(p,p+'\uffff'));q.onsuccess=()=>{R[n]=q.result}})}catch(e){try{t&&t.abort()}catch(x){}no(e)}},no)});
+const actOk=x=>isRec(x)&&x.ns==='n'&&typeof x.src==='string'&&Number.isInteger(x.n)&&x.n>=0;
+let STOREBAD='',STOREINFO=null,MIGREQ=null;
+function storeBad(why,R){STOREBAD=why;RO=true;ROWHY=why;STOREINFO=R||null;
+  /* 唯讀顯示用：有新資料就顯示新資料，否則顯示舊資料（都不能修改） */
+  if(R&&Array.isArray(R.nids)){K=KN;IMGON=true}else{K=K0;IMGON=!!(R&&isRec(R.meta)&&R.meta.img===1)}}
+async function initStore(){let R;
+  try{R=await kvSnap(['act','actPrev','mig','meta','oids','nmeta','nids'],{nN:'n:',oN:'o:'});R.itN=(await kvGetS('items'))===undefined?0:1}
+  catch(e){console.error(e);storeBad('讀不到儲存方式的記錄（'+((e&&e.name)||'錯誤')+'）',null);try{await imgLoadIndex()}catch(x){}return}
+  const a=R.act;ACTJ=JSON.stringify(a===undefined?null:a);
+  if(a!==undefined){
+    if(!actOk(a)){storeBad('儲存方式的記錄（act）格式不對',R);try{await imgLoadIndex()}catch(x){}return}
+    if(!Array.isArray(R.nids)||!isRec(R.nmeta)){storeBad('儲存方式指向的新資料不完整（找不到清單或版本記錄）',R);try{await imgLoadIndex()}catch(x){}return}
+    ACTP=a;K=KN;IMGON=true;try{LEGSIG=await legacySig()}catch(e){}}
+  else{const hasN=R.nids!==undefined||R.nmeta!==undefined;
+    if(hasN&&!actOk(R.actPrev)){storeBad('找不到儲存方式的記錄，但手機裡有升級後的新資料（不會自動退回舊資料）',R);try{await imgLoadIndex()}catch(x){}return}
+    K=K0;IMGON=(isRec(R.meta)&&R.meta.img===1)||(R.meta===undefined&&R.oids===undefined&&!R.itN&&!R.oN&&!hasN&&!R.nN&&!isRec(R.mig));
+    if(isRec(R.mig)&&R.mig.req===1)MIGREQ=R.mig}
+  if(IMGON){try{await imgLoadIndex()}catch(e){console.error(e);RO=true;ROWHY='圖片索引讀不到（'+((e&&e.name)||'錯誤')+'）'}}}
+/* 每個寫入交易都要核對：act 和這個分頁啟動時讀到的一樣（別的分頁切換過儲存方式，這個分頁就不能再寫） */
+const actChk=(st,fail)=>{const q=st.get('act');return ()=>{const v=q.result;if(JSON.stringify(v===undefined?null:v)!==ACTJ){fail(new ConflictErr('儲存方式已經在另一個分頁或視窗切換過，這個分頁的資料是舊的。請重新整理'));return false}return true}};
+const actSame=async()=>{try{const v=await kvGetS('act');return JSON.stringify(v===undefined?null:v)===ACTJ}catch(e){return false}};
+/* 跨分頁鎖（Safari 15.4 起支援）：同一時間只有一個分頁能升級或切換 */
+const withLock=async(name,fn)=>{if(!(navigator.locks&&navigator.locks.request))return fn();return navigator.locks.request(name,{ifAvailable:true},async l=>{if(!l){toast('另一個分頁或視窗正在升級／切換儲存方式，請關掉其他分頁再試',8000);return}return fn()})};
 /* 把一筆訂單的圖片欄位全部換回原本的 data URL（用來核對遷移結果） */
 async function expandOrder(o){const x=JSON.parse(JSON.stringify(o));const one=async(m,k)=>{if(isRef(m[k]))m[k]=await imgDataURL(m[k])};
   for(const it of (Array.isArray(x.items)?x.items:[]))if(isRec(it)&&isRec(it.img)){await one(it.img,'s');await one(it.img,'o')}for(const m of (Array.isArray(x.imgs)?x.imgs:[]))if(isRec(m)){await one(m,'s');await one(m,'o')}return x}
 function migUI(msg,pct,canStop){let e=$('migov');if(!msg){if(e)e.remove();return}if(!e){e=document.createElement('div');e.id='migov';e.style.cssText='position:fixed;inset:0;z-index:9998;background:rgba(40,36,30,.86);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;font-size:15px;line-height:1.6';document.body.appendChild(e)}
   e.innerHTML='<b style="font-size:17px">升級儲存方式</b><div></div><div style="width:80%;max-width:320px;height:8px;border-radius:4px;background:#fff3"><i style="display:block;height:100%;border-radius:4px;background:#fff;width:'+Math.round((pct||0)*100)+'%"></i></div>'+(canStop?'<button class="btn" id="migstop" style="background:#fff;color:#222">暫停（下次可以繼續）</button>':'');e.children[1].textContent=msg;const b=$('migstop');if(b)b.onclick=()=>{MIGSTOP=true;b.disabled=true;b.textContent='做完這一筆就暫停…'}}
-async function migRun(){if(MIGBUSY)return;if(K!==K0||IMGON){toast('已經是新的儲存方式');return}
+/* 按下「升級儲存方式」：只記下要求，然後重新開啟。
+   v472：遷移在「啟動時、還沒把舊資料讀進記憶體之前」進行（舊架構啟動會把全部圖片讀進記憶體，遷移時再多一份暫存，iPhone 容易被關掉） */
+async function migRun(){if(MIGBUSY)return;MIGBUSY=true;try{
+  if(K!==K0||IMGON){toast('已經是新的儲存方式');return}
   if(!READY||RO||WLOCK||syncBusy||SAVEST!=='ok'||MUTREV!==COMMITREV){toast('現在不能升級：'+(RO?'唯讀保護中':syncBusy?'正在同步':'有修改還沒存好或正在處理'),6000);return}
-  const st0=await kvGetS('mig');
-  if(!confirm((isRec(st0)?'上次升級做到一半，要繼續嗎？\n\n':'要升級儲存方式嗎？\n\n')+'・圖片會改成另外存放，收藏櫃只載入小縮圖，打開商品才載入大圖，編輯時才載入原圖。\n・原圖完全保留、不壓縮、不刪除；每張圖存好後都會讀回來核對。\n・舊的資料原封不動保留，升級後也可以切回。\n・可以隨時暫停，下次繼續。\n・升級期間不能修改資料；資料多的話可能要幾分鐘。\n・升級中途請不要開舊版（v442）。'))return;
-  MIGBUSY=true;MIGSTOP=false;WLOCK='升級儲存方式';const t0=Date.now();
+  const st0=await kvGetS('mig'),sig0=await legacySig();const cont=isRec(st0)&&st0.sig===sig0;
+  /* 空間估計（只是瀏覽器的估計，不代表實際配額）：新的圖片庫約等於現在圖片的大小，舊資料會保留 */
+  let est='';try{const e=await navigator.storage.estimate();const need=Math.round(approxSize(items)*0.8/1e6),free=Math.round((e.quota-e.usage)/1e6);est='\n\n・需要的空間約 '+need+' MB；瀏覽器估計還可以用約 '+free+' MB（只是估計）。'+(free<need*1.2?'\n⚠ 空間可能不夠。途中空間不足會停下來，舊資料不受影響，清出空間後可以繼續。':'')}catch(e){}
+  if(!confirm((cont?'上次升級做到一半，要繼續嗎？\n\n':'要升級儲存方式嗎？\n\n')+'・圖片會改成另外存放，收藏櫃只載入小縮圖，打開商品才載入大圖，編輯時才載入原圖。\n・原圖完全保留、不壓縮、不刪除；每張圖存好後都會讀回來核對。\n・舊的資料原封不動保留，升級後也可以切回。\n・app 會先重新開啟，在讀入資料之前進行升級（比較不吃記憶體）。可以隨時暫停，下次繼續。\n・資料多的話可能要幾分鐘，請不要切到別的 App。\n・升級中途請不要開舊版（v442）或其他分頁。'+est))return;
+  await kvTx(s=>s.put(Object.assign({},cont?st0:{sig:sig0,done:[],t:Date.now()},{req:1}),'mig'));location.reload()}
+  catch(e){toast('⚠ 無法開始升級：'+((e&&e.message)||'錯誤'),7000)}finally{MIGBUSY=false}}
+const migClearReq=async()=>{try{await kvTx(s=>{const q=s.get('mig');q.onsuccess=()=>{if(isRec(q.result)){const x=Object.assign({},q.result);delete x.req;s.put(x,'mig')}}})}catch(e){}};
+/* 啟動時的遷移（還沒讀入舊資料）。回傳 true＝已處理（會重新開啟），false＝照常啟動 */
+async function migCore(st0){let r=false;await withLock('ct-mig',async()=>{r=await migCoreIn(st0)});if(!r)await migClearReq();return r}
+async function migCoreIn(st0){MIGBUSY=true;MIGSTOP=false;WLOCK='升級儲存方式';const t0=Date.now(),own=newGen();
   try{migUI('準備中…',0,false);await blobSelfTest();await imgLoadIndex();
     const sig0=await legacySig(),ids=await kvGetS('oids'),set=await kvGetS('settings');if(!Array.isArray(ids))throw new Error('找不到舊的訂單清單');
-    let st=isRec(st0)&&st0.sig===sig0?st0:{sig:sig0,done:[],t:Date.now()};
-    if(!isRec(st0)||st0.sig!==sig0){/* 以前做到一半、或之前升級過又切回來：先把那份「新的資料」整份放進保存區，不覆蓋 */
-      const old=(await kvKeysS()).filter(k=>typeof k==='string'&&(k.startsWith('n:')||['nids','nset','nmeta'].includes(k)));
-      if(old.length){const gen=newGen();await kvTx(st2=>{const P=[];old.forEach(k=>P.push(new Promise(r=>{const q=st2.get(k);q.onsuccess=()=>{st2.put(q.result,'R:'+gen+':'+k);if(k.startsWith('n:'))st2.delete(k);r()}})));const rq=st2.get('rescues');rq.onsuccess=()=>{const R=Array.isArray(rq.result)?rq.result:[];R.push({gen,at:Date.now(),why:'重新升級前、上一次升級的資料',n:old.filter(k=>k.startsWith('n:')).length,kind:'rescue'});st2.put(R,'rescues')}})}
-      await kvTx(s=>s.put(st,'mig'))}
+    if((await kvGetS('act'))!==undefined)throw new Error('已經切換到新的儲存方式了（可能是另一個分頁做的）');
+    let st;
+    if(st0.sig!==sig0){if(st0.done&&st0.done.length)throw new Error('舊資料在按下升級之後被改過（可能開了舊版或其他分頁）。為了安全已取消，請重新按「升級儲存方式」');st={sig:sig0,done:[],t:Date.now()}}
+    else st={sig:sig0,done:Array.isArray(st0.done)?st0.done:[],t:st0.t||Date.now()};
+    st.own=own;st.req=1;
+    if(!st.done.length){/* 第一次開始（或重來）：之前升級過的那份「新的資料」（含 actPrev 指向的版本）整份放進保存區，然後清掉，不覆蓋、不讓「回到新的資料」指向做到一半的資料 */
+      const old=(await kvKeysS()).filter(k=>typeof k==='string'&&(k.startsWith('n:')||['nids','nset','nmeta','actPrev'].includes(k)));
+      if(old.length){const gen=newGen();await kvTx(s2=>{old.forEach(k=>{const q=s2.get(k);q.onsuccess=()=>{s2.put(q.result,'R:'+gen+':'+k);s2.delete(k)}});const rq=s2.get('rescues');rq.onsuccess=()=>{const R=Array.isArray(rq.result)?rq.result:[];R.push({gen,at:Date.now(),why:'重新升級前、上一次升級的資料',n:old.filter(k=>k.startsWith('n:')).length,kind:'rescue'});s2.put(R,'rescues')}})}}
+    await kvTx(s=>s.put(st,'mig'));
     const done=new Set(st.done);IMGON=true;
-    /* 舊架構啟動時把全部圖片讀進了記憶體；升級時用不到，先放掉（畫面被升級進度蓋住；中途停止或失敗都會重新開啟） */
-    items=[];FP.clear();hcSweep();hcSweep();
     for(let i=0;i<ids.length;i++){const id=ids[i];if(done.has(id))continue;
-      if(MIGSTOP){migUI('');alert('已暫停升級（做了 '+done.size+'／'+ids.length+' 筆）。下次到設定按「升級儲存方式」可以繼續。\n\napp 會重新開啟。');location.reload();return}
-      if(i%5===0&&(await legacySig())!==sig0)throw new Error('舊資料在升級途中被改過（可能開了舊版）。已停止，舊資料沒有被動到，請關掉舊版後重新升級');
+      if(MIGSTOP){migUI('');await migClearReq();alert('已暫停升級（做了 '+done.size+'／'+ids.length+' 筆）。下次到設定按「升級儲存方式」可以繼續。\n\napp 會重新開啟。');location.reload();return true}
+      if(i%5===0&&(await legacySig())!==sig0)throw new Error('舊資料在升級途中被改過（可能開了舊版或其他分頁）。已停止，舊資料沒有被動到，請關掉舊版後重新升級');
       const src=await kvGetS('o:'+id);if(!isRec(src)||src.id!==id||!Array.isArray(src.items))throw new Error('第 '+(i+1)+' 筆舊資料讀不到或損壞，已停止（舊資料沒有被動到）');
       const want=fpNC(src),o=src;await ingestList([o]);
       if(fpRep(o)!==want)throw new Error('第 '+(i+1)+' 筆轉換後核對不一致，已停止（舊資料沒有被動到）');
-      done.add(id);st.done=[...done];await kvTx(s=>{s.put(o,'n:'+id);s.put(st,'mig')});if(i%8===7)await new Promise(r=>setTimeout(r,30));
+      done.add(id);st.done=[...done];await kvTx(s=>{s.put(o,'n:'+id);s.put(st,'mig')});if(i%4===3)await new Promise(r=>setTimeout(r,30));
       migUI('正在處理 '+(i+1)+' / '+ids.length+' 筆（圖片放進圖片庫，並逐張讀回核對）',(i+1)/ids.length/2,true)}
-    /* 全部再核對一次：新的每一筆換回原本的圖片後，必須和舊資料完全相同 */
-    const fps=[];for(let i=0;i<ids.length;i++){const L=await kvGetS('o:'+ids[i]),N=await kvGetS('n:'+ids[i]);if(!isRec(N)||fpRep(N)!==fpNC(L))throw new Error('最後核對第 '+(i+1)+' 筆不一致，已停止（舊資料沒有被動到，可以重新升級）');
-      const refs=[];JSON.stringify(N,(k,v)=>{if(isRef(v))refs.push(v);return v});for(const r of refs)if(!(await imgVerify(r)))throw new Error('最後核對第 '+(i+1)+' 筆的圖片位元組不一致，已停止（舊資料沒有被動到）');fps.push(fpOf(N));
-      if(i%5===0)migUI('最後核對 '+(i+1)+' / '+ids.length+' 筆',.5+(i+1)/ids.length/2,false)}
-    /* 切換：一個很短的交易；切換前再確認舊資料沒被改過 */
+    /* 全部再核對一次：新的每一筆換回原本的圖片後，必須和舊資料完全相同（舊版 v442 改了內容也會在這裡被發現） */
+    const fps=[],lfps=[];for(let i=0;i<ids.length;i++){const L=await kvGetS('o:'+ids[i]),N=await kvGetS('n:'+ids[i]);const lf=fpNC(L);if(!isRec(N)||fpRep(N)!==lf)throw new Error('最後核對第 '+(i+1)+' 筆不一致（舊資料可能被改過），已停止（舊資料沒有被動到，可以重新升級）');
+      for(const r of imgRefsOf(N))if(!(await imgVerify(r)))throw new Error('最後核對第 '+(i+1)+' 筆的圖片位元組不一致，已停止（舊資料沒有被動到）');fps.push(fpOf(N));lfps.push(lf);
+      if(i%5===0){migUI('最後核對 '+(i+1)+' / '+ids.length+' 筆',.5+(i+1)/ids.length/2,false);await new Promise(r=>setTimeout(r,0))}}
+    /* 切換：一個很短的交易；交易內再確認舊資料沒被改過、還沒有別人切換、進度紀錄是這一次的 */
     const d=await db();await new Promise((res,rej)=>{const tx=d.transaction('kv','readwrite'),s=tx.objectStore('kv');let why=null;tx.oncomplete=res;tx.onabort=()=>rej(why||tx.error||new Error('切換中斷'));
-      const mq=s.get('meta'),iq=s.get('oids');iq.onsuccess=()=>{const m=mq.result,ids2=iq.result;const sig=JSON.stringify([m===undefined?null:m,Array.isArray(ids2)?idsHash(ids2):null,Array.isArray(ids2)?ids2.length:-1]);
+      const mq=s.get('meta'),iq=s.get('oids'),aq=s.get('act'),gq=s.get('mig');gq.onsuccess=()=>{const m=mq.result,ids2=iq.result;const sig=JSON.stringify([m===undefined?null:m,Array.isArray(ids2)?idsHash(ids2):null,Array.isArray(ids2)?ids2.length:-1]);
         if(sig!==sig0){why=new Error('舊資料在最後一刻被改過，已停止');tx.abort();return}
-        const nm=Object.assign(metaOf(1,ids,chOf(fps),shOf(set)),{img:1});s.put(ids,'nids');if(set!==undefined)s.put(set,'nset');s.put(nm,'nmeta');s.put({ns:'n',at:Date.now(),src:sig0,from:'v471',n:ids.length,ms:Date.now()-t0},'act');s.delete('mig')}});
-    migUI('完成，重新開啟中…',1,false);lsSet('migDone',String(Date.now()));setTimeout(()=>location.reload(),600)
-  }catch(e){console.error(e);IMGON=false;migUI('');alert('⚠ 升級沒有完成：'+((e&&e.message)||'錯誤')+'\n\n舊資料完全沒有被改動，app 會重新開啟、照舊使用。'+(/空間|Quota/i.test(String(e&&(e.name+e.message)))?'\n看起來是手機空間不夠，清出空間後可以再試一次（做好的部分會保留）。':''));if(!items.length)location.reload()}
+        if(aq.result!==undefined||!isRec(gq.result)||gq.result.own!==own){why=new Error('另一個分頁同時在升級，已停止');tx.abort();return}
+        const nm=Object.assign(metaOf(1,ids,chOf(fps),shOf(set)),{img:1});s.put(ids,'nids');if(set!==undefined)s.put(set,'nset');s.put(nm,'nmeta');s.put({ns:'n',at:Date.now(),src:sig0,lch:chOf(lfps),from:'v472',n:ids.length,ms:Date.now()-t0},'act');s.delete('mig')}});
+    migUI('完成，重新開啟中…',1,false);lsSet('migDone',String(Date.now()));setTimeout(()=>location.reload(),600);return true
+  }catch(e){console.error(e);IMGON=false;migUI('');await migClearReq();alert('⚠ 升級沒有完成：'+((e&&e.message)||'錯誤')+'\n\n舊資料完全沒有被改動，app 會重新開啟、照舊使用。'+(/空間|Quota/i.test(String(e&&(e.name+e.message)))?'\n看起來是手機空間不夠，清出空間後可以再試一次（做好的部分會保留）。':''));location.reload();return true}
   finally{MIGBUSY=false;if(WLOCK==='升級儲存方式')WLOCK=''}}
-/* 切回舊的儲存方式：只是把指標拿掉；新的資料（含升級後的修改）留著，可以再切回來 */
-async function migBack(){if(K!==KN){toast('目前已經是舊的儲存方式');return}if(syncBusy||WLOCK||MUTREV!==COMMITREV){toast('有工作進行中，請稍後再試');return}
+/* 切回舊的儲存方式：只是把指標移到 actPrev；新的資料（含升級後的修改）留著，可以再切回來。切換後暫停自動同步，要使用者確認才上傳 */
+async function migBack(){if(K!==KN){toast('目前已經是舊的儲存方式');return}if(RO||syncBusy||WLOCK||MUTREV!==COMMITREV){toast('有工作進行中，請稍後再試');return}
   const legChanged=LEGSIG&&ACTP&&LEGSIG!==ACTP.src;
-  if(!confirm('切回舊的儲存方式？\n\n・會回到「升級當時」的舊資料。升級之後做的修改不會出現在舊資料裡（新的資料會保留，可以再切回新的）。\n・建議先匯出一份完整備份。'+(legChanged?'\n\n⚠ 舊資料在升級後被改過（可能開過舊版）。':'')))return;
-  await kvTx(s=>{s.put(ACTP,'actPrev');s.delete('act')});location.reload()}
-async function migFwd(){const p=await kvGetS('actPrev');if(!isRec(p)){toast('沒有之前升級的資料');return}const sig=await legacySig();
-  if(sig!==p.src){if(!confirm('切回舊的儲存方式之後，舊資料又被改過。\n直接回到新的資料會看不到那些修改。要用「升級儲存方式」重新升級（會包含那些修改），還是直接回到新的資料？\n\n按確定＝直接回到新的資料；按取消＝不動。'))return}
-  await kvTx(s=>{s.put(p,'act');s.delete('actPrev')});location.reload()}
+  if(!confirm('切回舊的儲存方式？\n\n・會回到「升級當時」的舊資料。升級之後做的修改不會出現在舊資料裡（新的資料會保留，可以再切回新的）。\n・切換後會暫停自動同步，避免把較舊的資料傳上雲端。\n・建議先匯出一份完整備份。'+(legChanged?'\n\n⚠ 舊資料在升級後被改過（可能開過舊版）。':'')))return;
+  await withLock('ct-mig',async()=>{try{const d=await db();await new Promise((res,rej)=>{const t=d.transaction('kv','readwrite'),s=t.objectStore('kv');let why=null;t.oncomplete=res;t.onabort=()=>rej(why||t.error||new Error('切換中斷'));
+      const q=s.get('act');q.onsuccess=()=>{const v=q.result;if(JSON.stringify(v===undefined?null:v)!==ACTJ){why=new Error('儲存方式已經在別的分頁改過，請重新整理');t.abort();return}s.put(v,'actPrev');s.delete('act')}});
+    lsSet('syncHold','1');location.reload()}catch(e){toast('⚠ 沒有切換：'+e.message,7000)}})}
+/* 舊資料逐筆的內容指紋（一次讀一筆，不留在記憶體） */
+async function legacyLch(onp){const ids=await kvGetS('oids');if(!Array.isArray(ids))return null;const L=[];for(let i=0;i<ids.length;i++){const o=await kvGetS('o:'+ids[i]);L.push(o===undefined?'-':fpNC(o));if(onp&&i%10===0)onp(i,ids.length)}return chOf(L)}
+async function migFwd(){if(K===KN){toast('目前已經是新的儲存方式');return}if(!READY||syncBusy||WLOCK||MUTREV!==COMMITREV||SAVEST!=='ok'){toast('有工作進行中或還沒存好，請稍後再試');return}
+  await withLock('ct-mig',async()=>{const p=await kvGetS('actPrev');if(!actOk(p)){toast('沒有之前升級的資料');return}
+    const nids=await kvGetS('nids'),nm=await kvGetS('nmeta'),mg=await kvGetS('mig');if(!Array.isArray(nids)||!isRec(nm)){toast('之前升級的資料不完整，不能直接回去，請重新升級',7000);return}if(isRec(mg)&&mg.done&&mg.done.length){toast('上次重新升級做到一半，請先完成升級',7000);return}
+    const sig=await legacySig();let ch=sig!==p.src;
+    if(!ch&&p.lch){WLOCK='核對舊資料';try{const c=await legacyLch((i,n)=>toast('核對舊資料 '+(i+1)+'／'+n+'…',0));toast('',1);ch=c!==p.lch}finally{WLOCK=''}}
+    if(ch&&!confirm('切回舊的儲存方式之後，舊資料又被改過（可能用過舊版或在舊的儲存方式下修改過）。\n直接回到新的資料會看不到那些修改。想保留那些修改，請按取消，改用「升級儲存方式」重新升級。\n\n按確定＝直接回到新的資料（舊資料仍保留）。'))return;
+    try{const d=await db();await new Promise((res,rej)=>{const t=d.transaction('kv','readwrite'),s=t.objectStore('kv');let why=null;t.oncomplete=res;t.onabort=()=>rej(why||t.error||new Error('切換中斷'));
+        const q=s.get('act'),q2=s.get('actPrev');q2.onsuccess=()=>{if(q.result!==undefined||JSON.stringify(q2.result)!==JSON.stringify(p)){why=new Error('儲存方式已經在別的分頁改過，請重新整理');t.abort();return}s.put(p,'act');s.delete('actPrev')}});
+      lsSet('syncHold','1');location.reload()}catch(e){toast('⚠ 沒有切換：'+e.message,7000)}})}
+/* 儲存方式記錄壞掉時：讓使用者明確選擇要用哪一份（不自動選） */
+async function storeChoose(w){const R=STOREINFO||{};const lab=w==='n'?'升級後的新資料':'升級前的舊資料';
+  if(!confirm('改用「'+lab+'」？\n\n・另一份資料不會刪除，原本壞掉的記錄會另外保存。\n・切換後會暫停自動同步，請先確認資料正確、匯出完整備份，再手動上傳。'))return;
+  try{let nids=null;if(w==='n'){nids=await kvGetS('nids');if(!Array.isArray(nids)||!isRec(await kvGetS('nmeta'))){alert('新資料的清單或版本記錄不在，不能使用新資料');return}}
+    const sig=await legacySig().catch(()=>'');const d=await db();await new Promise((res,rej)=>{const t=d.transaction('kv','readwrite'),s=t.objectStore('kv');t.oncomplete=res;t.onabort=()=>rej(t.error||new Error('寫入中斷'));
+      const q=s.get('act');q.onsuccess=()=>{if(q.result!==undefined)s.put(q.result,'actBad:'+Date.now());if(w==='n')s.put({ns:'n',at:Date.now(),src:sig,from:'rescue',n:nids.length},'act');else s.delete('act')}});
+    lsSet('syncHold','1');location.reload()}catch(e){alert('⚠ 沒有切換：'+e.message)}}
 async function fillMig(){const b=$('migbox');if(!b)return;let h='';const st=await kvGet('mig'),prev=await kvGet('actPrev');
-  if(K===KN){const legCh=LEGSIG&&ACTP&&LEGSIG!==ACTP.src;h='<div class="msg" style="margin:0 0 6px">儲存方式：新的（圖片另外存放，共 '+BMX.size+' 張圖）。升級前的舊資料原封不動保留。'+(legCh?'<br><b style="color:#c0392b">⚠ 舊資料在升級後被改過（可能開過舊版 v442），新的資料不會讀到那些修改。</b>':'')+'</div><button class="btn" data-mg2="back">切回舊的儲存方式</button>'}
+  if(STOREBAD){const R=STOREINFO||{};h='<div class="msg" style="margin:0 0 6px;color:#c0392b"><b>⚠ '+esc(STOREBAD)+'</b><br>為了不蓋掉資料，現在是唯讀。手機裡：升級後的新資料 '+(Array.isArray(R.nids)?R.nids.length+' 筆':'沒有')+'；升級前的舊資料 '+(Array.isArray(R.oids)?R.oids.length+' 筆':R.oN?R.oN+' 筆（清單不在）':'沒有')+'。請先匯出救援備份，再選要使用哪一份。</div>'+(Array.isArray(R.nids)?'<button class="btn" data-mg2="useN">使用升級後的新資料</button>':'')+(R.oids!==undefined||R.meta!==undefined?'<button class="btn" data-mg2="use0">使用升級前的舊資料</button>':'')}
+  else if(K===KN){const legCh=LEGSIG&&ACTP&&LEGSIG!==ACTP.src;h='<div class="msg" style="margin:0 0 6px">儲存方式：新的（圖片另外存放，共 '+BMX.size+' 張圖）。升級前的舊資料原封不動保留。'+(legCh?'<br><b style="color:#c0392b">⚠ 舊資料在升級後被改過（可能開過舊版 v442），新的資料不會讀到那些修改。</b>':'')+'</div><button class="btn" data-mg2="back">切回舊的儲存方式</button>'}
   else if(IMGON)h='<div class="msg" style="margin:0 0 6px">儲存方式：新的（圖片另外存放，共 '+BMX.size+' 張圖）</div>';
-  else h='<div class="msg" style="margin:0 0 6px">儲存方式：舊的（圖片和商品存在一起，資料多時比較吃記憶體）'+(isRec(st)?'。上次升級做到一半（'+(st.done||[]).length+' 筆）':'')+'</div><button class="btn" data-mg2="run">'+(isRec(st)?'繼續升級儲存方式':'升級儲存方式（圖片另外存放）')+'</button>'+(isRec(prev)?'<button class="btn" data-mg2="fwd">回到之前升級的新資料</button>':'');
-  b.innerHTML=h;b.onclick=e=>{const x=e.target.closest('[data-mg2]');if(!x)return;const a=x.dataset.mg2;if(a==='run')migRun();else if(a==='back')migBack();else if(a==='fwd')migFwd()}}
+  else h='<div class="msg" style="margin:0 0 6px">儲存方式：舊的（圖片和商品存在一起，資料多時比較吃記憶體）'+(isRec(st)&&st.done&&st.done.length?'。上次升級做到一半（'+st.done.length+' 筆）':'')+'</div><button class="btn" data-mg2="run">'+(isRec(st)&&st.done&&st.done.length?'繼續升級儲存方式':'升級儲存方式（圖片另外存放）')+'</button>'+(actOk(prev)?'<button class="btn" data-mg2="fwd">回到之前升級的新資料</button>':'');
+  if(MISSN)h+='<div class="msg" style="margin:6px 0 0;color:#c0392b">⚠ 有 '+MISSN+' 張圖片在手機裡找不到。上傳與完整備份會暫停，可以用之前的完整備份還原修補（同樣的圖會自動補回）。</div>';
+  if(lsGet('syncHold')==='1')h+='<div class="msg" style="margin:6px 0 0;color:#a0522d">剛切換過儲存方式，自動同步已暫停。確認資料正確後，到雲端同步按「上傳」或「下載」才會恢復。</div>';
+  b.innerHTML=h;b.onclick=e=>{const x=e.target.closest('[data-mg2]');if(!x)return;const a=x.dataset.mg2;if(a==='run')migRun();else if(a==='back')migBack();else if(a==='fwd')migFwd();else if(a==='useN')storeChoose('n');else if(a==='use0')storeChoose('0')}}
 /* data safety center */
 function safeCard(){const lo=+lsGet('lastLocalOk')||0,ls=+lsGet('lastSync')||0,dirty=lsGet('dirty')==='1',tm=t=>t?new Date(t).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'尚無';
   const uns=lsGet('unsaved')==='1'&&SAVEST!=='saving';
@@ -1978,8 +2084,9 @@ async function readGen(gen){const R=await rawRead(gen),M=new Map(R.entries);cons
   const V=vList(src,'hard');const se=st===undefined?[]:vSettings(st,'legacy');
   return {L:V.ok,bad:V.bad,miss,st:se.length?undefined:st,badSettings:se,legacy,rec:R.rec,keys:R.entries.length,orig:R.entries.filter(e=>e[0].startsWith('orig:')).length,q:R.entries.filter(e=>e[0].startsWith('q:')).length}}
 async function genAct(act,gen){
-  if(act==='exp'){let R;try{R=await rawReadEnc(gen)}catch(e){toast('⚠ 讀不到這份保存區：'+e.message,7000);return}const P=rawPlan(gen,R);
-    if(P.parts.length===1){const f=rawPart(P,0);const r=await bkDeliver(f,BKT.raw);bkDone(r,1,'raw',P);return}BKP=P;drawBkps();return}
+  if(act==='exp'){let R;try{toast('準備匯出…',0);R=await rawPrep(gen);toast('',1)}catch(e){toast('⚠ 讀不到這份保存區：'+e.message,7000);return}const P=rawPlan(gen,R);
+    if(R.missing.length)alert('⚠ 這份保存區引用的圖片有 '+R.missing.length+' 張在手機裡找不到或內容損壞。\n匯出的檔案會標成「不完整」，不能用來確認刪除這份保存區。');
+    if(P.parts.length===1){let f;try{f=await rawPart(P,0)}catch(e){toast('⚠ '+e.message,7000);return}const r=await bkDeliver(f,BKT.raw);bkDone(r,1,'raw',P);return}BKP=P;drawBkps();return}
   if(act==='del'){if(WLOCK){roBlock();return}const R=await rescueList(),x=R.find(r=>r.gen===gen);if(!x){toast('找不到這份保存區');return}
     if(!x.ver){alert('還不能刪除：請先「匯出這份舊資料」，再到「檢查備份檔」把匯出的檔案（全部卷）一起選起來檢查。\n檢查確認和手機裡的保存區完全一致後，才能刪除。');return}
     if(!confirm('刪除這份保存下來的舊資料？\n（已確認匯出的檔案和它完全一致；刪除後手機裡就沒有這份了，只剩匯出的檔案）'))return;
@@ -2016,9 +2123,9 @@ const refFp=v=>{const m=BMX.get(v.slice(4));return m?m.lv+'|'+m.hv:v};
 /* 不快取版本：備份、還原、遷移處理大量圖片字串時用，避免把每張圖的字串留在快取裡（記憶體會一直累積） */
 const strFpNC=v=>v.length+'|'+h64(v);
 const fpNC=o=>JSON.stringify(o,(k,v)=>typeof v==='string'&&v.length>400?strFpNC(v):v);
-const fpRep=(o,rep)=>JSON.stringify(o,(k,v)=>{if(rep)v=rep(k,v);return isRef(v)?refFp(v):typeof v==='string'&&v.length>400?strFpNC(v):v});
+const fpRep=(o,rep)=>JSON.stringify(o,(k,v)=>{if(rep)v=rep(k,v);return isRefK(k,v)?refFp(v):typeof v==='string'&&v.length>400?strFpNC(v):v});
 /* 備份檔裡的大小：參照會換成完整的 data URL */
-const bkSize=(o,rep)=>{let x=0;const s=JSON.stringify(o,(k,v)=>{if(rep)v=rep(k,v);if(isRef(v)){const m=BMX.get(v.slice(4));if(m)x+=m.lv-v.length}return v});return u8len(s)+x};
+const bkSize=(o,rep)=>{let x=0;const s=JSON.stringify(o,(k,v)=>{if(rep)v=rep(k,v);if(isRefK(k,v)){const m=BMX.get(v.slice(4));if(m)x+=m.lv-v.length}return v});return u8len(s)+x};
 const stOf=()=>JSON.stringify(S,(k,v)=>/^(gk|ghTok)$/.test(k)?undefined:v);
 const MANK=['app','fmt','type','set','part','parts','count','orders','t','setHash','ih','stHash'];
 /* manifest 第 2 版：有意義的欄位（版本、編碼、保存區代號、不完整、有沒有遺失型別）全部納入每一卷的檢查碼 */
@@ -2032,8 +2139,9 @@ async function bkCheck(P){if(!P.live)return true;if(P.list!==items||MUTREV!==P.m
 async function bkPart(P,i){if(P.raw)return rawPart(P,i);if(!(await bkCheck(P))){P.void=true;throw new Error('資料在分卷途中改過，這一組備份已作廢，請重新匯出')}
   const ids=new Set(P.parts[i]),L=P.list.filter(o=>ids.has(o.id));for(const o of L)if(fpRep(o,P.rep)!==P.fps.get(o.id)){P.void=true;throw new Error('「'+title(o).slice(0,14)+'」在分卷途中改過，這一組備份已作廢，請重新匯出')}
   /* 只讀這一卷用到的圖片（還原成原本的 data URL），寫完就釋放 */
-  const DU=new Map();for(const o of L)JSON.stringify(o,(k,v)=>{if(P.rep)v=P.rep(k,v);if(isRef(v))DU.set(v,null);return v});for(const r of DU.keys())DU.set(r,await imgDataURL(r));
-  const arr='['+L.map(o=>JSON.stringify(o,(k,v)=>{if(P.rep)v=P.rep(k,v);return isRef(v)?DU.get(v):v})).join(',')+']',st=i===0?P.st:'';DU.clear();
+  const DU=new Map();for(const o of L)JSON.stringify(o,(k,v)=>{if(P.rep)v=P.rep(k,v);if(isRefK(k,v))DU.set(v,null);return v});
+  for(const r of DU.keys()){try{DU.set(r,await imgDataURL(r))}catch(e){if(P.mode==='rescue'){DU.set(r,r);P.miss=(P.miss||0)+1}else{DU.clear();P.void=true;throw new Error('有圖片在手機裡找不到或內容損壞（'+e.message+'），這份備份不完整，已停止。可以改用「救援備份」先把其他資料存下來，再用之前的完整備份修補圖片')}}}
+  const arr='['+L.map(o=>JSON.stringify(o,(k,v)=>{if(P.rep)v=P.rep(k,v);return isRefK(k,v)?DU.get(v):v})).join(',')+']',st=i===0?P.st:'';DU.clear();
   const man={app:'collection-tracker',fmt:3,mv:2,type:P.mode,label:BKT[P.mode],set:P.set,part:i+1,parts:P.parts.length,count:L.length,orders:P.n,t:P.t,setHash:P.setHash,ih:P.ih,stHash:P.stHash,incomplete:P.incomplete||undefined,note:'不含 Gemini／GitHub 金鑰'};
   man.hash=h64(manCore(man)+'|'+arr+'|'+st);
   const body='{"manifest":'+JSON.stringify(man)+',"items":'+arr+(i===0?',"settings":'+st:'')+'}';
@@ -2078,7 +2186,7 @@ const intOk=(v,min,max,allowEmpty)=>numOk(v,min,max,allowEmpty)&&(v===''||v==nul
 const PAYV=['paid','deposit','unpaid','cod',''],DATEK=['buyDate','recvDate','soldDate','eta','start'];
 const B64RE=/^[A-Za-z0-9+/]*={0,2}$/;
 /* 回傳 ''＝正常圖片、'ext'＝外部連結、其他＝錯誤原因 */
-function imgChk(v){if(typeof v!=='string'||!v)return '不是圖片';if(isRef(v))return BMX.has(v.slice(4))?'':'在圖片庫裡找不到（缺圖）';
+function imgChk(v){if(typeof v!=='string'||!v)return '不是圖片';if(isRef(v))return NOREF?'是只存在某支手機圖片庫裡的參照（這個檔案不是完整的獨立備份）':refOk(v)?'':'在圖片庫裡找不到（缺圖）';
   if(/^https?:\/\//i.test(v))return 'ext';if(/^blob:/i.test(v))return '是暫時的 blob 連結（重開後就失效）';
   const m=/^data:(image\/[\w.+-]+)((?:;[\w-]+=[^;,]*)*)(;base64)?,/i.exec(v.slice(0,200));if(!m)return '不是圖片資料';
   const body=v.slice(m[0].length),mime=m[1].toLowerCase();
@@ -2145,7 +2253,7 @@ async function readBackup(FL,opt){opt=opt||{};const warn=[];
     if(isRec(d)&&d.manifest)throw new Error('「'+FL[0].name+'」的格式不對');
     if(isRec(d)&&(d.patch===true||d.imgOnly===true))return {items:Array.isArray(d.items)?d.items:[],patch:d.patch===true?d:null,imgOnly:d.imgOnly===true,warn,legacy:true,bad:[],single:true};
     const L=Array.isArray(d)?d:isRec(d)?d.items:null;if(!Array.isArray(L))throw new Error('檔案裡找不到商品資料');const S0=Array.isArray(d)?undefined:d.settings;warn.push('這是舊格式的備份，沒有完整性資訊：只能確認格式正確，無法確認有沒有缺資料');
-    const V=vList(L,'legacy'),se=vSettings(S0,'legacy');if(V.ext)warn.push('有 '+V.ext+' 張圖片是外部網址（沒有存在備份裡），網址失效就看不到');
+    const V=noRef(()=>vList(L,'legacy')),se=vSettings(S0,'legacy');if(V.ext)warn.push('有 '+V.ext+' 張圖片是外部網址（沒有存在備份裡），網址失效就看不到');
     return {items:V.ok,bad:V.bad,badMsgs:V.msgs.concat(se),settings:se.length?undefined:S0,badSettings:se.length?S0:undefined,manifest:null,warn,legacy:true,ext:V.ext,total:L.length,rescue:false,badCount:V.bad.length+se.length,merge:isRec(d)&&d.merge===true,single:true}}
   const ms=H.map(x=>x.m),m0=ms[0];
   if(ms.some(m=>m.app!=='collection-tracker'))throw new Error('有檔案不是收藏櫃的備份');
@@ -2161,7 +2269,7 @@ async function readBackup(FL,opt){opt=opt||{};const warn=[];
   if(ms.reduce((a,m)=>a+(m.count||0),0)!==m0.orders&&m0.orders!=null)throw new Error('筆數不對：各卷合計和備份記錄不一樣');
   H.sort((x,y)=>x.m.part-y.m.part);
   const fps=[],ids=[],keys=new Set(),out=[],bad=[],msgs=[],ext={n:0},seen=new Set();let S0,total=0;
-  for(const h of H){let d,txt;try{txt=await h.f.text();d=JSON.parse(txt)}catch(e){throw new Error('「'+h.f.name+'」不是正確的備份檔（無法讀取）')}
+  let hi=0;for(const h of H){if(hi++)await new Promise(r=>setTimeout(r,40));/* 每卷之間讓瀏覽器有機會回收上一卷的暫存 */let d,txt;try{txt=await h.f.text();d=JSON.parse(txt)}catch(e){throw new Error('「'+h.f.name+'」不是正確的備份檔（無法讀取）')}
     const m=d.manifest;if(!isRec(m)||m.hash!==h.m.hash||m.part!==h.m.part)throw new Error('第 '+h.m.part+' 卷的 manifest 不一致');
     const L=raw?d.raw:d.items,st0=raw?d.rescue:d.settings;d=null;
     if(!Array.isArray(L))throw new Error('第 '+m.part+' 卷沒有資料');if(m.count!==L.length)throw new Error('第 '+m.part+' 卷筆數不對（應有 '+m.count+'，讀到 '+L.length+'）');
@@ -2174,18 +2282,18 @@ async function readBackup(FL,opt){opt=opt||{};const warn=[];
     else if(m.hash&&fnv64(JSON.stringify(L))!==m.hash)throw new Error('第 '+m.part+' 卷內容損壞或被改過');
     txt=null;
     if(m.part===1)S0=st0;
-    for(let k=0;k<L.length;k++){const o=L[k];L[k]=null;total++;fps.push(fpRep(o));
+    for(let k=0;k<L.length;k++){const o=L[k];L[k]=null;total++;fps.push(raw?fpNC(o):fpRep(o));
       if(raw){if(!Array.isArray(o)||o.length!==2||typeof o[0]!=='string')throw new Error('原始資料格式錯誤');if(keys.has(o[0]))throw new Error('原始資料裡有重複的鍵（'+o[0].slice(0,20)+'）');keys.add(o[0]);ids.push(o[0]);
         if(m.enc===1){try{o[1]=decV(o[1])}catch(e){throw new Error(e.message)}}out.push(o);continue}
       ids.push(isRec(o)?o.id:undefined);
-      const P=vOrder(o,total-1,f3?'full':'legacy',ext);let why=P.hard.concat(P.full);if(!why.length&&isRec(o)&&o.id){if(seen.has(o.id))why=['第 '+total+' 筆訂單的編號和前面重複'];else seen.add(o.id)}
+      const P=noRef(()=>vOrder(o,total-1,f3?'full':'legacy',ext));let why=P.hard.concat(P.full);if(!why.length&&isRec(o)&&o.id){if(seen.has(o.id))why=['第 '+total+' 筆訂單的編號和前面重複'];else seen.add(o.id)}
       if(why.length){bad.push({k:total-1,o,why});msgs.push(...why);continue}
       if(opt.keep){if(opt.ingest)await ingestList([o]);out.push(o)}}}
   if(m0.orders!=null&&m0.orders!==total)throw new Error('筆數不對：應有 '+m0.orders+' 筆，只讀到 '+total+' 筆');
   if(f3){const st=JSON.stringify(S0);if(h64(st)!==m0.stHash)throw new Error(raw?'保存區資訊被改過':'設定資料被改過');
     if(raw){if(h64(ids.join('\n'))!==m0.ih)throw new Error('原始資料的鍵清單和記錄對不上')}else if(idsHash(ids)!==m0.ih)throw new Error('訂單清單和備份記錄對不上');
     if(h64(fps.join('\n')+'\n'+st)!==m0.setHash)throw new Error('各卷的資料不是同一個時間的版本（可能在分卷途中改過），不能一起還原')}
-  if(raw){if(m0.mv!==2)warn.push('這是較舊版本匯出的原始資料，可以放回保存區，但不能用來確認「可以刪除」');if(m0.lossy)warn.push('匯出時有無法保存的特殊型別，不能用來確認「可以刪除」');
+  if(raw){if(m0.mv!==2)warn.push('這是較舊版本匯出的原始資料，可以放回保存區，但不能用來確認「可以刪除」');if(m0.incomplete)warn.push('匯出時有圖片找不到或損壞（標成不完整），不能用來確認「可以刪除」');if(m0.lossy)warn.push('匯出時有無法保存的特殊型別，不能用來確認「可以刪除」');
     return {raw:out,rescue:S0,manifest:m0,warn,legacy:false,bad:[],items:[]}}
   if(m0.incomplete||m0.type==='rescue')warn.push('這是「救援備份」，是在資料不完整或存檔失敗時匯出的，可能缺資料');
   const se=vSettings(S0,f3?'full':'legacy');if(ext.n)warn.push('有 '+ext.n+' 張圖片是外部網址（沒有存在備份裡），網址失效就看不到');
@@ -2199,7 +2307,7 @@ async function deepCheck(FL,onp){let n=0,badN=0;const badL=[];const H=[];for(con
 async function verifyBackup(FL){try{const r=await readBackup(FL,{keep:false});if(r.patch||r.imgOnly){alert('這是更新用的檔案，不是備份');return}
     if(r.raw){const g=r.manifest.gen;let local=null;try{local=await rawRead(g,true)}catch(e){}
       /* 把匯出檔解碼後，逐鍵和手機裡的保存區比（型別與位元組都要一樣）；舊版匯出、有遺失型別的不能用來授權刪除 */
-      let same=!!local&&r.manifest.mv===2&&!r.manifest.lossy&&local.entries.length===r.raw.length;
+      let same=!!local&&r.manifest.mv===2&&!r.manifest.lossy&&!r.manifest.incomplete&&!local.missing.length&&local.entries.length===r.raw.length;
       if(same){for(let i=0;i<r.raw.length;i++){if(r.raw[i][0]!==local.entries[i][0]||!(await deq(r.raw[i][1],local.entries[i][1]))){same=false;break}}}
       if(same){await rescueMark(g,{ver:Date.now()});if(SO.classList.contains('show'))drawSet()}
       alert('✓ 救援保存區的原始資料：檔案校驗通過（尚未實際寫入）\n\n共 '+r.raw.length+' 個原始鍵，'+r.manifest.parts+' 個檔'+(same?'\n已把檔案內容解碼，逐鍵和手機裡的保存區比對，型別與內容完全一致：現在可以刪除手機裡的這份保存區。':'\n（手機裡沒有對應的保存區、內容不同，或這份檔案不能用來確認刪除）')+(r.warn.length?'\n\n'+r.warn.join('\n'):''));return}
@@ -2288,24 +2396,39 @@ async function rawRead(gen,withImg){const d=await db();const R=await new Promise
   t.oncomplete=()=>{if(!rec){rej(new Error('找不到這份保存區'));return}res({entries:out,rec})};t.onabort=()=>rej(t.error||new Error('讀取中斷'));const st=t.objectStore('kv');
   const rq=st.get('rescues');rq.onsuccess=()=>{const R=Array.isArray(rq.result)?rq.result:[];const x=R.find(r=>r.gen===gen);if(x){rec={gen:x.gen,at:x.at,why:x.why||'',n:x.n,kind:x.kind||'rescue'}}};
   const cq=st.openCursor(IDBKeyRange.bound(P,P+'￿'));cq.onsuccess=()=>{const c=cq.result;if(c){out.push([c.key.slice(P.length),c.value]);c.continue()}}});
-  if(withImg){const refs=new Set(),seen=new Set();const walk=v=>{if(isRef(v))refs.add(v);else if(v&&typeof v==='object'&&!(v instanceof Blob)&&!seen.has(v)){seen.add(v);if(v instanceof Map)v.forEach((x,k)=>{walk(k);walk(x)});else if(v instanceof Set)v.forEach(walk);else for(const k of Object.keys(v))walk(v[k])}};R.entries.forEach(e=>walk(e[1]));
-    for(const r of [...refs].sort()){const sha=r.slice(4),m=BMX.get(sha),b=await kvGetS('B:'+sha);if(m&&b!==undefined)R.entries.push(['$img:'+sha,{meta:m,data:asBlob(b,m.mime)}])}}
+  R.missing=[];if(withImg){const refs=rawRefs(R.entries);
+    /* 每一張引用的圖都要有圖片資訊與本體（大小要對）；找不到的記下來，整份標成「不完整」，不能用來確認刪除 */
+    for(const r of [...refs].sort()){const sha=r.slice(4),m=BMX.get(sha);let b;try{b=await kvGetS('B:'+sha)}catch(e){b=undefined}const bb=b===undefined?null:asBlob(b,m&&m.mime);
+      if(m&&bb&&bb.size===m.bytes)R.entries.push(['$img:'+sha,{meta:m,data:bb}]);else R.missing.push(sha)}}
   return R}
+/* 保存區裡引用到的圖片（只看圖片欄位 s、o） */
+function rawRefs(E){const refs=new Set(),seen=new Set();const walk=(v,k)=>{if(isRefK(k,v))refs.add(v);else if(v&&typeof v==='object'&&!(v instanceof Blob)&&!seen.has(v)){seen.add(v);if(v instanceof Map)v.forEach((x,kk)=>{walk(kk,'');walk(x,typeof kk==='string'?kk:'')});else if(v instanceof Set)v.forEach(x=>walk(x,''));else for(const kk of Object.keys(v))walk(v[kk],kk)}};E.forEach(e=>{if(!e[0].startsWith('$img:'))walk(e[1],'')});return refs}
+/* 匯出前的第一遍：一次只編碼一個鍵，算出大小與指紋就丟掉（不把全部圖片的 base64 同時留在記憶體）；圖片核對 SHA-256 */
+async function rawPrep(gen){const R=await rawRead(gen,true);const info={},sz=[],fps=[],keep=[];
+  for(const e of R.entries){if(e[0].startsWith('$img:')){const sha=e[0].slice(5),by=new Uint8Array(await e[1].data.arrayBuffer());if(hexOf(await crypto.subtle.digest('SHA-256',by))!==sha){R.missing.push(sha);continue}}
+    const x=[e[0],await encV(e[1],info)];sz.push(u8len(JSON.stringify(x))+1);fps.push(fpNC(x));keep.push(e)}
+  R.entries=keep;R.sz=sz;R.fps=fps;R.lossy=!!info.lossy;R.lossyTypes=info.types?[...info.types]:[];if(R.missing.length)R.rec.missing=R.missing.length;return R}
 async function rawReadEnc(gen){const R=await rawRead(gen,true);const info={};for(const e of R.entries)e[1]=await encV(e[1],info);R.lossy=!!info.lossy;R.lossyTypes=info.types?[...info.types]:[];return R}
 function rawPlan(gen,R){const set=String(Date.now())+Math.random().toString(36).slice(2,6),parts=[],big=[];let cur=[],sz=0;const st=JSON.stringify(R.rec),over=u8len(st)+900;
-  R.entries.forEach((e,i)=>{const n=u8len(JSON.stringify(e))+1;if(n+over>BK_LIM){if(cur.length){parts.push(cur);cur=[];sz=0}parts.push([i]);big.push(e[0]+'（'+Math.ceil(n/1e6)+' MB）');return}if(cur.length&&sz+n+over>BK_LIM){parts.push(cur);cur=[];sz=0}cur.push(i);sz+=n});if(cur.length||!parts.length)parts.push(cur);
-  const fps=R.entries.map(e=>fpRep(e));return {mode:'raw',raw:R.entries,gen,set,parts,st,live:false,lossy:!!R.lossy,setHash:h64(fps.join('\n')+'\n'+st),ih:h64(R.entries.map(e=>e[0]).join('\n')),stHash:h64(st),n:R.entries.length,t:Date.now(),big,state:[]}}
-function rawPart(P,i){const L=P.parts[i].map(k=>P.raw[k]),arr='['+L.map(e=>JSON.stringify(e)).join(',')+']',st=i===0?P.st:'';
-  const man={app:'collection-tracker',fmt:3,mv:2,type:'raw',enc:1,gen:P.gen,lossy:P.lossy||undefined,label:BKT.raw,set:P.set,part:i+1,parts:P.parts.length,count:L.length,orders:P.n,t:P.t,setHash:P.setHash,ih:P.ih,stHash:P.stHash,note:'救援保存區原始資料，原封不動（含損壞的部分與用到的圖片）。不含金鑰'};
+  R.entries.forEach((e,i)=>{const n=R.sz[i];if(n+over>BK_LIM){if(cur.length){parts.push(cur);cur=[];sz=0}parts.push([i]);big.push(e[0]+'（'+Math.ceil(n/1e6)+' MB）');return}if(cur.length&&sz+n+over>BK_LIM){parts.push(cur);cur=[];sz=0}cur.push(i);sz+=n});if(cur.length||!parts.length)parts.push(cur);
+  const fps=R.fps;return {mode:'raw',raw:R.entries,rfps:fps,gen,set,parts,st,live:false,lossy:!!R.lossy,incomplete:R.missing.length?1:undefined,setHash:h64(fps.join('\n')+'\n'+st),ih:h64(R.entries.map(e=>e[0]).join('\n')),stHash:h64(st),n:R.entries.length,t:Date.now(),big,state:[]}}
+/* 第二遍：只編碼這一卷的鍵（含圖片），寫完就釋放；編碼結果必須和第一遍的指紋一樣 */
+async function rawPart(P,i){const info={},L=[];for(const k of P.parts[i]){const e=P.raw[k],x=[e[0],await encV(e[1],info)];if(fpNC(x)!==P.rfps[k]){P.void=true;throw new Error('保存區的內容在匯出途中變了，這一組已作廢，請重新匯出')}L.push(x)}
+  const arr='['+L.map(e=>JSON.stringify(e)).join(',')+']',st=i===0?P.st:'',cnt=L.length;L.length=0;
+  const man={app:'collection-tracker',fmt:3,mv:2,type:'raw',enc:1,gen:P.gen,lossy:P.lossy||undefined,incomplete:P.incomplete||undefined,label:BKT.raw,set:P.set,part:i+1,parts:P.parts.length,count:cnt,orders:P.n,t:P.t,setHash:P.setHash,ih:P.ih,stHash:P.stHash,note:'救援保存區原始資料，原封不動（含損壞的部分與用到的圖片）。不含金鑰'};
   man.hash=h64(manCore(man)+'|'+arr+'|'+st);
   return new File(['{"manifest":'+JSON.stringify(man)+',"raw":'+arr+(i===0?',"rescue":'+st:'')+'}'],'collection-RAW-'+P.gen.slice(1,9)+'-'+today()+(P.parts.length>1?'-'+(i+1)+'of'+P.parts.length:'')+'.json',{type:'application/json'})}
 /* 把原始資料匯出檔放回救援保存區（同一個交易；現有資料完全不動）。圖片（$img:）核對 SHA-256 後放回圖片庫 */
 async function rawImport(r){const gen=newGen(),info=r.rescue||{},E=r.raw;const imgs=[];
-  for(const [k,v] of E){if(!k.startsWith('$img:'))continue;const sha=k.slice(5);if(!isRec(v)||!isRec(v.meta)||!(v.data instanceof Blob))throw new Error('原始資料裡的圖片格式不對');const by=new Uint8Array(await v.data.arrayBuffer());if(hexOf(await crypto.subtle.digest('SHA-256',by))!==sha)throw new Error('原始資料裡的圖片內容和識別碼不符');imgs.push([sha,v.meta,by])}
+  for(const [k,v] of E){if(!k.startsWith('$img:'))continue;const sha=k.slice(5);if(!isRec(v)||!isRec(v.meta)||!(v.data instanceof Blob)||v.meta.sha!==sha||typeof v.meta.pre!=='string'||!/^data:image\//i.test(v.meta.pre))throw new Error('原始資料裡的圖片格式不對');const by=new Uint8Array(await v.data.arrayBuffer());if(by.length!==v.meta.bytes||hexOf(await crypto.subtle.digest('SHA-256',by))!==sha)throw new Error('原始資料裡的圖片內容和識別碼不符');
+    const lm=BMX.get(sha);if(lm&&lm.pre!==v.meta.pre)throw new Error('匯入的圖片和手機裡同一張圖的格式寫法不同，為了能逐字還原，已停止匯入（手機裡的資料沒有改動）');imgs.push([sha,v.meta,by])}
+  /* 引用閉包：每一張引用的圖都要在檔案裡、或手機裡已經完整存在 */
+  const inF=new Set(imgs.map(x=>x[0])),miss=[...rawRefs(E)].filter(x=>!inF.has(x.slice(4))&&!refOk(x)).length;
   const ok=imgs.length?await blobSelfTest():true;
-  await kvTx(st=>{E.forEach(([k,v])=>{if(!k.startsWith('$img:'))st.put(v,'R:'+gen+':'+k)});imgs.forEach(([sha,m,by])=>{if(!BMX.has(sha)){st.put(ok?new Blob([by],{type:m.mime}):by.buffer,'B:'+sha);st.put(Object.assign({},m,{th:undefined}),'BM:'+sha)}});
-    const q=st.get('rescues');q.onsuccess=()=>{const R=Array.isArray(q.result)?q.result:[];R.push({gen,at:Date.now(),why:'從原始資料檔匯入（原本：'+(info.why||'')+'）',n:E.filter(e=>/^[on]:/.test(e[0])).length,kind:'import',from:r.manifest.gen,sz:E.reduce((a,e)=>a+approxSize(e[1]),0)});st.put(R,'rescues')}});
-  imgs.forEach(([sha,m])=>{if(!BMX.has(sha))BMX.set(sha,Object.assign({},m,{th:undefined}))});return gen}
+  /* 圖片本體一律用檔案裡核對過的位元組寫入（手機裡原本壞掉的同一張圖會被修好）；圖片資訊已經有就保留 */
+  await kvTx(st=>{E.forEach(([k,v])=>{if(!k.startsWith('$img:'))st.put(v,'R:'+gen+':'+k)});imgs.forEach(([sha,m,by])=>{st.put(ok?new Blob([by],{type:m.mime}):by.buffer,'B:'+sha);if(!BMX.has(sha))st.put(Object.assign({},m,{th:undefined}),'BM:'+sha)});
+    const q=st.get('rescues');q.onsuccess=()=>{const R=Array.isArray(q.result)?q.result:[];R.push({gen,at:Date.now(),why:'從原始資料檔匯入（原本：'+(info.why||'')+'）'+(miss||r.manifest.incomplete?'（不完整：缺 '+(miss||'部分')+' 張圖）':''),n:E.filter(e=>/^[on]:/.test(e[0])).length,kind:'import',from:r.manifest.gen,sz:E.reduce((a,e)=>a+approxSize(e[1]),0)});st.put(R,'rescues')}});
+  for(const [sha,m,by] of imgs){if(!(await bOk(sha,by.length)))throw new Error('圖片寫進手機後讀回來核對不一致');if(!BMX.has(sha))BMX.set(sha,Object.assign({},m,{th:undefined}));BHAS.add(sha)}return gen}
 function renderBk(){renderJobs();
   const el=$('bk');if(!el)return;let sn=0;try{sn=+localStorage.getItem('bkSnooze')||0}catch(e){}
   const l=lastBk(),d=l?Math.floor((Date.now()-l)/864e5):999;
@@ -2535,7 +2658,7 @@ function imVec(im){const N=48,c=document.createElement('canvas');c.width=c.heigh
   const d2=x2.getImageData(0,0,M,M).data,g=new Float32Array(M*M*3);let m=0;for(let i=0,j=0;i<d2.length;i+=4){g[j++]=d2[i];g[j++]=d2[i+1];g[j++]=d2[i+2]}
   for(let i=0;i<g.length;i++)m+=g[i];m/=g.length;let n=0;for(let i=0;i<g.length;i++){g[i]-=m;n+=g[i]*g[i]}n=Math.sqrt(n)||1;for(let i=0;i<g.length;i++)g[i]/=n;
   return {h:hist,g}}
-const imLoad=async src=>{if(isRef(src))src=await imgURL(src,'t');return await imLoad0(src)};
+const imLoad=async src=>isRef(src)?withURL(src,'t',imLoad0).catch(()=>null):imLoad0(src);
 const imLoad0=src=>new Promise(res=>{const im=new Image();im.onload=()=>{try{res(imVec(im))}catch(e){res(null)}};im.onerror=()=>res(null);im.src=src});
 async function imEnsure(srcs){for(const s of srcs){if(!s||IF.has(s))continue;IF.set(s,await imLoad(s))}}
 function imSim(a,b){if(!a||!b)return 0;let hi=0;for(let i=0;i<64;i++)hi+=Math.min(a.h[i],b.h[i]);let dt=0;for(let i=0;i<a.g.length;i++)dt+=a.g[i]*b.g[i];return .5*hi+.5*Math.max(0,dt)}
@@ -2993,7 +3116,7 @@ async function autoTrimAll(){
   if(ch&&writable()&&REPGEN===rg){await save();render()}
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){autoPull();}else if(autoOn()&&isDirty()&&lsGet('syncSha'))syncUp(true)});
-(async()=>{await initStore();const LD=await loadItems(),s=LD.settings;if(s&&s.cats)S=Object.assign(S,s);items=(LD.items||[]).map(mig);READY=true;renderCats();usWarn();if(RO)roBanner();else{if(dedupChars()>0)setTimeout(()=>{save().then(ok=>{if(ok)toast('已合併重複的角色',3500)})},800);setTimeout(feeAuto,1500)}try{if(!RO&&!localStorage.getItem('fixCut1')){localStorage.setItem('fixCut1','1');Promise.resolve(fixCut()).then(n=>{if(n){render();toast('已找回 '+n+' 張去背圖的標記',4000)}}).catch(()=>{})}}catch(e){}try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{const h=localStorage.getItem('hp2')||(localStorage.getItem('hp')==='0'?'all':'hide');$('hp').value=h}catch(e){}
+(async()=>{await initStore();if(MIGREQ&&!RO&&(await migCore(MIGREQ)))return;const LD=await loadItems(),s=LD.settings;if(s&&s.cats)S=Object.assign(S,s);items=(LD.items||[]).map(mig);READY=true;renderCats();usWarn();if(IMGON){MISSN=imgMissCount(items);if(MISSN)setTimeout(()=>toast('⚠ 有 '+MISSN+' 張圖片在手機裡找不到（畫面顯示「缺圖」）。上傳與完整備份會暫停；可以用之前的完整備份還原修補，或到設定匯出救援備份',12000),1500)}if(RO)roBanner();else{if(dedupChars()>0)setTimeout(()=>{save().then(ok=>{if(ok)toast('已合併重複的角色',3500)})},800);setTimeout(feeAuto,1500)}try{if(!RO&&!localStorage.getItem('fixCut1')){localStorage.setItem('fixCut1','1');Promise.resolve(fixCut()).then(n=>{if(n){render();toast('已找回 '+n+' 張去背圖的標記',4000)}}).catch(()=>{})}}catch(e){}try{const f=localStorage.getItem('fcSel');if(f&&[...$('fc').options].some(o=>o.value===f))$('fc').value=f}catch(e){}try{const h=localStorage.getItem('hp2')||(localStorage.getItem('hp')==='0'?'all':'hide');$('hp').value=h}catch(e){}
 try{const v=localStorage.getItem('view');if(VB[v])view=v;Object.entries(VB).forEach(([k,id])=>$(id).classList.toggle('on',k===view))}catch(e){}render();if(!RO)setTimeout(()=>autoTrimAll().catch(()=>{}),400);jobs=[];saveJobs();if(applyCfgHash()){fillCfg();toast('已設定，開始從雲端下載…');setTimeout(()=>syncDown(),300)}else if(!RO)setTimeout(autoPull,1500)})();
 
 /* shrink every "NT$" next to numerals (Hoefler old-style figures make caps look big) */
