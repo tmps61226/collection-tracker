@@ -1991,6 +1991,8 @@ function migUI(msg,pct,canStop){let e=$('migov');if(!msg){if(e)e.remove();return
 /* v472 當機保護：舊的儲存方式啟動時要把全部圖片讀進記憶體；資料太多時 iPhone 會一打開就關掉、一直重來。
    啟動前先記一筆「正在讀入舊資料」，順利開好才清掉；下次啟動還看到這筆，就先不讀入，讓使用者選擇直接升級（一筆一筆處理）或再試一次 */
 const BOOTK='bootLeg';
+/* 已經順利開好之後才重新整理或關閉（例如切換儲存方式、確認用過舊版）→ 不算當機 */
+window.addEventListener('pagehide',()=>{if(READY)lsSet(BOOTK,'')});
 function bootSafe(){return new Promise(res=>{const e=document.createElement('div');e.id='bootsafe';e.style.cssText='position:fixed;inset:0;z-index:9999;background:#f3f0e8;color:#2a2620;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px;text-align:center;font-size:15px;line-height:1.7';
   e.innerHTML='<b style="font-size:18px">上次開啟沒有完成</b><div>上次打開時，app 在讀入資料途中被關掉了（可能是資料太多、手機記憶體不夠）。<br>手機裡的資料沒有被改動。</div><div style="font-size:13px;color:#6b6457">「升級儲存方式」會一筆一筆處理，不必一次讀入全部圖片；舊資料會原封不動保留，之後也可以切回。</div><button class="btn pri" data-bs="mig" style="min-width:240px">升級儲存方式（建議）</button><button class="btn" data-bs="retry" style="min-width:240px">再試一次正常開啟</button>';
   e.onclick=ev=>{const b=ev.target.closest('[data-bs]');if(!b)return;if(b.dataset.bs==='retry'){e.remove();res('retry')}else{if(!confirm('要升級儲存方式嗎？\n\n・app 會一筆一筆處理，不會一次讀入全部圖片。\n・原圖完全保留；舊資料原封不動，之後可以切回。\n・可以隨時暫停，下次繼續。\n・升級完成後，請先匯出一份「完整備份」。'))return;e.remove();res('mig')}};document.body.appendChild(e)})}
