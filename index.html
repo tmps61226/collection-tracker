@@ -2204,7 +2204,8 @@ const numOk=(v,min,max,allowEmpty)=>(allowEmpty&&(v===''||v==null))||(isNum(v)&&
 /* 日期：YYYY-MM-DD，而且年月日真的存在（2026-02-31 不行） */
 const dateOk=s=>{if(typeof s!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(s))return false;const [y,m,d]=s.split('-').map(Number);const t=new Date(Date.UTC(y,m-1,d));return t.getUTCFullYear()===y&&t.getUTCMonth()===m-1&&t.getUTCDate()===d};
 const intOk=(v,min,max,allowEmpty)=>numOk(v,min,max,allowEmpty)&&(v===''||v==null||Number.isInteger(+v));
-const PAYV=['paid','deposit','unpaid','cod',''],DATEK=['buyDate','recvDate','soldDate','eta','start'];
+/* v472：預計到貨日、開始日期和舊版一樣可以寫文字（例如「4-5月」），只檢查是不是文字、長度合理；其他日期照常嚴格檢查 */
+const PAYV=['paid','deposit','unpaid','cod',''],DATEK=['buyDate','recvDate','soldDate'],DATETXT=['eta','start'];
 const B64RE=/^[A-Za-z0-9+/]*={0,2}$/;
 /* 回傳 ''＝正常圖片、'ext'＝外部連結、其他＝錯誤原因 */
 function imgChk(v){if(typeof v!=='string'||!v)return '不是圖片';if(isRef(v))return NOREF?'是只存在某支手機圖片庫裡的參照（這個檔案不是完整的獨立備份）':refOk(v)?'':'在圖片庫裡找不到（缺圖）';
@@ -2232,6 +2233,7 @@ function vOrder(o,k,lvl,ext){ext=ext||{n:0};const P={hard:[],full:[]},lab='第 '
   if(!numOk(o.rate,0,1e6,true))F('的匯率不正確（'+String(o.rate).slice(0,10)+'）');
   ['ship','deposit','twPaid','fee','feeAmt','fpaid','soldPrice'].forEach(f=>{if(!numOk(o[f],-1e9,1e9,true))F('的金額欄位 '+f+' 不正確')});
   DATEK.forEach(f=>{if(o[f]!=null&&o[f]!==''&&!dateOk(o[f]))F('的日期 '+f+' 不正確（'+String(o[f]).slice(0,12)+'）')});
+  DATETXT.forEach(f=>{if(o[f]!=null&&o[f]!==''&&(typeof o[f]!=='string'||o[f].length>60))F('的日期 '+f+' 不正確（'+String(o[f]).slice(0,12)+'）')});
   o.items.forEach((it,j)=>{const E=t=>F('的第 '+(j+1)+' 個品項'+t);if(it.name!=null&&typeof it.name!=='string')E('名稱格式錯誤');
     if(!intOk(it.qty,1,99999,true))E('數量不正確（'+it.qty+'，必須是 1 以上的整數）');const q=+it.qty||1;
     if(it.sq!=null&&it.sq!==''&&!(intOk(it.sq,0,99999)&&+it.sq<=q))E('售出數量不正確（'+it.sq+'）');
